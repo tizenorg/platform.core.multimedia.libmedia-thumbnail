@@ -1,0 +1,7 @@
+# auto generated tet_scen
+all
+	"Starting Full Test Suite"
+	/utc/utc_thumbnail_request_from_db_func
+	/utc/utc_thumbnail_get_data_func
+	"Completed Full Test Suite"
+# EOF

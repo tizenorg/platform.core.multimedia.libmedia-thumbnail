@@ -1,0 +1,52 @@
+/*
+ * media-thumbnail-server
+ *
+ * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
+ *
+ * Contact: Hyunjun Ko <zzoon.ko@samsung.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include <glib.h>
+#include "media-thumb-ipc.h"
+
+#ifndef _THUMB_DAEMON_INTERNAL_H_
+#define _THUMB_DAEMON_INTERNAL_H_
+
+#define SAFE_FREE(src)      { if(src) {free(src); src = NULL;}}
+
+typedef enum {
+	MEDIA_SERVER_PID = 1,
+	OTHERS_PID = 0,
+	GETPID_FAIL = -1
+} _pid_e;
+
+typedef enum {
+	BLOCK_MODE = 0,
+	TIMEOUT_MODE = 1
+} _server_mode_e;
+
+typedef struct _queueMsg{
+	thumbMsg *recv_msg;
+	thumbMsg *res_msg;
+	struct sockaddr_in *client_addr;
+} queueMsg;
+
+int _thumb_daemon_get_sockfd();
+GAsyncQueue *_thumb_daemon_get_queue();
+gboolean _thumb_daemon_udp_thread(void *data);
+
+#endif /*_THUMB_DAEMON_INTERNAL_H_*/
+

@@ -1,0 +1,10 @@
+libmedia-thumbnail:
+
+Most files in libmedia-thumbnail are under the Apache License Version 2.0.
+Read the file LICENSE for details.
+
+Some parts of libmedia-thumbnail are licensed under the GNU Lesser General Public License version 2.1
+See the file COPYING for details.
+
+Specifically, the LGPL parts of libmedia-thumbnail are
+ - md5/media-thumb-hash.c
