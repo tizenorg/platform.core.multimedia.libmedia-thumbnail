@@ -5,7 +5,6 @@ Maintainer: Hyunjun Ko<zzoon.ko@samsung.com>, Byungwook Jang <bw.jang@samsung.co
 Uploaders: Hyunjun Ko<zzoon.ko@samsung.com>
 Build-Depends: debhelper (>= 5), libglib2.0-dev,
                dlog-dev,
-               libmedia-service-dev,
                libmm-fileinfo-dev,
                libmm-utility-dev,
                drm-service-dev,
@@ -38,7 +37,7 @@ Description: Media thumbnail service library for multimedia applications.
 Package: libmedia-thumbnail-dev
 Section: libdevel
 Architecture: any
-Depends: libmedia-thumbnail (= ${Source-Version}), libmedia-service-dev, libmm-fileinfo-dev, libmm-utility-dev, libglib2.0-dev, dlog-dev, drm-service-dev, libevas-dev, libecore-dev, libexif-dev, libaul-1-dev
+Depends: libmedia-thumbnail (= ${Source-Version}), libmm-fileinfo-dev, libmm-utility-dev, libglib2.0-dev, dlog-dev, drm-service-dev, libevas-dev, libecore-dev, libexif-dev, libaul-1-dev
 Description: Media thumbnail service library for multimedia applications. (development)
 
 Package: libmedia-thumbnail-dbg

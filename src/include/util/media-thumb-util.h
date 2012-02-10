@@ -69,6 +69,12 @@ _media_thumb_save_to_file_with_evas(unsigned char *data,
 											int h,
 											char *thumb_path);
 
+int
+_media_thumb_get_width(media_thumb_type thumb_type);
+
+int
+_media_thumb_get_height(media_thumb_type thumb_type);
+
 /**
  *	_thumbnail_get_data:
  *  This function generates thumbnail raw data, which is wanted by user

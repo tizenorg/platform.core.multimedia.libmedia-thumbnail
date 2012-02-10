@@ -7,7 +7,6 @@ License:    TO_BE/FILLED_IN
 Source0:    %{name}-%{version}.tar.gz
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
-BuildRequires: pkgconfig(libmedia-service)
 BuildRequires: pkgconfig(mm-fileinfo)
 BuildRequires: pkgconfig(mmutil-imgp)
 BuildRequires: pkgconfig(mmutil-jpeg)

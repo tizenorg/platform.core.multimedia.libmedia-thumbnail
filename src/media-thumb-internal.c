@@ -44,6 +44,44 @@
 #include <Ecore_Evas.h>
 #include <libexif/exif-data.h>
 
+int _media_thumb_get_proper_thumb_size(media_thumb_type thumb_type,
+								int orig_w, int orig_h,
+								int *thumb_w, int *thumb_h)
+{
+	thumb_dbg("orig w: %d orig h: %d thumb type: %d", orig_w, orig_h, thumb_type);
+
+	BOOL portrait = FALSE;
+	double ratio;
+
+	if (orig_w < orig_h) {
+		portrait = TRUE;
+	}
+
+	if (portrait) {
+		if (orig_h < _media_thumb_get_width(thumb_type)) {
+			*thumb_h = orig_h;
+		} else {
+			*thumb_h = _media_thumb_get_width(thumb_type);
+		}
+
+		ratio = (double)orig_w / (double)orig_h;
+		*thumb_w = *thumb_h * ratio;
+	} else {
+		if (orig_w < _media_thumb_get_width(thumb_type)) {
+			*thumb_w = orig_w;
+		} else {
+			*thumb_w = _media_thumb_get_width(thumb_type);
+		}
+
+		ratio = (double)orig_h / (double)orig_w;
+		*thumb_h = *thumb_w * ratio;
+	}
+
+	thumb_dbg("proper thumb w: %d h: %d", *thumb_w, *thumb_h);
+
+	return 0;
+}
+
 int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value,
 		     int ifdtype, long tagtype)
 {
@@ -161,13 +199,6 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 
 		thumb_height = value;
 	}
-/*
-	if (thumb_width < required_width && 
-			thumb_height < required_height) {
-		thumb_dbg("Size of thumb from exif is small");
-		return -1;
-	}
-*/
 
 	if (ed->data && ed->size) {
 		thumb_dbg("Size: %d, thumb: 0x%x\n", ed->size, ed->data);
@@ -256,7 +287,71 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 	}
 
 	thumb_dbg("size:%d, w:%d, h:%d\n", decoded.size, decoded.width, decoded.height);
-#if 1
+
+	thumb_width = decoded.width;
+	thumb_height = decoded.height;
+
+	media_thumb_type thumb_type;
+	int need_resize = 0;
+	unsigned int buf_size = decoded.size;
+
+	if (required_width == _media_thumb_get_width(MEDIA_THUMB_LARGE)) {
+		thumb_type = MEDIA_THUMB_LARGE;
+	} else {
+		thumb_type = MEDIA_THUMB_SMALL;
+	}
+
+	if (thumb_type == MEDIA_THUMB_LARGE) {
+		if (thumb_width < _media_thumb_get_width(MEDIA_THUMB_LARGE)) {
+			thumb_dbg("Thumb data in exif is too small for MEDIA_THUMB_LARGE");
+			SAFE_FREE(decoded.data);
+			return -1;
+		}
+	} else {
+		if (thumb_width > _media_thumb_get_width(MEDIA_THUMB_SMALL)) {
+			need_resize = 1;
+		}
+	}
+
+	if (need_resize == 1) {
+		int resized_w = _media_thumb_get_width(MEDIA_THUMB_LARGE);
+		int resized_h = _media_thumb_get_height(MEDIA_THUMB_LARGE);
+
+		err = mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, resized_w, resized_h, &buf_size);
+		if (err < 0) {
+			thumb_dbg("mm_util_get_image_size failed : %d", err);
+
+			SAFE_FREE(decoded.data);
+			return err;
+		}
+
+		thumb_dbg("size(RGB888) : %d", buf_size);
+
+		unsigned char *dst = (unsigned char *)malloc(buf_size);
+		if (dst == NULL) {
+			thumb_err("Failed to allocate memory!");
+			SAFE_FREE(decoded.data);
+			return -1;
+		}
+
+		if (mm_util_resize_image(decoded.data, thumb_width,
+				thumb_height, MM_UTIL_IMG_FMT_RGB888,
+				dst, (unsigned int *)&resized_w,
+				(unsigned int *)&resized_h) < 0) {
+			thumb_err("Failed to resize the thumbnails");
+
+			SAFE_FREE(decoded.data);
+			SAFE_FREE(dst);
+
+			return -1;
+		}
+
+		SAFE_FREE(decoded.data);
+		decoded.data = dst;
+		decoded.width = thumb_width = resized_w;
+		decoded.height = thumb_height = resized_h;
+	}
+
 	if (orientation == ROT_90 || orientation == ROT_180 || orientation == ROT_270) {
 		/* Start to decode to rotate */
 		unsigned char *rotated = NULL;
@@ -278,11 +373,10 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 		err = mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, r_w, r_h, &r_size);
 		if (err < 0) {
 			thumb_dbg("mm_util_get_image_size failed : %d", err);
-			
 			SAFE_FREE(decoded.data);
 			return err;
 		}
-	
+
 		thumb_dbg("Size of Rotated : %d", r_size);
 
 #if 1
@@ -369,30 +463,16 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 		thumb_info->width = r_w;
 		thumb_info->height = r_h;
 	} else if (orientation == NORMAL) {
-#endif
-		unsigned int buf_size = 0;
-
-		err = mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, decoded.width, decoded.height, &buf_size);
-		if (err < 0) {
-			thumb_dbg("mm_util_get_image_size failed : %d", err);
-			
-			SAFE_FREE(decoded.data);
-			return err;
-		}
-
-		thumb_dbg("size(RGB888) : %d", buf_size);
-
 		thumb_info->data = decoded.data;
 		thumb_info->size = buf_size;
-		thumb_info->width = decoded.width;
-		thumb_info->height = decoded.height;
-#if 1
+		thumb_info->width = thumb_width;
+		thumb_info->height = thumb_height;
 	} else {
 		thumb_warn("Unknown orientation");
 		SAFE_FREE(decoded.data);
 		return -1;
 	}
-#endif
+
 	return 0;
 }
 
@@ -481,34 +561,18 @@ int _media_thumb_get_wh_with_evas(const char *origin_path, int *width, int *heig
 	return 0;
 }
 
-int _media_thumb_decode_with_evas(const char *origin_path, int thumb_length, 
+int _media_thumb_decode_with_evas(const char *origin_path,
+					int thumb_width, int thumb_height,
 					media_thumb_info *thumb_info, int need_scale)
 {
 	ecore_evas_init();
 
-	Ecore_Evas *ee = ecore_evas_buffer_new(
-						thumb_length, thumb_length);
-	if (!ee) {
-		thumb_err("Failed to create a ecore evas\n");
-		ecore_evas_shutdown();
-		return -1;
-	}
-
-	Evas *evas = ecore_evas_get(ee);
-	if (!evas) {
-		thumb_err("Failed to ecore_evas_get\n");
-		ecore_evas_free(ee);
-		ecore_evas_shutdown();
-		return -1;
-	}
-
 	Ecore_Evas *resize_img_ee;
 	resize_img_ee =
-		ecore_evas_buffer_new(thumb_length, thumb_length);
+		ecore_evas_buffer_new(thumb_width, thumb_height);
 
 	if (!resize_img_ee) {
 		thumb_err("Failed to create a new ecore evas buffer\n");
-		ecore_evas_free(ee);
 		ecore_evas_shutdown();
 		return -1;
 	}
@@ -516,7 +580,6 @@ int _media_thumb_decode_with_evas(const char *origin_path, int thumb_length,
 	Evas *resize_img_e = ecore_evas_get(resize_img_ee);
 	if (!resize_img_e) {
 		thumb_err("Failed to ecore_evas_get\n");
-		ecore_evas_free(ee);
 		ecore_evas_free(resize_img_ee);
 		ecore_evas_shutdown();
 		return -1;
@@ -526,13 +589,11 @@ int _media_thumb_decode_with_evas(const char *origin_path, int thumb_length,
 	if (!source_img) {
 		thumb_dbg
 			("evas_object_image_add failed\n");
-		ecore_evas_free(ee);
 		ecore_evas_free(resize_img_ee);
 		ecore_evas_shutdown();
 		return -1;
 	}
 
-	evas_object_image_load_size_set(source_img, thumb_length, thumb_length);
 	evas_object_image_load_orientation_set(source_img, 1);
 	evas_object_image_file_set(source_img, origin_path, NULL);
 
@@ -550,42 +611,83 @@ int _media_thumb_decode_with_evas(const char *origin_path, int thumb_length,
 		evas_object_image_load_scale_down_set(source_img, 10);
 	}
 
+	int err = -1;
+	media_thumb_type thumb_type;
+
+	if (thumb_width == _media_thumb_get_width(MEDIA_THUMB_LARGE)) {
+		thumb_type = MEDIA_THUMB_LARGE;
+	} else {
+		thumb_type = MEDIA_THUMB_SMALL;
+	}
+
+	err = _media_thumb_get_proper_thumb_size(thumb_type,
+									thumb_info->origin_width, thumb_info->origin_height,
+									&thumb_width, &thumb_height);
+	if (err < 0) {
+		thumb_err("_media_thumb_get_proper_thumb_size failed: %d", err);
+		ecore_evas_free(resize_img_ee);
+		ecore_evas_shutdown();
+		return err;
+	}
+
+	ecore_evas_resize(resize_img_ee, thumb_width, thumb_height);
+
+	evas_object_image_load_size_set(source_img, thumb_width, thumb_height);
 	evas_object_image_fill_set(source_img,
 					0, 0,
-					thumb_length,
-					thumb_length);
+					thumb_width,
+					thumb_height);
 	evas_object_image_filled_set(source_img, 1);
 	evas_object_resize(source_img,
-				thumb_length,
-				thumb_length);
+				thumb_width,
+				thumb_height);
 	evas_object_show(source_img);
 
+	/* Create target buffer and copy origin resized img to it */
+	Ecore_Evas *target_ee = ecore_evas_buffer_new(
+						thumb_width, thumb_height);
+	if (!target_ee) {
+		thumb_err("Failed to create a ecore evas\n");
+		ecore_evas_free(resize_img_ee);
+		ecore_evas_shutdown();
+		return -1;
+	}
+
+	Evas *target_evas = ecore_evas_get(target_ee);
+	if (!target_evas) {
+		thumb_err("Failed to ecore_evas_get\n");
+		ecore_evas_free(resize_img_ee);
+		ecore_evas_free(target_ee);
+		ecore_evas_shutdown();
+		return -1;
+	}
+
 	Evas_Object *ret_image =
-		evas_object_image_add(evas);
+		evas_object_image_add(target_evas);
 
 	evas_object_image_size_set(ret_image,
-					thumb_length,
-					thumb_length);
+					thumb_width,
+					thumb_height);
 
 	evas_object_image_fill_set(ret_image, 0,
 					0,
-					thumb_length,
-					thumb_length);
+					thumb_width,
+					thumb_height);
 
 	evas_object_image_filled_set(ret_image,	EINA_TRUE);
 	evas_object_image_data_set(ret_image,
 					(int *)ecore_evas_buffer_pixels_get(resize_img_ee));
-	evas_object_image_data_update_add(ret_image, 0, 0, thumb_length,
-			thumb_length);
+	evas_object_image_data_update_add(ret_image, 0, 0, thumb_width,
+			thumb_height);
 
 	unsigned int buf_size = 0;
 
-	if (mm_util_get_image_size(MM_UTIL_IMG_FMT_BGRA8888, thumb_length,
-			thumb_length, &buf_size) < 0) {
+	if (mm_util_get_image_size(MM_UTIL_IMG_FMT_BGRA8888, thumb_width,
+			thumb_height, &buf_size) < 0) {
 		thumb_err("Failed to get buffer size");
 
-		ecore_evas_free(ee);
 		ecore_evas_free(resize_img_ee);
+		ecore_evas_free(target_ee);
 		ecore_evas_shutdown();
 
 		return MEDIA_THUMB_ERROR_MM_UTIL;
@@ -594,12 +696,12 @@ int _media_thumb_decode_with_evas(const char *origin_path, int thumb_length,
 	thumb_dbg("mm_util_get_image_size : %d", buf_size);
 
 	thumb_info->size = buf_size;
-	thumb_info->width = thumb_length;
-	thumb_info->height = thumb_length;
+	thumb_info->width = thumb_width;
+	thumb_info->height = thumb_height;
 	thumb_info->data = malloc(buf_size);
 	memcpy(thumb_info->data, evas_object_image_data_get(ret_image, 1), buf_size);
 
-	ecore_evas_free(ee);
+	ecore_evas_free(target_ee);
 	ecore_evas_free(resize_img_ee);
 	ecore_evas_shutdown();
 
@@ -714,19 +816,34 @@ int _media_thumb_convert_format(media_thumb_info *thumb_info,
 	return 0;
 }
 
-int _media_thumb_agif(const char *origin_path, 
+int _media_thumb_agif(const char *origin_path,
 					ImgImageInfo *image_info,
-					int thumb_length,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
 	int err = -1;
-	int thumb_width = thumb_length;
-	int thumb_height = thumb_length;
 	unsigned int *thumb = NULL;
+	media_thumb_type thumb_type;
 
 	thumb = ImgGetFirstFrameAGIFAtSize(origin_path, image_info);
-	
+
+	if (thumb_width == _media_thumb_get_width(MEDIA_THUMB_LARGE)) {
+		thumb_type = MEDIA_THUMB_LARGE;
+	} else {
+		thumb_type = MEDIA_THUMB_SMALL;
+	}
+
+	err = _media_thumb_get_proper_thumb_size(thumb_type,
+									thumb_info->origin_width, thumb_info->origin_height,
+									&thumb_width, &thumb_height);
+	if (err < 0) {
+		thumb_err("_media_thumb_get_proper_thumb_size failed: %d", err);
+		SAFE_FREE(thumb);
+		return err;
+	}
+
 	err = _media_thumb_resize_data((unsigned char *)thumb, 
 									image_info->width,
 									image_info->height,
@@ -753,13 +870,14 @@ int _media_thumb_agif(const char *origin_path,
 	return 0;
 }
 
-int _media_thumb_png(const char *origin_path, 
-					int thumb_length,
+int _media_thumb_png(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
 	int err = -1;
-	err = _media_thumb_decode_with_evas(origin_path, thumb_length, thumb_info, 0);
+	err = _media_thumb_decode_with_evas(origin_path, thumb_width, thumb_height, thumb_info, 0);
 
 	if (err < 0) {
 		thumb_err("decode_with_evas failed : %d", err);
@@ -776,13 +894,14 @@ int _media_thumb_png(const char *origin_path,
 	return 0;
 }
 
-int _media_thumb_bmp(const char *origin_path, 
-					int thumb_length,
+int _media_thumb_bmp(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
 	int err = -1;
-	err = _media_thumb_decode_with_evas(origin_path, thumb_length, thumb_info, 0);
+	err = _media_thumb_decode_with_evas(origin_path, thumb_width, thumb_height, thumb_info, 0);
 
 	if (err < 0) {
 		thumb_err("decode_with_evas failed : %d", err);
@@ -799,13 +918,14 @@ int _media_thumb_bmp(const char *origin_path,
 	return 0;
 }
 
-int _media_thumb_wbmp(const char *origin_path, 
-					int thumb_length,
+int _media_thumb_wbmp(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
 	int err = -1;
-	err = _media_thumb_decode_with_evas(origin_path, thumb_length, thumb_info, 0);
+	err = _media_thumb_decode_with_evas(origin_path, thumb_width, thumb_height, thumb_info, 0);
 
 	if (err < 0) {
 		thumb_err("decode_with_evas failed : %d", err);
@@ -823,12 +943,13 @@ int _media_thumb_wbmp(const char *origin_path,
 }
 
 int _media_thumb_gif(const char *origin_path, 
-					int thumb_length,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
 	int err = -1;
-	err = _media_thumb_decode_with_evas(origin_path, thumb_length, thumb_info, 0);
+	err = _media_thumb_decode_with_evas(origin_path, thumb_width, thumb_height, thumb_info, 0);
 
 	if (err < 0) {
 		thumb_err("decode_with_evas failed : %d", err);
@@ -845,8 +966,9 @@ int _media_thumb_gif(const char *origin_path,
 	return 0;
 }
 
-int _media_thumb_jpeg(const char *origin_path, 
-					int thumb_length,
+int _media_thumb_jpeg(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
@@ -869,7 +991,7 @@ int _media_thumb_jpeg(const char *origin_path,
 		thumb_dbg("Orientation: %d", orientation);
 
 		/* Second, Get thumb from exif */
-		err = _media_thumb_get_thumb_from_exif(ed, origin_path, orientation, thumb_length, thumb_length, thumb_info);
+		err = _media_thumb_get_thumb_from_exif(ed, origin_path, orientation, thumb_width, thumb_height, thumb_info);
 
 		if (err < 0) {
 			thumb_dbg("_media_thumb_get_thumb_from_exif failed");
@@ -898,7 +1020,7 @@ int _media_thumb_jpeg(const char *origin_path,
 
 	if (!thumb_done) {
 
-		err = _media_thumb_decode_with_evas(origin_path, thumb_length, thumb_info, 0);
+		err = _media_thumb_decode_with_evas(origin_path, thumb_width, thumb_height, thumb_info, 0);
 	
 		if (err < 0) {
 			thumb_err("decode_with_evas failed : %d", err);
@@ -917,8 +1039,9 @@ int _media_thumb_jpeg(const char *origin_path,
 }
 
 int
-_media_thumb_image(const char *origin_path, 
-					int thumb_length, 
+_media_thumb_image(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
@@ -943,15 +1066,15 @@ _media_thumb_image(const char *origin_path,
 	}
 
 	if (image_type == IMG_CODEC_AGIF) {
-		err = _media_thumb_agif(origin_path, &image_info, thumb_length, format, thumb_info);
+		err = _media_thumb_agif(origin_path, &image_info, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_JPEG) {
-		err = _media_thumb_jpeg(origin_path, thumb_length, format, thumb_info);
+		err = _media_thumb_jpeg(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_PNG) {
-		err = _media_thumb_png(origin_path, thumb_length, format, thumb_info);
+		err = _media_thumb_png(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_GIF) {
-		err = _media_thumb_gif(origin_path, thumb_length, format, thumb_info);
+		err = _media_thumb_gif(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_BMP) {
-		err = _media_thumb_bmp(origin_path, thumb_length, format, thumb_info);
+		err = _media_thumb_bmp(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else {
 		char file_ext[10];
 		err = _media_thumb_get_file_ext(origin_path, file_ext, sizeof(file_ext));
@@ -977,7 +1100,7 @@ _media_thumb_image(const char *origin_path,
 				thumb_info->origin_width = wbmp_width;
 				thumb_info->origin_height = wbmp_height;
 
-				err = _media_thumb_wbmp(origin_path, thumb_length, format, thumb_info);
+				err = _media_thumb_wbmp(origin_path, thumb_width, thumb_height, format, thumb_info);
 
 				return err;
 			}
@@ -992,7 +1115,8 @@ _media_thumb_image(const char *origin_path,
 
 int
 _media_thumb_video(const char *origin_path, 
-					int thumb_length, 
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info)
 {
@@ -1056,14 +1180,14 @@ _media_thumb_video(const char *origin_path,
 			return MEDIA_THUMB_ERROR_MM_UTIL;
 		}
 
-		if (width > thumb_length || height > thumb_length) {
+		if (width > thumb_width || height > thumb_height) {
 			err = _media_thumb_resize_data(frame,
 										width,
-										height, 
+										height,
 										MM_UTIL_IMG_FMT_RGB888,
 										thumb_info,
-										thumb_length,
-										thumb_length);
+										thumb_width,
+										thumb_height);
 
 			if (err < 0) {
 				thumb_err("_media_thumb_resize_data failed - %d", err);

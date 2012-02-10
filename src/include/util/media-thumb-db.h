@@ -28,6 +28,12 @@
 #define _MEDIA_THUMB_DB_H_
 
 int
+_media_thumb_db_connect();
+
+int
+_media_thumb_db_disconnect();
+
+int
 _media_thumb_get_thumb_from_db(const char *origin_path,
 								char *thumb_path,
 								int max_length,

@@ -1,10 +1,20 @@
+libmedia-thumbnail (0.2.0-4) unstable; urgency=low
+
+  * Change thumbnail policy - Large: 320x240, Small: 160x120
+  * Remove libmedia-service dependancy
+  * Change of DB schema in media.db
+  * Git : pkgs/l/libmedia-thumbnail
+  * Tag : libmedia-thumbnail_0.2.0-4
+
+ -- Hyunjun Ko <zzoon.ko@samsung.com>  Tue, 10 Feb 2012 18:30:00 +0900
+
 libmedia-thumbnail (0.2.0-3) unstable; urgency=low
 
   * Separates md5 codes to another shared object
   * Git : pkgs/l/libmedia-thumbnail
   * Tag : libmedia-thumbnail_0.2.0-3
 
- -- Hyunjun Ko <zzoon.ko@samsung.com>  Tue, 3 Jan 2011 18:30:00 +0900
+ -- Hyunjun Ko <zzoon.ko@samsung.com>  Tue, 3 Jan 2012 18:30:00 +0900
 
 libmedia-thumbnail (0.2.0-2) unstable; urgency=low
 

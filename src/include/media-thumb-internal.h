@@ -31,6 +31,10 @@
 /* The maximum of resolution to be able to get thumbnail is 3000 x 3000, except for only jpeg */
 #define THUMB_MAX_ALLOWED_MEM_FOR_THUMB 9000000
 
+#define THUMB_LARGE_WIDTH 320
+#define THUMB_LARGE_HEIGHT 240
+#define THUMB_SMALL_WIDTH 160
+#define THUMB_SMALL_HEIGHT 120
 
 typedef struct {
 	int size;
@@ -54,14 +58,16 @@ enum Exif_Orientation {
 };
 
 int
-_media_thumb_image(const char *origin_path, 
-					int thumb_length, 
-					media_thumb_format format, 
+_media_thumb_image(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
+					media_thumb_format format,
 					media_thumb_info *thumb_info);
 
 int
-_media_thumb_video(const char *origin_path, 
-					int thumb_length, 
+_media_thumb_video(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info);
 

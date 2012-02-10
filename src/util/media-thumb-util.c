@@ -30,12 +30,23 @@
 #include <Evas.h>
 #include <Ecore_Evas.h>
 
-int _media_thumb_get_length(media_thumb_type thumb_type)
+int _media_thumb_get_width(media_thumb_type thumb_type)
 {
 	if (thumb_type == MEDIA_THUMB_LARGE) {
-		return 256;
+		return THUMB_LARGE_WIDTH;
 	} else if (thumb_type == MEDIA_THUMB_SMALL) {
-		return  96;
+		return  THUMB_SMALL_WIDTH;
+	} else {
+		return -1;
+	}
+}
+
+int _media_thumb_get_height(media_thumb_type thumb_type)
+{
+	if (thumb_type == MEDIA_THUMB_LARGE) {
+		return THUMB_LARGE_HEIGHT;
+	} else if (thumb_type == MEDIA_THUMB_SMALL) {
+		return  THUMB_SMALL_HEIGHT;
 	} else {
 		return -1;
 	}
@@ -256,7 +267,8 @@ int _thumbnail_get_data(const char *origin_path,
 						int *origin_height)
 {
 	int err = -1;
-	int thumb_length = -1;
+	int thumb_width = -1;
+	int thumb_height = -1;
 
 	if (origin_path == NULL || size == NULL 
 			|| width == NULL || height == NULL) {
@@ -275,8 +287,14 @@ int _thumbnail_get_data(const char *origin_path,
 			return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
-	thumb_length = _media_thumb_get_length(thumb_type);
-	if (thumb_length < 0) {
+	thumb_width = _media_thumb_get_width(thumb_type);
+	if (thumb_width < 0) {
+		thumb_err("media_thumb_type is invalid");
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+	}
+
+	thumb_height = _media_thumb_get_height(thumb_type);
+	if (thumb_height < 0) {
 		thumb_err("media_thumb_type is invalid");
 		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
@@ -288,14 +306,14 @@ int _thumbnail_get_data(const char *origin_path,
 	file_type = _media_thumb_get_file_type(origin_path);
 
 	if (file_type == THUMB_IMAGE_TYPE) {
-		err = _media_thumb_image(origin_path, thumb_length, format, &thumb_info);
+		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info);
 		if (err < 0) {
 			thumb_err("_media_thumb_image failed");
 			return err;
 		}
 
 	} else if (file_type == THUMB_VIDEO_TYPE) {
-		err = _media_thumb_video(origin_path, thumb_length, format, &thumb_info);
+		err = _media_thumb_video(origin_path, thumb_width, thumb_height, format, &thumb_info);
 		if (err < 0) {
 			thumb_err("_media_thumb_image failed");
 			return err;

@@ -27,7 +27,6 @@
 #include "media-thumb-db.h"
 
 #include <glib.h>
-#include <media-svc.h>
 
 int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length)
 {
@@ -61,11 +60,16 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 
 	thumb_err("Path : %s", origin_path);
 
-	err = minfo_init();
+	//err = minfo_init();
+	err = _media_thumb_db_connect();
+	if (err < 0) {
+		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
+		return MEDIA_THUMB_ERROR_DB;
+	}
 
 	err = _media_thumb_get_thumb_from_db(origin_path, thumb_path, max_length, &need_update_db);
 	if (err == 0) {
-		minfo_finalize();
+		_media_thumb_db_disconnect();
 		return MEDIA_THUMB_ERROR_NONE;
 	}
 
@@ -73,7 +77,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	err = _media_thumb_request(THUMB_REQUEST_DB, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
-		minfo_finalize();
+		_media_thumb_db_disconnect();
 		return err;
 	}
 
@@ -85,7 +89,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 		}
 	}
 
-	minfo_finalize();
+	_media_thumb_db_disconnect();
 	return MEDIA_THUMB_ERROR_NONE;
 }
 

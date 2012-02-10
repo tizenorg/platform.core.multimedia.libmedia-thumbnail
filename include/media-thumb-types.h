@@ -25,8 +25,8 @@
 #define _MEDIA_THUMB_TYPES_H_
 
 typedef enum {
-	MEDIA_THUMB_LARGE,			/* 256x256 */
-	MEDIA_THUMB_SMALL,			/* 96x96 */
+	MEDIA_THUMB_LARGE,
+	MEDIA_THUMB_SMALL,
 } media_thumb_type;
 
 typedef enum {

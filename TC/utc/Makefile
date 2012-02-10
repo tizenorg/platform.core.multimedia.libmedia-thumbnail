@@ -11,15 +11,13 @@ else
 endif
 
 TS1=utc_thumbnail_request_from_db_func
-TS2=utc_thumbnail_get_data_func
+TS2=utc_thumbnail_request_save_to_file_func
 
-LIBS = `pkg-config --libs libmedia-thumbnail`
-LIBS +=-L/usr/lib/:/usr/lib/pkgconfig
+LIBS = `pkg-config --libs media-thumbnail`
 LIBS +=$(TET_ROOT)/lib/tet3/tcm_s.o
-LIBS +=-L$(TET_ROOT)/lib/tet3 -ltcm_s
-LIBS +=-L$(TET_ROOT)/lib/tet3/ -lapi_s
+LIBS +=-L$(TET_ROOT)/lib/tet3 -ltcm_s -lapi_s
 
-INCS = -I. `pkg-config --cflags  libmedia-thumbnail`
+INCS = -I. `pkg-config --cflags media-thumbnail`
 INCS += -I$(TET_ROOT)/inc/tet3
 INCS += -I/usr/include
 
@@ -27,7 +25,7 @@ CFLAGS = $(INCS)
 CC += $(CFLAGS)
 LDFLAGS = $(LIBS)
 
-all : $(TS10) $(TS11)
+all : $(TS1) $(TS2)
 
 $(TS1): $(TS1).c
 	$(CC) -o $(TS1) $(TS1).c $(LDFLAGS)

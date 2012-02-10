@@ -20,36 +20,40 @@
  */
 
 /**
-* @file 	utc_thumbnail_request_from_db_func.c
-* @brief 	This is a suit of unit test cases to test thumbnail_request_from_db API function
+* @file 	utc_thumbnail_request_save_to_file_func.c
+* @brief 	This is a suit of unit test cases to test thumbnail_request_save_to_file API function
 * @author
 * @version 	Initial Creation Version 0.1
 * @date 	2011-10-13
 */
 
-#include "utc_thumbnail_request_from_db_func.h"
+#include "utc_thumbnail_request_save_to_file_func.h"
 
 
 /**
-* @brief	This tests int thumbnail_request_from_db() API with valid parameters
-* @par ID	utc_thumbnail_request_from_db_func_01
+* @brief	This tests int thumbnail_request_save_to_file() API with valid parameters
+* @par ID	utc_thumbnail_request_save_to_file_func_01
 * @param	[in] 
 * @return	This function returns zero on success, or negative value with error code
 */
-void utc_thumbnail_request_from_db_func_01()
+void utc_thumbnail_request_save_to_file_func_01()
 {
 	int ret = -1;
 	 
 	const char *origin_path = "/opt/media/Images/Wallpapers/Home_default.jpg";
-	char thumb_path[1024] = {0,};
+	char thumb_path[255] = { 0, };
+	snprintf(thumb_path, sizeof(thumb_path), "/tmp/test_thumb.jpg");
 
-	ret = thumbnail_request_from_db(origin_path, thumb_path, sizeof(thumb_path));
+	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
+
+	ret = thumbnail_request_save_to_file(origin_path, thumb_type, thumb_path);
 	
 	if (ret < MEDIA_THUMB_ERROR_NONE) {
-		UTC_THUMB_LOG( "unable to get thumbnail from thumb-daemon. error code->%d", ret);
+		UTC_THUMB_LOG( "unable to save thumbnail file. error code->%d", ret);
 		tet_result(TET_FAIL);
 		return;
 	} else {
+		unlink(thumb_path);
 		tet_result(TET_PASS);
 	}
 	
@@ -58,25 +62,26 @@ void utc_thumbnail_request_from_db_func_01()
 
 
 /**
-* @brief 	This tests int thumbnail_request_from_db() API with invalid parameters
-* @par ID	utc_thumbnail_request_from_db_func_02
+* @brief 	This tests int thumbnail_request_save_to_file() API with invalid parameters
+* @par ID	utc_thumbnail_request_save_to_file_func_02
 * @param	[in] 
 * @return	error code on success 
 */
-void utc_thumbnail_request_from_db_func_02()
+void utc_thumbnail_request_save_to_file_func_02()
 {	
 	int ret = -1;
 
 	const char *origin_path = NULL;
-	char thumb_path[1024] = {0,};
+	char thumb_path[255] = { 0, };
 
-	ret = thumbnail_request_from_db(origin_path, thumb_path, sizeof(thumb_path));
+	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
 
+	ret = thumbnail_request_save_to_file(origin_path, thumb_type, thumb_path);
 	if (ret < MEDIA_THUMB_ERROR_NONE) {
 		UTC_THUMB_LOG("abnormal condition test for null, error code->%d", ret);
 		tet_result(TET_PASS);
 	} else {
-		UTC_THUMB_LOG("Getting thumbnail from thumb-daemon should be failed because the origin_path is NULL");
+		UTC_THUMB_LOG("Creating thumbnail file should be failed because the origin_path is NULL");
 		tet_result(TET_FAIL);
 	}
 
