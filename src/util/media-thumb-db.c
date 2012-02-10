@@ -313,38 +313,6 @@ _media_thumb_update_db(const char *origin_path,
 	thumb_dbg("");
 	int err = -1;
 
-#if 0
-	Mitem *item = NULL;
-
-	err = minfo_get_item(mb_svc_handle, origin_path, &item);
-	if (err < 0) {
-		thumb_err("minfo_get_item (%s) failed: %d", origin_path, err);
-		return MEDIA_THUMB_ERROR_DB;
-	}
-
-	err = minfo_update_media_thumb(mb_svc_handle, item->uuid, thumb_path);
-	if (err < 0) {
-		thumb_err("minfo_update_media_thumb (ID:%s, %s) failed: %d",
-							item->uuid, thumb_path, err);
-		minfo_destroy_mtype_item(item);
-		return MEDIA_THUMB_ERROR_DB;
-	}
-
-	if (item->type == MINFO_ITEM_IMAGE) {
-		err = minfo_update_image_meta_info_int(mb_svc_handle, item->uuid, 
-												MINFO_IMAGE_META_WIDTH, width,
-												MINFO_IMAGE_META_HEIGHT, height, -1);
-	
-		if (err < 0) {
-			thumb_err("minfo_update_image_meta_info_int failed: %d", err);
-			minfo_destroy_mtype_item(item);
-			return MEDIA_THUMB_ERROR_DB;
-		}
-	}
-	
-	err = minfo_destroy_mtype_item(item);
-#endif
-
 	err = _media_thumb_update_thumb_path_to_db(db_handle, origin_path, thumb_path);
 	if (err < 0) {
 		thumb_err("_media_thumb_update_thumb_path_to_db (%s) failed: %d", origin_path, err);
