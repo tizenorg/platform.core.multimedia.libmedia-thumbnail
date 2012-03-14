@@ -1,9 +1,9 @@
 Name:       libmedia-thumbnail
 Summary:    Media thumbnail service library for multimedia applications.
-Version:    0.1.9
+Version:	0.2.0
 Release:    1
 Group:      TO_BE/FILLED_IN
-License:    TO_BE/FILLED_IN
+License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
@@ -50,24 +50,22 @@ cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 make %{?jobs:-j%jobs}
 
 %install
-rm -rf %{buildroot}
 %make_install
 
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc5.d/
-ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
-mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d/
-ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
+chmod +x %{buildroot}/etc//init.d/thumbsvr
+
+%post
+ln -s /etc//init.d/thumbsvr %{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
+ln -s /etc/init.d/thumbsvr %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
 
 
 
 %files
-%defattr(-,root,root,-)
 %{_libdir}/libmedia-thumbnail.so.*
 %{_libdir}/libmedia-hash.so.*
 
 
 %files devel
-%defattr(-,root,root,-)
 %{_libdir}/libmedia-thumbnail.so
 %{_libdir}/libmedia-hash.so
 %{_libdir}/pkgconfig/media-thumbnail.pc
@@ -78,10 +76,7 @@ ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47th
 
 
 %files -n media-thumbnail-server
-%defattr(-,root,root,-)
 %{_bindir}/media-thumbnail-server
-%{_sysconfdir}/init.d/thumbsvr
-%{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
-%{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
+%attr(755,root,root) %{_sysconfdir}/init.d/thumbsvr
 %exclude %{_bindir}/test-thumb
 
