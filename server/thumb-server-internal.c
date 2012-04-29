@@ -31,10 +31,12 @@
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG "Thumb-Daemon"
+#define LOG_TAG "Thumb-Server"
 
-static int sock;
-GAsyncQueue *g_req_queue = NULL;
+static __thread int sock;
+static __thread char **arr_path;
+static __thread int g_idx = 0;
+static __thread int g_cur_idx = 0;
 
 static __thread _server_mode_e g_server_mode = BLOCK_MODE;
 static __thread int g_media_svr_pid = 0;
@@ -42,29 +44,6 @@ static __thread int g_media_svr_pid = 0;
 int _thumb_daemon_get_sockfd()
 {
 	return sock;
-}
-
-
-GAsyncQueue *_thumb_daemon_get_queue()
-{
-	return g_req_queue;
-}
-
-void _thumb_daemon_destroy_queue_msg(queueMsg *msg)
-{
-	if (msg != NULL) {
-		if (msg->recv_msg != NULL) {
-			free(msg->recv_msg);
-			msg->recv_msg = NULL;
-		}
-
-		if (msg->res_msg != NULL) {
-			free(msg->res_msg);
-			msg->res_msg = NULL;
-		}
-
-		msg = NULL;
-	}
 }
 
 int _thumb_daemon_compare_pid_with_mediaserver_fast(int pid)
@@ -155,7 +134,6 @@ int _thumb_daemon_compare_pid_with_mediaserver(int pid)
 
 int _thumb_daemon_recv_by_select(int fd, gboolean is_timeout)
 {
-	thumb_err("");
 	fd_set fds;
 	int ret = -1;
 
@@ -164,8 +142,8 @@ int _thumb_daemon_recv_by_select(int fd, gboolean is_timeout)
 
 	if (is_timeout) {
 		struct timeval timeout;
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 10000;
 
 		ret = select(fd + 1, &fds, 0, 0, &timeout);
 	} else {
@@ -181,7 +159,7 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg)
 
 	err = _media_thumb_process(req_msg, res_msg);
 	if (err < 0) {
-		if (req_msg->msg_type == THUMB_REQUEST_SAVE) {
+		if (req_msg->msg_type == THUMB_REQUEST_SAVE_FILE) {
 			thumb_err("_media_thumb_process is failed: %d", err);
 			res_msg->status = THUMB_FAIL;
 		} else {
@@ -195,33 +173,114 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg)
 	return err;
 }
 
-int _thumb_daemon_process_queue_jobs()
+int _thumb_daemon_all_extract()
 {
-	int length = 0;
+	int err = -1;
+	int count = 0;
+	char query_string[MAX_PATH_SIZE + 1] = { 0, };
+	char path[MAX_PATH_SIZE + 1] = { 0, };
+	sqlite3 *sqlite_db_handle = NULL;
+	sqlite3_stmt *sqlite_stmt = NULL;
 
-	while(1) {
-		length = g_async_queue_length(g_req_queue);
-		if (length > 0) {
-			thumb_dbg("There are %d jobs in the queue", length);
-			queueMsg *data = g_async_queue_pop(g_req_queue);
-
-			_thumb_daemon_process_job(data->recv_msg, data->res_msg);
-
-			if (sendto(sock, data->res_msg, sizeof(thumbMsg), 0, (struct sockaddr *)data->client_addr, sizeof(struct sockaddr_in)) != sizeof(thumbMsg)) {
-				thumb_err("sendto failed\n");
-			} else {
-				thumb_dbg("Sent %s(%d) \n", data->res_msg->dst_path, strlen(data->res_msg->dst_path));
-			}
-
-			_thumb_daemon_destroy_queue_msg(data);
-		} else {
-			break;
-		}
+	err = _media_thumb_db_connect();
+	if (err < 0) {
+		thumb_err("_media_thumb_db_connect failed: %d", err);
+		return MEDIA_THUMB_ERROR_DB;
 	}
 
-	g_server_mode = BLOCK_MODE;
+	sqlite_db_handle = _media_thumb_db_get_handle();
+	if (sqlite_db_handle == NULL) {
+		thumb_err("sqlite handle is NULL");
+		return MEDIA_THUMB_ERROR_DB;
+	}
 
-	return 0;
+	snprintf(query_string, sizeof(query_string), SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA);
+	thumb_dbg("Query: %s", query_string);
+
+	err = sqlite3_prepare_v2(sqlite_db_handle, query_string, strlen(query_string), &sqlite_stmt, NULL);
+	if (SQLITE_OK != err) {
+		thumb_err("prepare error [%s]\n", sqlite3_errmsg(sqlite_db_handle));
+		return MEDIA_THUMB_ERROR_DB;
+	}
+
+	while(1) {
+		err = sqlite3_step(sqlite_stmt);
+		if (err != SQLITE_ROW) {
+			thumb_dbg("end of row [%s]\n", sqlite3_errmsg(sqlite_db_handle));
+			break;
+		}
+
+		strncpy(path, (const char *)sqlite3_column_text(sqlite_stmt, 0), MAX_PATH_SIZE + 1);
+		count = sqlite3_column_int(sqlite_stmt, 1);
+
+		thumb_dbg("Path : %s", path);
+
+		if (g_idx == 0) {
+			arr_path = (char**)malloc(sizeof(char*));
+		} else {
+			arr_path = (char**)realloc(arr_path, (g_idx + 1) * sizeof(char*));
+		}
+
+		arr_path[g_idx++] = strdup(path);
+	}
+
+	sqlite3_finalize(sqlite_stmt);
+	_media_thumb_db_disconnect();
+
+	return MEDIA_THUMB_ERROR_NONE;
+}
+
+int _thumb_daemon_process_queue_jobs()
+{
+	int err = -1;
+	char *path = NULL;
+
+	if (g_cur_idx < g_idx) {
+		thumb_dbg("There are %d jobs in the queue", g_idx - g_cur_idx);
+		thumb_dbg("Current idx : [%d]", g_cur_idx);
+		path = arr_path[g_cur_idx++];
+
+		thumbMsg recv_msg, res_msg;
+		memset(&recv_msg, 0x00, sizeof(thumbMsg));
+		memset(&res_msg, 0x00, sizeof(thumbMsg));
+
+		recv_msg.msg_type = THUMB_REQUEST_DB_INSERT;
+		recv_msg.thumb_type = MEDIA_THUMB_LARGE;
+		strncpy(recv_msg.org_path, path, sizeof(recv_msg.org_path));
+
+		_thumb_daemon_process_job(&recv_msg, &res_msg);
+
+		if (res_msg.status == THUMB_SUCCESS) {
+			err = _media_thumb_db_connect();
+			if (err < 0) {
+				thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
+				return MEDIA_THUMB_ERROR_DB;
+			}
+
+			/* Need to update DB once generating thumb is done */
+			err = _media_thumb_update_db(recv_msg.org_path,
+										res_msg.dst_path,
+										res_msg.origin_width,
+										res_msg.origin_height);
+			if (err < 0) {
+				thumb_err("_media_thumb_update_db failed : %d", err);
+			}
+
+			_media_thumb_db_disconnect();
+		}
+
+		free(path);
+		path = NULL;
+		g_server_mode = TIMEOUT_MODE;
+	} else {
+		g_cur_idx = 0;
+		g_idx = 0;
+		g_server_mode = BLOCK_MODE;
+		thumb_warn("Deleting array");
+		free(arr_path);
+	}
+
+	return MEDIA_THUMB_ERROR_NONE;
 }
 
 gboolean _thumb_daemon_udp_thread(void *data)
@@ -234,7 +293,6 @@ gboolean _thumb_daemon_udp_thread(void *data)
 	unsigned short serv_port;
 	unsigned int client_addr_len;
 
-	queueMsg *queue_msg = NULL;
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
 	int recv_msg_size;
@@ -243,10 +301,6 @@ gboolean _thumb_daemon_udp_thread(void *data)
 	memset((void *)&recv_msg, 0, sizeof(recv_msg));
 	memset((void *)&res_msg, 0, sizeof(res_msg));
 	serv_port = THUMB_DAEMON_PORT;
-
-	if (!g_req_queue) {
-		g_req_queue = g_async_queue_new();
-	}
 
 	/* Creaete a datagram/UDP socket */
 	if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -270,7 +324,7 @@ gboolean _thumb_daemon_udp_thread(void *data)
 
 	while(1) {
 		if (g_server_mode == TIMEOUT_MODE) {
-			thumb_dbg("Wait for other app's request for 1 sec");
+			thumb_dbg("Wait for other app's request for 10 msec");
 			is_timeout = TRUE;
 		} else {
 			is_timeout = FALSE;
@@ -289,7 +343,6 @@ gboolean _thumb_daemon_udp_thread(void *data)
 			continue;
 
 		} else {
-			_pid_e pid_type = 0;
 			/* Socket is readable */
 			client_addr_len = sizeof(client_addr);
 			if ((recv_msg_size = recvfrom(sock, &recv_msg, sizeof(recv_msg), 0, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
@@ -299,77 +352,28 @@ gboolean _thumb_daemon_udp_thread(void *data)
 
 			thumb_dbg("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
-			if (g_media_svr_pid > 0) {
-				pid_type = _thumb_daemon_compare_pid_with_mediaserver_fast(recv_msg.pid);
-			}
+			if (recv_msg.msg_type == THUMB_REQUEST_ALL_MEDIA) {
+				thumb_dbg("All thumbnails are being extracted now");
+				_thumb_daemon_all_extract();
 
-			if (g_media_svr_pid <= 0) {
-				pid_type = _thumb_daemon_compare_pid_with_mediaserver(recv_msg.pid);
-			}
-
-			if (pid_type == GETPID_FAIL) {
-				thumb_err("Failed to get media svr pid. So This req is regarded as other app's request.");
-				pid_type = OTHERS_PID;
-			}
-
-			if (g_server_mode == BLOCK_MODE || pid_type == OTHERS_PID) {
+				g_server_mode = TIMEOUT_MODE;
+			} else {
 				long start = thumb_get_debug_time();
 
 				_thumb_daemon_process_job(&recv_msg, &res_msg);
 
 				long end = thumb_get_debug_time();
 				thumb_dbg("Time : %f (%s)\n", ((double)(end - start) / (double)CLOCKS_PER_SEC), recv_msg.org_path);
-
-				if (sendto(sock, &res_msg, sizeof(res_msg), 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != sizeof(res_msg)) {
-					thumb_err("sendto failed\n");
-				} else {
-					thumb_dbg("Sent %s(%d) \n", res_msg.dst_path, strlen(res_msg.dst_path));
-				}
-
-				memset((void *)&recv_msg, 0, sizeof(recv_msg));
-				memset((void *)&res_msg, 0, sizeof(res_msg));
-
-				if (pid_type == OTHERS_PID) {
-					g_server_mode = TIMEOUT_MODE;
-				}
-			} else {
-				/* This is a request from media-server on TIMEOUT mode.
-				   So this req is going to be pushed to the queue */
-
-				queue_msg = malloc(sizeof(queueMsg));
-				if (queue_msg == NULL) {
-					thumb_err("malloc failed");
-					continue;
-				}
-				queue_msg->recv_msg = malloc(sizeof(thumbMsg));
-				if (queue_msg->recv_msg == NULL) {
-					thumb_err("malloc failed");
-					SAFE_FREE(queue_msg);
-					continue;
-				}
-				queue_msg->res_msg = malloc(sizeof(thumbMsg));
-				if (queue_msg->res_msg == NULL) {
-					thumb_err("malloc failed");
-					SAFE_FREE(queue_msg->recv_msg);
-					SAFE_FREE(queue_msg);
-					continue;
-				}
-				queue_msg->client_addr = malloc(sizeof(struct sockaddr_in));
-				if (queue_msg->client_addr == NULL) {
-					thumb_err("malloc failed");
-					SAFE_FREE(queue_msg->recv_msg);
-					SAFE_FREE(queue_msg->res_msg);
-					SAFE_FREE(queue_msg);
-					continue;
-				}
-
-				memcpy(queue_msg->recv_msg, &recv_msg, sizeof(thumbMsg));
-				memcpy(queue_msg->res_msg, &res_msg, sizeof(thumbMsg));
-				memcpy(queue_msg->client_addr, &client_addr, sizeof(struct sockaddr_in));
-
-				g_async_queue_push(g_req_queue, GINT_TO_POINTER(queue_msg));
-				g_server_mode = TIMEOUT_MODE;
 			}
+
+			if (sendto(sock, &res_msg, sizeof(res_msg), 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != sizeof(res_msg)) {
+				thumb_err("sendto failed\n");
+			} else {
+				thumb_dbg("Sent %s(%d) \n", res_msg.dst_path, strlen(res_msg.dst_path));
+			}
+
+			memset((void *)&recv_msg, 0, sizeof(recv_msg));
+			memset((void *)&res_msg, 0, sizeof(res_msg));
 		}
 	}
 

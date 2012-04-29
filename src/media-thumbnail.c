@@ -60,7 +60,6 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 
 	thumb_err("Path : %s", origin_path);
 
-	//err = minfo_init();
 	err = _media_thumb_db_connect();
 	if (err < 0) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
@@ -74,7 +73,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	}
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_DB, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		_media_thumb_db_disconnect();
@@ -108,7 +107,7 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 	strncpy(tmp_thumb_path, thumb_path, sizeof(tmp_thumb_path));
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_SAVE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_SAVE_FILE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -117,4 +116,22 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
+int thumbnail_request_extract_all_thumbs(void)
+{
+	int err = -1;
+
+	media_thumb_info thumb_info;
+	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
+	char tmp_origin_path[MAX_PATH_SIZE] = {0,};
+	char tmp_thumb_path[MAX_PATH_SIZE] = {0,};
+
+	/* Request for thumb file to the daemon "Thumbnail generator" */
+	err = _media_thumb_request(THUMB_REQUEST_ALL_MEDIA, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
+	if (err < 0) {
+		thumb_err("_media_thumb_request failed : %d", err);
+		return err;
+	}
+
+	return MEDIA_THUMB_ERROR_NONE;
+}
 

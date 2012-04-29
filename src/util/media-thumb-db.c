@@ -20,19 +20,13 @@
  */
 
 #include "media-thumb-db.h"
-//#include <media-svc.h>
-//#include <visual-svc.h>
+#include "media-thumb-util.h"
 #include <glib.h>
 #include <string.h>
 #include <unistd.h>
 #include <util-func.h>
 
-//__thread MediaSvcHandle *mb_svc_handle = NULL;
-__thread sqlite3 *db_handle;
-const char *MEDIA_DATABASE_NAME = "/opt/dbspace/.media.db";
-const char *SELECT_MEDIA_BY_PATH = "SELECT thumbnail_path FROM visual_media WHERE path='%q';";
-const char *UPDATE_THUMB_BY_PATH = "UPDATE visual_media SET thumbnail_path = '%q' WHERE path='%q';";
-const char *UPDATE_WH_BY_PATH = "UPDATE image_meta SET width=%d,height=%d WHERE visual_uuid=(SELECT visual_uuid FROM visual_media WHERE path='%q');";
+static __thread  sqlite3 *db_handle;
 
 static int _media_thumb_busy_handler(void *pData, int count)
 {
@@ -40,6 +34,11 @@ static int _media_thumb_busy_handler(void *pData, int count)
 	thumb_dbg("_media_thumb_busy_handler called : %d\n", count);
 
 	return 100 - count;
+}
+
+sqlite3 *_media_thumb_db_get_handle()
+{
+	return db_handle;
 }
 
 int
@@ -313,16 +312,53 @@ _media_thumb_update_db(const char *origin_path,
 	thumb_dbg("");
 	int err = -1;
 
+#if 0
+	Mitem *item = NULL;
+
+	err = minfo_get_item(mb_svc_handle, origin_path, &item);
+	if (err < 0) {
+		thumb_err("minfo_get_item (%s) failed: %d", origin_path, err);
+		return MEDIA_THUMB_ERROR_DB;
+	}
+
+	err = minfo_update_media_thumb(mb_svc_handle, item->uuid, thumb_path);
+	if (err < 0) {
+		thumb_err("minfo_update_media_thumb (ID:%s, %s) failed: %d",
+							item->uuid, thumb_path, err);
+		minfo_destroy_mtype_item(item);
+		return MEDIA_THUMB_ERROR_DB;
+	}
+
+	if (item->type == MINFO_ITEM_IMAGE) {
+		err = minfo_update_image_meta_info_int(mb_svc_handle, item->uuid, 
+												MINFO_IMAGE_META_WIDTH, width,
+												MINFO_IMAGE_META_HEIGHT, height, -1);
+	
+		if (err < 0) {
+			thumb_err("minfo_update_image_meta_info_int failed: %d", err);
+			minfo_destroy_mtype_item(item);
+			return MEDIA_THUMB_ERROR_DB;
+		}
+	}
+	
+	err = minfo_destroy_mtype_item(item);
+#endif
+
 	err = _media_thumb_update_thumb_path_to_db(db_handle, origin_path, thumb_path);
 	if (err < 0) {
 		thumb_err("_media_thumb_update_thumb_path_to_db (%s) failed: %d", origin_path, err);
 		return MEDIA_THUMB_ERROR_DB;
 	}
 
-	err = _media_thumb_update_wh_to_db(db_handle, origin_path, width, height);
-	if (err < 0) {
-		thumb_err("_media_thumb_update_wh_to_db (%s) failed: %d", origin_path, err);
-		return MEDIA_THUMB_ERROR_DB;
+	int media_type = THUMB_NONE_TYPE;
+	media_type = _media_thumb_get_file_type(origin_path);
+	
+	if (media_type == THUMB_IMAGE_TYPE && width > 0 && height > 0) {
+		err = _media_thumb_update_wh_to_db(db_handle, origin_path, width, height);
+		if (err < 0) {
+			thumb_err("_media_thumb_update_wh_to_db (%s) failed: %d", origin_path, err);
+			return MEDIA_THUMB_ERROR_DB;
+		}
 	}
 
 	thumb_dbg("_media_thumb_update_db success");

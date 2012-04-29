@@ -2,7 +2,7 @@ Name:       libmedia-thumbnail
 Summary:    Media thumbnail service library for multimedia applications.
 Version:	0.2.0
 Release:    1
-Group:      TO_BE/FILLED_IN
+Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 BuildRequires: cmake
@@ -23,7 +23,7 @@ Description: Media thumbnail service library for multimedia applications.
 
 
 %package devel
-License:        TO_BE / FILL_IN
+License:        Apache-2.0
 Summary:        Media thumbnail service library for multimedia applications. (development)
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
@@ -32,7 +32,7 @@ Group:          Development/Libraries
 Description: Media thumbnail service library for multimedia applications. (development)
 
 %package -n media-thumbnail-server
-License:        TO_BE / FILL_IN
+License:        Apache-2.0
 Summary:        Thumbnail generator.
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
@@ -50,24 +50,24 @@ cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 make %{?jobs:-j%jobs}
 
 %install
+rm -rf %{buildroot}
 %make_install
 
-chmod +x %{buildroot}/etc//init.d/thumbsvr
-
-%post
-ln -s /etc//init.d/thumbsvr %{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
-ln -s /etc/init.d/thumbsvr %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
+mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc5.d/
+ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
+mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d/
+ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
 
 
 
 %files
+%{_libdir}/libmedia-thumbnail.so
 %{_libdir}/libmedia-thumbnail.so.*
+%{_libdir}/libmedia-hash.so
 %{_libdir}/libmedia-hash.so.*
 
 
 %files devel
-%{_libdir}/libmedia-thumbnail.so
-%{_libdir}/libmedia-hash.so
 %{_libdir}/pkgconfig/media-thumbnail.pc
 %{_includedir}/media-thumbnail/media-thumb-types.h
 %{_includedir}/media-thumbnail/media-thumb-error.h
@@ -78,5 +78,7 @@ ln -s /etc/init.d/thumbsvr %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
 %files -n media-thumbnail-server
 %{_bindir}/media-thumbnail-server
 %attr(755,root,root) %{_sysconfdir}/init.d/thumbsvr
+%attr(755,root,root) %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
+%attr(755,root,root) %{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
 %exclude %{_bindir}/test-thumb
 

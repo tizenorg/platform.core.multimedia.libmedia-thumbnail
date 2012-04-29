@@ -19,13 +19,22 @@
  *
  */
 
-
+#include <sqlite3.h>
 #include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
 
 #ifndef _MEDIA_THUMB_DB_H_
 #define _MEDIA_THUMB_DB_H_
+
+#define MEDIA_DATABASE_NAME "/opt/dbspace/.media.db"
+
+#define SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA "SELECT path from visual_media where thumbnail_path='' and valid=1;"
+#define SELECT_MEDIA_BY_PATH "SELECT thumbnail_path FROM visual_media WHERE path='%q';"
+#define UPDATE_THUMB_BY_PATH "UPDATE visual_media SET thumbnail_path = '%q' WHERE path='%q';"
+#define UPDATE_WH_BY_PATH "UPDATE image_meta SET width=%d,height=%d WHERE visual_uuid=(SELECT visual_uuid FROM visual_media WHERE path='%q');"
+
+sqlite3 *_media_thumb_db_get_handle();
 
 int
 _media_thumb_db_connect();

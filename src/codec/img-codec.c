@@ -22,6 +22,7 @@
 #include "media-thumb-debug.h"
 #include "img-codec.h"
 #include <string.h>
+#include <mm_util_imgp.h>
 
 unsigned int *ImgGetFirstFrameAGIFAtSize(const char *szFileName,
 					 ImgImageInfo *image_info)
@@ -57,8 +58,15 @@ unsigned int *ImgGetFirstFrameAGIFAtSize(const char *szFileName,
 				pFrameInfo->pOutBits = pDecodedRGB888Buf;
 				unsigned char *src =
 				    ((unsigned char *)(pFrameInfo->pOutBits));
-				int i =
-				    image_info->width * image_info->height * 3;
+
+				unsigned int i = 0;
+
+				if (mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, image_info->width, image_info->height, &i) < 0) {
+					thumb_err("ImgGetFirstFrameAGIFAtSize: Failed to get buffer size");
+					return NULL;
+				}
+				thumb_dbg("ImgGetFirstFrameAGIFAtSize: raw data size : %d)", i);
+
 				raw_data = (unsigned char *)malloc(i);
 				memset(raw_data, 0, i);
 				unsigned char *dest = raw_data;
@@ -90,6 +98,7 @@ int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width,
 	unsigned char *rgb888Buf = 0;
 	unsigned char red, green, blue;
 	int i;
+	unsigned int size;
 
 	rgb565buf = (unsigned short *)pBuf_rgb565;
 	if (rgb565buf == NULL) {
@@ -97,14 +106,19 @@ int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width,
 		return FALSE;
 	}
 
-	rgb888Buf = (unsigned char *)malloc(width * height * 3);
+	if (mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, width, height, &size) < 0) {
+		thumb_err("ImgGetFirstFrameAGIFAtSize: Failed to get buffer size");
+		return FALSE;
+	}
+
+	rgb888Buf = (unsigned char *)malloc(size);
 
 	if (rgb888Buf == NULL) {
 		thumb_err("rgb888Buf is NULL: Error !!!");
 		return FALSE;
 	}
 
-	memset(rgb888Buf, 0, (width * height * 3));
+	memset(rgb888Buf, 0, size);
 
 	for (i = 0; i < width * height; i++) {
 		red = ((rgb565buf[i] >> 11) & 0x1F) << 3;

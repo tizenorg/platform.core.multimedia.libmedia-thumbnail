@@ -829,6 +829,11 @@ int _media_thumb_agif(const char *origin_path,
 
 	thumb = ImgGetFirstFrameAGIFAtSize(origin_path, image_info);
 
+	if (!thumb) {
+		thumb_err("Frame data is NULL!!");
+		return MEDIA_THUMB_ERROR_UNSUPPORTED;
+	}
+
 	if (thumb_width == _media_thumb_get_width(MEDIA_THUMB_LARGE)) {
 		thumb_type = MEDIA_THUMB_LARGE;
 	} else {
@@ -857,7 +862,7 @@ int _media_thumb_agif(const char *origin_path,
 		SAFE_FREE(thumb);
 		return err;
 	}
-	
+
 	SAFE_FREE(thumb);
 
 	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);

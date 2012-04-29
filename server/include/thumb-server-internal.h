@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include "media-thumb-ipc.h"
+#include "media-thumb-db.h"
 
 #ifndef _THUMB_DAEMON_INTERNAL_H_
 #define _THUMB_DAEMON_INTERNAL_H_
@@ -38,14 +39,7 @@ typedef enum {
 	TIMEOUT_MODE = 1
 } _server_mode_e;
 
-typedef struct _queueMsg{
-	thumbMsg *recv_msg;
-	thumbMsg *res_msg;
-	struct sockaddr_in *client_addr;
-} queueMsg;
-
 int _thumb_daemon_get_sockfd();
-GAsyncQueue *_thumb_daemon_get_queue();
 gboolean _thumb_daemon_udp_thread(void *data);
 
 #endif /*_THUMB_DAEMON_INTERNAL_H_*/

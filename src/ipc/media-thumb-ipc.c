@@ -56,7 +56,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
 
-	if (msg_type == THUMB_REQUEST_SAVE) {
+	if (msg_type == THUMB_REQUEST_SAVE_FILE) {
 		strncpy(req_msg.dst_path, thumb_path, sizeof(req_msg.dst_path));
 		req_msg.dst_path[strlen(req_msg.dst_path)] = '\0';
 	}
@@ -83,7 +83,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 		thumb_err("setsockopt failed: %d\n", errno);
 		return MEDIA_THUMB_ERROR_NETWORK;
 	}
-	
+
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
@@ -162,7 +162,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 		return -1;
 	}
 
-	if (msg_type != THUMB_REQUEST_SAVE) {
+	if (msg_type != THUMB_REQUEST_SAVE_FILE) {
 		strncpy(thumb_path, recv_msg.dst_path, max_length);
 	}
 
@@ -196,10 +196,10 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 
 	media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
 
-	thumb_path = req_msg->dst_path;
-	max_length = sizeof(req_msg->dst_path);
+	thumb_path = res_msg->dst_path;
+	max_length = sizeof(res_msg->dst_path);
 
-	if (msg_type == THUMB_REQUEST_DB) {
+	if (msg_type == THUMB_REQUEST_DB_INSERT) {
 		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length);
 		if (err < 0) {
 			thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
@@ -208,6 +208,8 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		}
 
 		thumb_path[strlen(thumb_path)] = '\0';
+	} else if (msg_type == THUMB_REQUEST_SAVE_FILE) {
+		strncpy(thumb_path, req_msg->dst_path, sizeof(thumb_path));
 	}
 
 	thumb_dbg("Thumb path : %s", thumb_path);
@@ -215,7 +217,6 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 	if (g_file_test(thumb_path, 
 					G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 		thumb_warn("thumb path already exists in file system");
-		strncpy(res_msg->dst_path, thumb_path, sizeof(res_msg->dst_path));
 		return 0;
 	}
 
@@ -244,7 +245,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		thumb_err("save_to_file_with_evas failed - %d\n", err);
 		SAFE_FREE(data);
 
-		if (msg_type == THUMB_REQUEST_DB)
+		if (msg_type == THUMB_REQUEST_DB_INSERT)
 			strncpy(thumb_path, THUMB_DEFAULT_PATH, max_length);
 
 		return err;
@@ -266,8 +267,6 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		close(fd);
 	}
 	/* End of fsync */
-
-	strncpy(res_msg->dst_path, thumb_path, sizeof(res_msg->dst_path));
 
 	SAFE_FREE(data);
 	

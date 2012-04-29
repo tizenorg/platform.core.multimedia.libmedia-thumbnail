@@ -32,7 +32,7 @@
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG "Thumb-Daemon"
+#define LOG_TAG "Thumb-Server"
 
 #ifdef USE_HIB
 #undef USE_HIB
@@ -75,13 +75,6 @@ void _hibernation_enter_callback(void *data)
 		close(sock);
 	}
 
-	GAsyncQueue *req_queue = _thumb_daemon_get_queue();
-
-	if (req_queue != NULL) {
-		g_async_queue_unref(req_queue);
-		req_queue = NULL;
-	}
-
 	if (hib_fd != 0) {
 		heynoti_close(hib_fd);
 		hib_fd = 0;
@@ -120,6 +113,7 @@ int main()
 	}
 	
 	udp_thr = g_thread_create((GThreadFunc)_thumb_daemon_udp_thread, NULL, FALSE, NULL);
+
 	mainloop = g_main_loop_new(NULL, FALSE);
 
 	thumb_dbg("*****************************************");

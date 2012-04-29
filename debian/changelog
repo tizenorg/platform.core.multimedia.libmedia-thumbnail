@@ -1,3 +1,11 @@
+libmedia-thumbnail (0.2.0-5) unstable; urgency=low
+
+  * Push for tizen 1.0 release
+  * Git : pkgs/l/libmedia-thumbnail
+  * Tag : libmedia-thumbnail_0.2.0-5
+
+ -- Hyunjun Ko <zzoon.ko@samsung.com>  Mon, 19 Mar 2012 18:30:00 +0900
+
 libmedia-thumbnail (0.2.0-4) unstable; urgency=low
 
   * Change thumbnail policy - Large: 320x240, Small: 160x120

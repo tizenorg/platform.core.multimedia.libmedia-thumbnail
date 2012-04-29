@@ -30,7 +30,7 @@ typedef enum {
 } media_thumb_type;
 
 typedef enum {
-	MEDIA_THUMB_BGRA,				/* BGRA, especially provided for evas users */
+	MEDIA_THUMB_BGRA,			/* BGRA, especially provided for evas users */
 	MEDIA_THUMB_RGB888,			/* RGB888 */
 } media_thumb_format;
 

@@ -216,6 +216,16 @@ int main(int argc, char *argv[])
 		}
 
 		printf("Success!!\n");
+	} else if (mode == 5) {
+		printf("Test thumbnail_request_extract_all_thumbs\n");
+
+		err = thumbnail_request_extract_all_thumbs();
+		if (err < 0) {
+			printf("thumbnail_request_extract_all_thumbs failed : %d\n", err);
+			return -1;
+		} else {
+			printf("thumbnail_request_extract_all_thumbs success!\n");
+		}
 	}
 
 	return 0;

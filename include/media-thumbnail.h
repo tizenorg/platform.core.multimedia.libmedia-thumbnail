@@ -127,8 +127,38 @@ int thumbnail_request_save_to_file(const char *origin_path,
 									const char *thumb_path);
 
 
+/**
+ *	thumbnail_request_extract_all_thumbs:
+ * 	This function generates thumbnail of all media, which don't have thumbnail yet and save it to the file system as jpeg format.
+ *  Once thumbnail generated, the thumbnail path and original image's width and height will be updated to media database.
+ *
+ *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
+ *	@see		None.
+ *	@pre		None.
+ *	@post		None.
+ * 	@par example
+ * 	@code
 
+#include <media-thumbnail.h>
 
+void extract_all_thumbs()
+{
+	int ret = MEDIA_THUMB_ERROR_NONE;
+
+	ret = thumbnail_request_extract_all_thumbs();
+
+	if (ret < 0) {
+		printf( "thumbnail_request_extract_all_thumbs fails. error code->%d", ret);
+	}
+
+	return;
+}
+
+ * 	@endcode
+ */
+
+int thumbnail_request_extract_all_thumbs(void);
 
 /** @} */
 
