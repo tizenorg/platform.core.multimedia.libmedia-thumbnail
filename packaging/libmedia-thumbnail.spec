@@ -5,6 +5,7 @@ Release:    1
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: packaging/libmedia-thumbnail.manifest 
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(mm-fileinfo)
@@ -46,6 +47,7 @@ Description: Media Thumbnail Server.
 
 
 %build
+cp %{SOURCE1001} .
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 make %{?jobs:-j%jobs}
 
@@ -61,6 +63,7 @@ ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47th
 
 
 %files
+%manifest libmedia-thumbnail.manifest
 %{_libdir}/libmedia-thumbnail.so
 %{_libdir}/libmedia-thumbnail.so.*
 %{_libdir}/libmedia-hash.so
@@ -68,6 +71,7 @@ ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47th
 
 
 %files devel
+%manifest libmedia-thumbnail.manifest
 %{_libdir}/pkgconfig/media-thumbnail.pc
 %{_includedir}/media-thumbnail/media-thumb-types.h
 %{_includedir}/media-thumbnail/media-thumb-error.h
@@ -76,6 +80,7 @@ ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47th
 
 
 %files -n media-thumbnail-server
+%manifest libmedia-thumbnail.manifest
 %{_bindir}/media-thumbnail-server
 %attr(755,root,root) %{_sysconfdir}/init.d/thumbsvr
 %attr(755,root,root) %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
