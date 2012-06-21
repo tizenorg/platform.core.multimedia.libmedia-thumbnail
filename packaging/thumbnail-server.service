@@ -1,0 +1,12 @@
+
+[Unit]
+Description=Start the thumbnailer service
+
+[Service]
+ExecStart=/usr/bin/media-thumbnail-server
+Nice=5
+OOMScoreAdjust=100
+
+[Install]
+WantedBy=tizen-middleware.target
+

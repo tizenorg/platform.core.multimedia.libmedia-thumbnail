@@ -5,6 +5,7 @@ Release:    1
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1:    thumbnail-server.service
 Source1001: packaging/libmedia-thumbnail.manifest 
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
@@ -55,6 +56,10 @@ make %{?jobs:-j%jobs}
 rm -rf %{buildroot}
 %make_install
 
+mkdir -p %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants
+install -m 0644 %SOURCE1 %{buildroot}%{_libdir}/systemd/user/
+ln -s ../thumbnail-server.service %{buildroot}%{_libdir}/systemd/user/tizen-middleware.target.wants/thumbnail-server.service
+
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc5.d/
 ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
 mkdir -p %{buildroot}%{_sysconfdir}/rc.d/rc3.d/
@@ -82,8 +87,10 @@ ln -s %{_sysconfdir}/init.d/thumbsvr %{buildroot}%{_sysconfdir}/rc.d/rc3.d/S47th
 %files -n media-thumbnail-server
 %manifest libmedia-thumbnail.manifest
 %{_bindir}/media-thumbnail-server
+%exclude %{_bindir}/test-thumb
 %attr(755,root,root) %{_sysconfdir}/init.d/thumbsvr
 %attr(755,root,root) %{_sysconfdir}/rc.d/rc3.d/S47thumbsvr
 %attr(755,root,root) %{_sysconfdir}/rc.d/rc5.d/S47thumbsvr
-%exclude %{_bindir}/test-thumb
+%{_libdir}/systemd/user/thumbnail-server.service
+%{_libdir}/systemd/user/tizen-middleware.target.wants/thumbnail-server.service
 
