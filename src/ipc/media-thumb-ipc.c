@@ -63,8 +63,6 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	struct timeval tv_timeout = { TIMEOUT_SEC, 0 };
 
-	serv_ip = "127.0.0.1";
-
 	if (send_str_len > MAX_PATH_SIZE) {
 		thumb_err("original path's length exceeds %d(max packet size)", MAX_PATH_SIZE);
 		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
@@ -209,7 +207,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 
 		thumb_path[strlen(thumb_path)] = '\0';
 	} else if (msg_type == THUMB_REQUEST_SAVE_FILE) {
-		strncpy(thumb_path, req_msg->dst_path, sizeof(thumb_path));
+		strncpy(thumb_path, req_msg->dst_path, max_length);
 	}
 
 	thumb_dbg("Thumb path : %s", thumb_path);
@@ -273,4 +271,122 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 	return 0;
 }
 
+gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpointer data)
+{
+	thumb_err("_media_thumb_write_socket is called");
+
+	thumbMsg recv_msg;
+	int recv_msg_len;
+	int recv_str_len;
+	int sock = 0;
+	int err = MEDIA_THUMB_ERROR_NONE;
+	unsigned int from_size;
+
+	struct sockaddr_in from_addr;
+
+	memset((void *)&recv_msg, 0, sizeof(thumbMsg));
+	sock = g_io_channel_unix_get_fd(src);
+
+	/* recv a response */
+	from_size = sizeof(from_addr);
+
+	if ((recv_msg_len = recvfrom(sock, &recv_msg, sizeof(recv_msg), 0, (struct sockaddr *)&from_addr, &from_size)) < 0) {
+
+		if (errno == EWOULDBLOCK) {
+			thumb_warn("Timeout. Can't try any more");
+			g_io_channel_shutdown(src, TRUE, NULL);
+			err = MEDIA_THUMB_ERROR_TIMEOUT;
+			goto callback;
+		} else {
+			thumb_err("recvfrom failed");
+			g_tries = 0;
+			g_io_channel_shutdown(src, TRUE, NULL);
+			err = MEDIA_THUMB_ERROR_NETWORK;
+			goto callback;
+		}
+	} else {
+		thumb_dbg("recvfrom done");
+	}
+
+	recv_msg.org_path[MAX_PATH_SIZE - 1] = '\0';
+	recv_str_len = strlen(recv_msg.dst_path);
+	thumb_dbg("recv %s(%d) from thumb daemon is successful", recv_msg.dst_path, recv_str_len);
+
+	g_io_channel_shutdown(src, TRUE, NULL);
+
+	if (recv_msg.status == THUMB_FAIL) {
+		thumb_err("Failed to make thumbnail");
+		err = MEDIA_THUMB_ERROR_UNSUPPORTED;
+		goto callback;
+	}
+
+callback:
+	if (data) {
+		thumbUserData* cb = (thumbUserData*)data;
+		cb->func(err, recv_msg.dst_path, cb->user_data);
+		free(cb);
+		cb = NULL;
+	}
+
+	return FALSE;
+}
+
+int
+_media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData)
+{
+	int sock;
+	const char *serv_ip = "127.0.0.1";
+	struct sockaddr_in serv_addr;
+
+	int send_str_len = strlen(origin_path);
+	int pid;
+
+	thumbMsg req_msg;
+	memset((void *)&req_msg, 0, sizeof(thumbMsg));
+
+	req_msg.msg_type = msg_type;
+	req_msg.thumb_type = thumb_type;
+	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
+	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
+
+	struct timeval tv_timeout = { 0, 100 };
+
+	if (send_str_len > MAX_PATH_SIZE) {
+		thumb_err("original path's length exceeds %d(max packet size)", MAX_PATH_SIZE);
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+	}
+
+	pid = getpid();
+	req_msg.pid = pid;
+
+	/* Creaete a datagram/UDP socket */
+	if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		thumb_err("socket failed: %d\n", errno);
+		return MEDIA_THUMB_ERROR_NETWORK;
+	}
+
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout)) == -1) {
+		thumb_err("setsockopt failed: %d\n", errno);
+		return MEDIA_THUMB_ERROR_NETWORK;
+	}
+
+	GIOChannel *channel = NULL;
+	channel = g_io_channel_unix_new(sock);
+	g_io_add_watch(channel, G_IO_IN, _media_thumb_write_socket, userData );
+
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
+	serv_addr.sin_port = htons(THUMB_DAEMON_PORT);
+
+	if (sendto(sock, &req_msg, sizeof(req_msg), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(req_msg)) {
+		thumb_err("sendto failed: %d\n", errno);
+		g_io_channel_shutdown(channel, TRUE, NULL);
+		return MEDIA_THUMB_ERROR_NETWORK;
+	}
+
+	thumb_dbg("Sending msg to thumbnail daemon is successful");
+
+	return 0;
+}
 

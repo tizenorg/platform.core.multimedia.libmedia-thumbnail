@@ -36,7 +36,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <drm-service.h>
+//#include <drm-service.h>
+#include <drm_client.h>
 #include <mm_file.h>
 #include <mm_util_imgp.h>
 #include <mm_util_jpeg.h>
@@ -523,8 +524,6 @@ int _media_thumb_resize_data(unsigned char *src_data,
 int _media_thumb_get_wh_with_evas(const char *origin_path, int *width, int *height)
 {	
 	/* using evas to get w/h */
-	ecore_evas_init();
-
 	Ecore_Evas *ee =
 		ecore_evas_buffer_new(0, 0);
 	if (!ee) {
@@ -556,7 +555,6 @@ int _media_thumb_get_wh_with_evas(const char *origin_path, int *width, int *heig
 	thumb_dbg("Width:%d, Height:%d", *width, *height);
 
 	ecore_evas_free(ee);
-	ecore_evas_shutdown();
 
 	return 0;
 }
@@ -565,15 +563,12 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 					int thumb_width, int thumb_height,
 					media_thumb_info *thumb_info, int need_scale)
 {
-	ecore_evas_init();
-
 	Ecore_Evas *resize_img_ee;
 	resize_img_ee =
 		ecore_evas_buffer_new(thumb_width, thumb_height);
 
 	if (!resize_img_ee) {
 		thumb_err("Failed to create a new ecore evas buffer\n");
-		ecore_evas_shutdown();
 		return -1;
 	}
 
@@ -581,16 +576,13 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 	if (!resize_img_e) {
 		thumb_err("Failed to ecore_evas_get\n");
 		ecore_evas_free(resize_img_ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 
 	Evas_Object *source_img = evas_object_image_add(resize_img_e);
 	if (!source_img) {
-		thumb_dbg
-			("evas_object_image_add failed\n");
+		thumb_err("evas_object_image_add failed\n");
 		ecore_evas_free(resize_img_ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 
@@ -626,7 +618,6 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 	if (err < 0) {
 		thumb_err("_media_thumb_get_proper_thumb_size failed: %d", err);
 		ecore_evas_free(resize_img_ee);
-		ecore_evas_shutdown();
 		return err;
 	}
 
@@ -649,7 +640,6 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 	if (!target_ee) {
 		thumb_err("Failed to create a ecore evas\n");
 		ecore_evas_free(resize_img_ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 
@@ -658,7 +648,6 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 		thumb_err("Failed to ecore_evas_get\n");
 		ecore_evas_free(resize_img_ee);
 		ecore_evas_free(target_ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 
@@ -688,7 +677,6 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 
 		ecore_evas_free(resize_img_ee);
 		ecore_evas_free(target_ee);
-		ecore_evas_shutdown();
 
 		return MEDIA_THUMB_ERROR_MM_UTIL;
 	}
@@ -703,7 +691,6 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 
 	ecore_evas_free(target_ee);
 	ecore_evas_free(resize_img_ee);
-	ecore_evas_shutdown();
 
 	return 0;
 }
@@ -1135,8 +1122,16 @@ _media_thumb_video(const char *origin_path,
 	int size = 0;
 	int width = 0;
 	int height = 0;
+	int ret = 0;
+	drm_bool_type_e drm_type;
 
-	is_drm = (drm_svc_is_drm_file(origin_path) == 1);
+	ret = (drm_is_drm_file(origin_path, &drm_type) == 1);
+	if (ret < 0) {
+		thumb_err("drm_is_drm_file falied : %d", ret);
+		drm_type = DRM_FALSE;
+	}
+
+	is_drm = drm_type;
 	err = mm_file_create_content_attrs(&content, origin_path);
 
 	if (err < 0) {
@@ -1184,6 +1179,9 @@ _media_thumb_video(const char *origin_path,
 			mm_file_destroy_content_attrs(content);
 			return MEDIA_THUMB_ERROR_MM_UTIL;
 		}
+
+		thumb_info->origin_width = width;
+		thumb_info->origin_height = height;
 
 		if (width > thumb_width || height > thumb_height) {
 			err = _media_thumb_resize_data(frame,

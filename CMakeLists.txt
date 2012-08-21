@@ -30,6 +30,7 @@ SET(PACKAGE ${PROJECT_NAME})
 SET(PKGNAME "com.${VENDOR}.${PACKAGE}")
 SET(PREFIX ${CMAKE_INSTALL_PREFIX})
 SET(BINDIR "${PREFIX}/bin")
+SET(LOCALBINDIR "${PREFIX}/local/bin")
 SET(DATADIR "${PREFIX}/share")
 SET(EXEC_PREFIX "\${prefix}")
 SET(LIBDIR "\${prefix}/lib")
@@ -44,7 +45,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/include 
 
 INCLUDE(FindPkgConfig)
 pkg_check_modules(pkgs REQUIRED
-glib-2.0 gthread-2.0 dlog mm-fileinfo drm-service aul
+glib-2.0 gthread-2.0 dlog mm-fileinfo drm-client aul
 libexif ecore-evas evas mmutil-imgp mmutil-jpeg heynoti)
 
 
@@ -68,6 +69,7 @@ ADD_DEFINITIONS("-DPACKAGE=\"${PACKAGE}\"")
 ADD_DEFINITIONS("-DPACKAGE_NAME=\"${PKGNAME}\"")
 ADD_DEFINITIONS("-DPREFIX=\"${PREFIX}\"")
 #ADD_DEFINITIONS("-D_PERFORMANCE_CHECK_")
+ADD_DEFINITIONS("-D_USE_NEW_MEDIA_DB_")
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed -Wl,--hash-style=both")
 CONFIGURE_FILE(media-thumbnail.pc.in media-thumbnail.pc @ONLY)
@@ -92,7 +94,7 @@ INSTALL(TARGETS media-thumbnail-server DESTINATION ${BINDIR})
 
 ADD_EXECUTABLE(test-thumb ${TEST-THUMB})
 TARGET_LINK_LIBRARIES(test-thumb ${pkgs_LDFLAGS} ${MEDIATHUMB-LIB} )
-INSTALL(TARGETS test-thumb DESTINATION ${BINDIR})
+INSTALL(TARGETS test-thumb DESTINATION ${LOCALBINDIR})
 
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumbnail.h DESTINATION include/${MEDIATHUMB-LIB})
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumbnail-private.h DESTINATION include/${MEDIATHUMB-LIB})

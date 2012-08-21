@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 5), libglib2.0-dev,
                dlog-dev,
                libmm-fileinfo-dev,
                libmm-utility-dev,
-               drm-service-dev,
+               drm-client-dev,
                libexif-dev,
                libheynoti-dev,
                libevas-dev,
@@ -37,7 +37,7 @@ Description: Media thumbnail service library for multimedia applications.
 Package: libmedia-thumbnail-dev
 Section: libdevel
 Architecture: any
-Depends: libmedia-thumbnail (= ${Source-Version}), libmm-fileinfo-dev, libmm-utility-dev, libglib2.0-dev, dlog-dev, drm-service-dev, libevas-dev, libecore-dev, libexif-dev, libaul-1-dev
+Depends: libmedia-thumbnail (= ${Source-Version}), libmm-fileinfo-dev, libmm-utility-dev, libglib2.0-dev, dlog-dev, drm-client-dev, libevas-dev, libecore-dev, libexif-dev, libaul-1-dev
 Description: Media thumbnail service library for multimedia applications. (development)
 
 Package: libmedia-thumbnail-dbg

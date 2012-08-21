@@ -20,6 +20,7 @@
  */
 
 
+#include "media-thumbnail.h"
 #include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
@@ -56,6 +57,11 @@ enum Exif_Orientation {
     TRANSVERSE  =7,
     ROT_270 =8
 };
+
+typedef struct {
+	ThumbFunc func;
+	void *user_data;
+} thumbUserData;
 
 int
 _media_thumb_image(const char *origin_path,

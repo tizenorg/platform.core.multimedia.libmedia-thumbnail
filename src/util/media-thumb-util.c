@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <aul.h>
 #include <string.h>
-#include <drm-service.h>
+#include <drm_client.h>
 
 #include <Evas.h>
 #include <Ecore_Evas.h>
@@ -75,27 +75,43 @@ int
 _media_thumb_get_file_type(const char *file_full_path)
 {
 	int ret = 0;
+	drm_bool_type_e drm_type;
+	drm_file_type_e drm_file_type;
 	char mimetype[255];
 
 	if (file_full_path == NULL)
 		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 
-	if (drm_svc_is_drm_file(file_full_path) == DRM_TRUE) {
-		DRM_FILE_TYPE drm_type = DRM_FILE_TYPE_NONE;
-		drm_type = drm_svc_get_drm_type(file_full_path);
-		if (drm_type == DRM_FILE_TYPE_NONE) {
-			return THUMB_NONE_TYPE;
-		} 
-		else {
-			drm_content_info_t contentInfo = { 0 };
+	ret = drm_is_drm_file(file_full_path, &drm_type);
+	if (ret < 0) {
+		thumb_err("drm_is_drm_file falied : %d", ret);
+		drm_type = DRM_FALSE;
+	}
 
-			ret = drm_svc_get_content_info(file_full_path, &contentInfo);
-			if (ret != DRM_RESULT_SUCCESS) {
-				thumb_err("drm_svc_get_content_info() fails. ");
+	if (drm_type == DRM_TRUE) {
+		thumb_dbg("DRM file : %s", file_full_path);
+
+		ret = drm_get_file_type(file_full_path, &drm_file_type);
+		if (ret < 0) {
+			thumb_err("drm_get_file_type falied : %d", ret);
+			return THUMB_NONE_TYPE;
+		}
+
+		if (drm_file_type == DRM_TYPE_UNDEFINED) {
+			return THUMB_NONE_TYPE;
+		} else {
+			drm_content_info_s contentInfo;
+			memset(&contentInfo, 0x00, sizeof(drm_content_info_s));
+
+			ret = drm_get_content_info(file_full_path, &contentInfo);
+			if (ret != DRM_RETURN_SUCCESS) {
+				thumb_err("drm_get_content_info() fails. : %d", ret);
 				return THUMB_NONE_TYPE;
 			}
+			thumb_dbg("DRM mime type: %s", contentInfo.mime_type);
 
-			strncpy(mimetype, contentInfo.contentType, sizeof(mimetype));
+			strncpy(mimetype, contentInfo.mime_type, sizeof(mimetype) - 1);
+			mimetype[sizeof(mimetype) - 1] = '\0';
 		}
 	} else {
 		/* get content type and mime type from file. */
@@ -216,20 +232,27 @@ int _media_thumb_save_to_file_with_evas(unsigned char *data,
 											int w,
 											int h,
 											char *thumb_path)
-{
-	ecore_evas_init();
-	
+{	
 	Ecore_Evas *ee =
 		ecore_evas_buffer_new(w, h);
+	if (ee == NULL) {
+		thumb_err("Failed to create a new ecore evas buffer\n");
+		return -1;
+	}
+
 	Evas *evas = ecore_evas_get(ee);
+	if (evas == NULL) {
+		thumb_err("Failed to ecore_evas_get\n");
+		ecore_evas_free(ee);
+		return -1;
+	}
 
 	Evas_Object *img = NULL;
 	img = evas_object_image_add(evas);
 
 	if (img == NULL) {
-		thumb_dbg("image object is NULL\n");
+		thumb_err("image object is NULL\n");
 		ecore_evas_free(ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 
@@ -244,13 +267,11 @@ int _media_thumb_save_to_file_with_evas(unsigned char *data,
 		(img, thumb_path, NULL,	"quality=100 compress=1")) {
 		thumb_dbg("evas_object_image_save success\n");
 		ecore_evas_free(ee);
-		ecore_evas_shutdown();
 
 		return 0;
 	} else {
 		thumb_dbg("evas_object_image_save failed\n");
 		ecore_evas_free(ee);
-		ecore_evas_shutdown();
 		return -1;
 	}
 }

@@ -77,6 +77,12 @@ _media_thumb_request(int msg_type,
 					media_thumb_info *thumb_info);
 
 int
+_media_thumb_request_async(int msg_type,
+					media_thumb_type thumb_type,
+					const char *origin_path,
+					thumbUserData *userData);
+
+int
 _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg);
 
 #endif /*_MEDIA_THUMB_IPC_H_*/

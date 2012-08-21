@@ -28,9 +28,15 @@
 
 #define SAFE_FREE(src)      { if(src) {free(src); src = NULL;}}
 
-#define THUMB_NONE_TYPE    0x00000001  /* Image */
+#ifndef _USE_NEW_MEDIA_DB_
+#define THUMB_NONE_TYPE    0x00000000  /* None */
 #define THUMB_IMAGE_TYPE    0x00000001  /* Image */
-#define THUMB_VIDEO_TYPE    0x00000002  /* Image */
+#define THUMB_VIDEO_TYPE    0x00000002  /* Video */
+#else
+#define THUMB_NONE_TYPE    -1	/* None */
+#define THUMB_IMAGE_TYPE   0	/* Image */
+#define THUMB_VIDEO_TYPE   1	/* Video */
+#endif
 
 #define THUMB_PATH_PHONE 	"/opt/media" 	/**< File path prefix of files stored in phone */
 #define THUMB_PATH_MMC 	"/opt/storage/sdcard"	/**< File path prefix of files stored in mmc card */

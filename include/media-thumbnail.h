@@ -49,6 +49,13 @@ extern "C" {
 
 
 /**
+ * Callback function, which is used to call thumbnail_request_from_db_async
+ */
+
+typedef int (*ThumbFunc) (int error_code, char* path, void* data);
+
+
+/**
  *	thumbnail_request_from_db:
  * 	This function connects to the media database and find thumbnail path of the passed original image. 
  *  If found, the thumbnail path will be returned, or starts to generate thumbnail
@@ -86,6 +93,51 @@ void gen_thumbs()
  * 	@endcode
  */
 int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length);
+
+/**
+ *	thumbnail_request_from_db_async:
+ * 	This function connects to the media database and find thumbnail path of the passed original image. 
+ *  If found, the thumbnail path will be returned through callback, which is registered by user.
+ *
+ *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
+ *  @param[in]				origin_path     The path of the original image
+ *  @param[in]				func            The callback, which is registered by user
+ *  @param[in]				user_data       User data, which is used by user in callback
+ *	@see		None.
+ *	@pre		None.
+ *	@post		None.
+ *	@remark	The database name is "/opt/dbspace/.media.db".
+ * 	@par example
+ * 	@code
+
+#include <media-thumbnail.h>
+
+int _thumb_cb(int error_code, char *path, void *user_data)
+{
+	printf("Error code : %d\n", error_code);
+	printf("Thumb path : %s\n", path);
+}
+
+void gen_thumbs()
+{
+	int ret = MEDIA_THUMB_ERROR_NONE;
+	const char *origin_path = "/opt/media/test.jpg";
+	char thumb_path[255];
+
+	ret = thumbnail_request_from_db_async(origin_path, _thumb_cb, NULL);
+
+	if (ret < 0)
+	{
+		printf( "thumbnail_request_from_db_async fails. error code->%d", ret);
+	}
+
+	return;
+}
+
+ * 	@endcode
+ */
+int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data);
 
 /**
  *	thumbnail_request_save_to_file:

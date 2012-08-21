@@ -27,107 +27,89 @@
 
 #include <pthread.h>
 #include <heynoti.h>
+//#include <signal.h>
+//#include <glib-unix.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
 
 #define LOG_TAG "Thumb-Server"
+#define POWEROFF_NOTI_NAME "power_off_start" /*poeroff noti from system-server*/
 
-#ifdef USE_HIB
-#undef USE_HIB
-#endif
 
-#ifdef USE_HIB
-int hib_fd = 0;
+GMainLoop *g_thumb_server_mainloop = NULL;
 
-void _hibernation_leave_callback(void *data)
+static void _media_thumb_signal_handler(void *user_data)
 {
-	thumb_dbg("hibernation leave callback\n");
+	thumb_dbg("Singal Hander for HEYNOTI \"power_off_start\"");
 
-	GMainLoop *mainloop = NULL;
-	GThread *udp_thr = NULL;
-
-	if (!g_thread_supported()) {
-		g_thread_init(NULL);
-	}
-	
-	udp_thr = g_thread_create((GThreadFunc)_thumb_daemon_udp_thread, NULL, FALSE, NULL);
-	mainloop = g_main_loop_new(NULL, FALSE);
-
-	thumb_dbg("*****************************************");
-	thumb_dbg("*** Server of thumbnail is running ***");
-	thumb_dbg("*****************************************");
-
-	g_main_loop_run(mainloop);
-
-	g_main_loop_unref(mainloop);
-
-	exit(0);
-}
-
-void _hibernation_enter_callback(void *data)
-{
-	thumb_dbg("hibernation enter callback\n");
-
-	int sock = _thumb_daemon_get_sockfd();
-	if (sock != 0) {
-		close(sock);
-	}
-
-	if (hib_fd != 0) {
-		heynoti_close(hib_fd);
-		hib_fd = 0;
-	}
-}
-
-void _hibernation_initialize(void)
-{
-	hib_fd = heynoti_init();
-	heynoti_subscribe(hib_fd, "HIBERNATION_ENTER",
-			  _hibernation_enter_callback, (void *)hib_fd);
-	heynoti_subscribe(hib_fd, "HIBERNATION_LEAVE",
-			  _hibernation_leave_callback, (void *)hib_fd);
-	heynoti_attach_handler(hib_fd);
+	if (g_thumb_server_mainloop)
+		g_main_loop_quit(g_thumb_server_mainloop);
+	else 
+		exit(1);
 
 	return;
 }
 
-void _hibernation_fianalize(void)
-{
-	heynoti_close(hib_fd);
-}
-#endif
 
 int main()
 {
-#ifdef USE_HIB
-	_hibernation_initialize();
-#endif
+	int sockfd = -1;
 
-	GMainLoop *mainloop = NULL;
-	GThread *udp_thr = NULL;
-	
-	if (!g_thread_supported()) {
-		g_thread_init(NULL);
+    GSource *source = NULL;
+	GIOChannel *channel = NULL;
+	GMainContext *context = NULL;
+
+	/*heynoti for power off*/
+	int err = 0;
+	int heynoti_id = heynoti_init();
+
+	heynoti_subscribe(heynoti_id, POWEROFF_NOTI_NAME, _media_thumb_signal_handler, NULL);
+
+	err = heynoti_attach_handler(heynoti_id);
+	if (err < 0)
+		thumb_err("heynoti_attach_handler failed: %d", err);
+
+	/* Create and bind new UDP socket */
+	if (!_thumb_server_prepare_socket(&sockfd)) {
+		thumb_err("Failed to create socket\n");
+		return -1;
 	}
-	
-	udp_thr = g_thread_create((GThreadFunc)_thumb_daemon_udp_thread, NULL, FALSE, NULL);
 
-	mainloop = g_main_loop_new(NULL, FALSE);
+	g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
+	context = g_main_loop_get_context(g_thumb_server_mainloop);
 
-	thumb_dbg("*****************************************");
-	thumb_dbg("*** Server of thumbnail is running ***");
-	thumb_dbg("*****************************************");
+	/* Create new channel to watch udp socket */
+	channel = g_io_channel_unix_new(sockfd);
+	source = g_io_create_watch(channel, G_IO_IN);
 
-	g_main_loop_run(mainloop);
+	/* Set callback to be called when socket is readable */
+	g_source_set_callback(source, (GSourceFunc)_thumb_server_read_socket, NULL, NULL);
+	g_source_attach(source, context);
 
-	g_main_loop_unref(mainloop);
+	GSource *source_evas_init = NULL;
+	source_evas_init = g_idle_source_new ();
+	g_source_set_callback (source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
+	g_source_attach (source_evas_init, context);
 
-#ifdef USE_HIB
-	_hibernation_fianalize();
-#endif
+/*	Would be used when glib 2.32 is installed
+	GSource *sig_handler_src = NULL;
+	sig_handler_src = g_unix_signal_source_new (SIGTERM);
+	g_source_set_callback(sig_handler_src, (GSourceFunc)_media_thumb_signal_handler, NULL, NULL);
+	g_source_attach(sig_handler_src, context);
+*/
+	thumb_dbg("************************************");
+	thumb_dbg("*** Thumbnail server is running ***");
+	thumb_dbg("************************************");
+
+	g_main_loop_run(g_thumb_server_mainloop);
+
+	thumb_dbg("Thumbnail server is shutting down...");
+	g_io_channel_shutdown(channel,  FALSE, NULL);
+	g_io_channel_unref(channel);
+	_thumb_daemon_finish_jobs();
+	g_main_loop_unref(g_thumb_server_mainloop);
 
 	return 0;
 }
-
