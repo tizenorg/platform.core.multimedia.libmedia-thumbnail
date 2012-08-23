@@ -1,6 +1,0 @@
-# auto generated tet_scen
-all
-	"Starting Full Test Suite"
-	:include:/utc/tslist
-	"Completed Full Test Suite"
-# EOF
