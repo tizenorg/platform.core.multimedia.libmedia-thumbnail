@@ -62,6 +62,9 @@ _media_thumb_get_file_ext(const char *file_path, char *file_ext, int max_len);
 int
 _media_thumb_get_file_type(const char *file_full_path);
 
+int
+_media_thumb_remove_file(const char *path);
+
 char
 *_media_thumb_generate_hash_name(const char *file);
 

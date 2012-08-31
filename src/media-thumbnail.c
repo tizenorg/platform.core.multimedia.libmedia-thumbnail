@@ -24,14 +24,14 @@
 #include "media-thumb-util.h"
 #include "media-thumb-internal.h"
 #include "media-thumb-ipc.h"
-#include "media-thumb-db.h"
+//#include "media-thumb-db.h"
 
 #include <glib.h>
 
 int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length)
 {
 	int err = -1;
-	int need_update_db = 0;
+	//int need_update_db = 0;
 	media_thumb_info thumb_info;
 
 	if (origin_path == NULL || thumb_path == NULL) {
@@ -59,7 +59,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	}
 
 	thumb_err("Path : %s", origin_path);
-
+/*
 	err = _media_thumb_db_connect();
 	if (err < 0) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
@@ -71,16 +71,16 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 		_media_thumb_db_disconnect();
 		return MEDIA_THUMB_ERROR_NONE;
 	}
-
+*/
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
-		_media_thumb_db_disconnect();
+		//_media_thumb_db_disconnect();
 		return err;
 	}
-
-	/* Need to update DB once generating thumb is done */
+/*
+	// Need to update DB once generating thumb is done
 	if (need_update_db) {
 		err = _media_thumb_update_db(origin_path, thumb_path, thumb_info.origin_width, thumb_info.origin_height);
 		if (err < 0) {
@@ -89,6 +89,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	}
 
 	_media_thumb_db_disconnect();
+*/
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
@@ -119,8 +120,7 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height)
 {
 	int err = -1;
-	int need_update_db = 0;
-	int width, height = 0;
+	//int need_update_db = 0;
 	media_thumb_info thumb_info;
 
 	if (origin_path == NULL || thumb_path == NULL) {
@@ -153,7 +153,7 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 	}
 
 	thumb_err("Path : %s", origin_path);
-
+/*
 	err = _media_thumb_db_connect();
 	if (err < 0) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
@@ -165,19 +165,19 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 		_media_thumb_db_disconnect();
 		return MEDIA_THUMB_ERROR_NONE;
 	}
-
+*/
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
-		_media_thumb_db_disconnect();
+		//_media_thumb_db_disconnect();
 		return err;
 	}
 
 	*origin_width = thumb_info.origin_width;
 	*origin_height = thumb_info.origin_height;
 
-	_media_thumb_db_disconnect();
+	//_media_thumb_db_disconnect();
 	return MEDIA_THUMB_ERROR_NONE;
 }
 

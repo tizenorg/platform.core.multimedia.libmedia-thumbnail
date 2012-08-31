@@ -37,7 +37,8 @@
 #define _MEDIA_THUMB_IPC_H_
 
 #define THUMB_DAEMON_PORT 10000
-#define MAX_PATH_SIZE 4096
+//#define MAX_PATH_SIZE 4096
+#define MAX_PATH_SIZE 2048
 
 #define TIMEOUT_SEC		10
 #define MAX_TRIES		3

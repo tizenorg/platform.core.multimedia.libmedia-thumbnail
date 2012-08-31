@@ -181,6 +181,20 @@ int _media_thumb_get_store_type_by_path(const char *full_path)
 	return -1;
 }
 
+int _media_thumb_remove_file(const char *path)
+{
+	int result = -1;
+
+	result = remove(path);
+	if (result == 0) {
+		thumb_dbg("success to remove file");
+		return TRUE;
+	} else {
+		thumb_err("fail to remove file[%s] result errno = %s", path, strerror(errno));
+		return FALSE;
+	}
+}
+
 int
 _media_thumb_get_hash_name(const char *file_full_path,
 				 char *thumb_hash_path, size_t max_thumb_path)
