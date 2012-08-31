@@ -1,4 +1,3 @@
-#sbs-git:slp/pkgs/l/libmedia-thumbnail libmedia-thumbnail 0.1.32 a6b6cb2f372f6a8cca44ef50813ad0300d34a9de
 Name:       libmedia-thumbnail
 Summary:    Media thumbnail service library for multimedia applications.
 Version: 0.1.44
