@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=@PREFIX@
+exec_prefix=@EXEC_PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: @PROJECT_NAME@
+Description: Samsung Linux platform @PROJECT_NAME@ library
+Version: @VERSION@
+Requires: dlog
+Libs: -L${libdir} -lmedia-thumbnail -lmedia-hash
+Cflags: -I${includedir}/media-thumbnail
