@@ -1,12 +1,9 @@
 <manifest>
-	<define>
-		<domain name="thumb-server"/>
-	</define>
 	<request>
-		<domain name="_"/>
+		<domain name="media-server"/>
 	</request>
 	<assign>
-		<filesystem path="/usr/bin/media-thumbnail-server" label="thumb-server" exec_label="thumb-server"/>
+		<filesystem path="/usr/bin/media-thumbnail-server" label="media-server" exec_label="media-server"/>
 	</assign>
 </manifest>
 

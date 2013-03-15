@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <Ecore_Evas.h>
-
+#include <vconf.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -43,6 +43,7 @@ GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 #ifdef _USE_MEDIA_UTIL_
 gboolean _thumb_server_send_msg_to_agent(int msg_type);
 #endif
+void _thumb_daemon_stop_job();
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
@@ -67,6 +68,46 @@ void _thumb_daemon_finish_jobs()
 
 	/* Shutdown ecore-evas */
 	ecore_evas_shutdown();
+
+	return;
+}
+
+void _thumb_daemon_vconf_cb(void *data)
+{
+	int err = -1;
+	int status = 0;
+
+	thumb_warn("_thumb_daemon_vconf_cb called");
+
+	err = vconf_get_int(VCONFKEY_SYSMAN_MMC_FORMAT, &status);
+	if (err == 0) {
+		if (status == VCONFKEY_SYSMAN_MMC_FORMAT_COMPLETED) {
+			thumb_warn("SD card format is completed. So media-thumbnail-server stops jobs to extract all thumbnails");
+
+			_thumb_daemon_stop_job();
+		} else {
+			thumb_dbg("not completed");
+		}
+	} else if (err == -1) {
+		thumb_err("vconf_get_int failed : %d", err);
+	} else {
+		thumb_err("vconf_get_int Unexpected error code: %d", err);
+	}
+
+	return;
+}
+
+void _thumb_daemon_stop_job()
+{
+	int i = 0;
+	char *path = NULL;
+
+	thumb_warn("There are %d jobs in the queue. But all jobs will be stopped", g_idx - g_cur_idx);
+
+	for (i = g_cur_idx; i < g_idx; i++) {
+		path = arr_path[g_cur_idx++];
+		SAFE_FREE(path);
+	}
 
 	return;
 }
@@ -129,7 +170,8 @@ int _thumb_daemon_all_extract()
 			break;
 		}
 
-		strncpy(path, (const char *)sqlite3_column_text(sqlite_stmt, 0), MAX_PATH_SIZE + 1);
+		strncpy(path, (const char *)sqlite3_column_text(sqlite_stmt, 0), sizeof(path));
+		path[sizeof(path) - 1] = '\0';
 		count = sqlite3_column_int(sqlite_stmt, 1);
 
 		thumb_dbg("Path : %s", path);
@@ -339,11 +381,13 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 
 	if (sendto(sock, &send_msg, sizeof(ms_thumb_server_msg), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(ms_thumb_server_msg)) {
 		thumb_err("sendto failed: %s\n", strerror(errno));
+		close(sock);
 		return FALSE;
 	}
 
 	thumb_dbg("Sending msg to thumbnail agent[%d] is successful", send_msg.msg_type);
 
+	close(sock);
  	return TRUE;
 }
 #endif

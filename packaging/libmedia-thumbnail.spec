@@ -1,10 +1,12 @@
 Name:       libmedia-thumbnail
 Summary:    Media thumbnail service library for multimedia applications.
-Version: 0.1.65
+Version: 0.1.68
 Release:    1
 Group:      utils
 License:    Apache
 Source0:    %{name}-%{version}.tar.gz
+
+Requires: media-server
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(mm-fileinfo)
@@ -16,6 +18,7 @@ BuildRequires: pkgconfig(heynoti)
 BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(ecore)
 BuildRequires: pkgconfig(aul)
+BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libmedia-utils)
 
 

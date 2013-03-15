@@ -27,6 +27,7 @@
 
 #include <pthread.h>
 #include <heynoti.h>
+#include <vconf.h>
 //#include <signal.h>
 //#include <glib-unix.h>
 
@@ -77,6 +78,11 @@ int main()
 				thumb_err("heynoti_attach_handler failed: %d", err);
 		}
 	}
+
+	/* Set VCONFKEY_SYSMAN_MMC_FORMAT callback to get noti for SD card format */
+	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_FORMAT, (vconf_callback_fn) _thumb_daemon_vconf_cb, NULL);
+	if (err == -1)
+		thumb_err("vconf_notify_key_changed %s fails", VCONFKEY_SYSMAN_MMC_FORMAT);
 
 	/* Create and bind new UDP socket */
 	if (!_thumb_server_prepare_socket(&sockfd)) {

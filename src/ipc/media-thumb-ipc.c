@@ -28,7 +28,12 @@
 #include <string.h>
 #include <errno.h>
 
-
+static __thread GQueue *g_request_queue = NULL;
+typedef struct {
+	GIOChannel *channel;
+	char *path;
+	int source_id;
+} thumbReq;
 
 int
 _media_thumb_create_socket(int sock_type, int *sock)
@@ -106,6 +111,79 @@ int _media_thumb_get_error()
 		thumb_err("recvfrom failed : %s", strerror(errno));
 		return MEDIA_THUMB_ERROR_NETWORK;
 	}
+}
+
+int __media_thumb_pop_req_queue(const char *path, bool shutdown_channel)
+{
+	int req_len = 0, i;
+
+	if (g_request_queue == NULL) return -1;
+	req_len = g_queue_get_length(g_request_queue);
+
+//	thumb_dbg("Queue length : %d", req_len);
+//	thumb_dbg("Queue path : %s", path);
+
+	if (req_len <= 0) {
+//		thumb_dbg("There is no request in the queue");
+	} else {
+
+		for (i = 0; i < req_len; i++) {
+			thumbReq *req = NULL;
+			req = (thumbReq *)g_queue_peek_nth(g_request_queue, i);
+			if (req == NULL) continue;
+
+			if (strncmp(path, req->path, strlen(path)) == 0) {
+				//thumb_dbg("Popped %s", path);
+				if (shutdown_channel) {
+					g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), req->source_id));
+
+					g_io_channel_shutdown(req->channel, TRUE, NULL);
+					g_io_channel_unref(req->channel);
+				}
+				g_queue_pop_nth(g_request_queue, i);
+
+				SAFE_FREE(req->path);
+				SAFE_FREE(req);
+
+				break;
+			}
+		}
+		if (i == req_len) {
+//			thumb_dbg("There's no %s in the queue", path);
+		}
+	}
+
+	return MEDIA_THUMB_ERROR_NONE;
+}
+
+int __media_thumb_check_req_queue(const char *path)
+{
+	int req_len = 0, i;
+
+	req_len = g_queue_get_length(g_request_queue);
+
+//	thumb_dbg("Queue length : %d", req_len);
+//	thumb_dbg("Queue path : %s", path);
+
+	if (req_len <= 0) {
+//		thumb_dbg("There is no request in the queue");
+	} else {
+
+		for (i = 0; i < req_len; i++) {
+			thumbReq *req = NULL;
+			req = (thumbReq *)g_queue_peek_nth(g_request_queue, i);
+			if (req == NULL) continue;
+
+			if (strncmp(path, req->path, strlen(path)) == 0) {
+				//thumb_dbg("Same Request - %s", path);
+				return -1;
+
+				break;
+			}
+		}
+	}
+
+	return MEDIA_THUMB_ERROR_NONE;
 }
 
 int
@@ -291,6 +369,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
+		close(sock);
 		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
@@ -503,8 +582,6 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 
 gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpointer data)
 {
-	thumb_err("_media_thumb_write_socket is called");
-
 	thumbMsg recv_msg;
 	int header_size = 0;
 	int recv_str_len = 0;
@@ -516,16 +593,21 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 
 	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE*2;
 
+	thumb_err("_media_thumb_write_socket socket : %d", sock);
+
 	if ((err = _media_thumb_recv_msg(sock, header_size, &recv_msg)) < 0) {
 		thumb_err("_media_thumb_recv_msg failed ");
 		g_io_channel_shutdown(src, TRUE, NULL);
-		return err;
+		return FALSE;
 	}
 
 	recv_str_len = strlen(recv_msg.dst_path);
-	thumb_dbg("recv %s(%d) from thumb daemon is successful", recv_msg.dst_path, recv_str_len);
+	thumb_dbg("recv %s(%d) in  [ %s ] from thumb daemon is successful", recv_msg.dst_path, recv_str_len, recv_msg.org_path);
 
 	g_io_channel_shutdown(src, TRUE, NULL);
+
+	//thumb_dbg("Completed..%s", recv_msg.org_path);
+	__media_thumb_pop_req_queue(recv_msg.org_path, FALSE);
 
 	if (recv_msg.status == THUMB_FAIL) {
 		thumb_err("Failed to make thumbnail");
@@ -541,6 +623,7 @@ callback:
 		cb = NULL;
 	}
 
+	thumb_dbg("Done");
 	return FALSE;
 }
 
@@ -553,6 +636,9 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 
 	int pid;
 
+	if ((msg_type == THUMB_REQUEST_DB_INSERT) && (__media_thumb_check_req_queue(origin_path) < 0)) {
+		return MEDIA_THUMB_ERROR_DUPLICATED_REQUEST;
+	}
 
 #ifdef _USE_MEDIA_UTIL_
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
@@ -569,10 +655,8 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 
 	GIOChannel *channel = NULL;
 	channel = g_io_channel_unix_new(sock);
+	int source_id = -1;
 
-	if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
-		g_io_add_watch(channel, G_IO_IN, _media_thumb_write_socket, userData );
-	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -588,6 +672,18 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 		thumb_err("connect error : %s", strerror(errno));
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		return MEDIA_THUMB_ERROR_NETWORK;
+	}
+
+	if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
+		//source_id = g_io_add_watch(channel, G_IO_IN, _media_thumb_write_socket, userData );
+
+		/* Create new channel to watch udp socket */
+		GSource *source = NULL;
+		source = g_io_create_watch(channel, G_IO_IN);
+
+		/* Set callback to be called when socket is readable */
+		g_source_set_callback(source, (GSourceFunc)_media_thumb_write_socket, userData, NULL);
+		source_id = g_source_attach(source, g_main_context_get_thread_default());
 	}
 
 	thumbMsg req_msg;
@@ -618,6 +714,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	if (send(sock, buf, buf_size, 0) != buf_size) {
 		thumb_err("sendto failed: %d\n", errno);
 		SAFE_FREE(buf);
+		g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), source_id));
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		return MEDIA_THUMB_ERROR_NETWORK;
 	}
@@ -625,9 +722,36 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	SAFE_FREE(buf);
 	thumb_dbg("Sending msg to thumbnail daemon is successful");
 
+#if 0
 	if (msg_type == THUMB_REQUEST_CANCEL_MEDIA) {
 		g_io_channel_shutdown(channel, TRUE, NULL);
 	}
+#else
+	if (msg_type == THUMB_REQUEST_CANCEL_MEDIA) {
+		g_io_channel_shutdown(channel, TRUE, NULL);
+
+		//thumb_dbg("Cancel : %s[%d]", origin_path, sock);
+		__media_thumb_pop_req_queue(origin_path, TRUE);
+	} else if (msg_type == THUMB_REQUEST_DB_INSERT) {
+		if (g_request_queue == NULL) {
+		 	g_request_queue = g_queue_new();
+		}
+
+		thumbReq *thumb_req = NULL;
+		thumb_req = calloc(1, sizeof(thumbReq));
+		if (thumb_req == NULL) {
+			thumb_err("Failed to create request element");
+			return 0;
+		}
+
+		thumb_req->channel = channel;
+		thumb_req->path = strdup(origin_path);
+		thumb_req->source_id = source_id;
+
+		//thumb_dbg("Push : %s [%d]", origin_path, sock);
+		g_queue_push_tail(g_request_queue, (gpointer)thumb_req);
+	}
+#endif
 
 	return 0;
 }

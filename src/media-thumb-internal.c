@@ -1193,7 +1193,6 @@ _media_thumb_video(const char *origin_path,
 				return err;
 			}
 		} else {
-
 			thumb_info->size = size;
 			thumb_info->width = width;
 			thumb_info->height = height;

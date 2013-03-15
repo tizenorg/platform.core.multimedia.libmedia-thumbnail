@@ -103,9 +103,10 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 	}
 
 	media_thumb_info thumb_info;
-	char tmp_thumb_path[MAX_PATH_SIZE] = {0,};
+	char tmp_thumb_path[MAX_PATH_SIZE + 1] = {0,};
 
 	strncpy(tmp_thumb_path, thumb_path, sizeof(tmp_thumb_path));
+	tmp_thumb_path[sizeof(tmp_thumb_path) - 1] = '\0';
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_SAVE_FILE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
