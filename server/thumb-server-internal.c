@@ -297,14 +297,14 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	}
 #endif
 
-	thumb_dbg("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
+	thumb_warn("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
 	if (recv_msg.msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		thumb_dbg("All thumbnails are being extracted now");
 		_thumb_daemon_all_extract();
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
-		thumb_dbg("received KILL msg from thumbnail agent.");
+		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
 		long start = thumb_get_debug_time();
 
@@ -341,12 +341,12 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	}
 #endif
 
-	thumb_dbg("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
+	thumb_warn("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
 
 	SAFE_FREE(buf);
 
 	if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
-		thumb_dbg("Shutting down...");
+		thumb_warn("Shutting down...");
 		g_main_loop_quit(g_thumb_server_mainloop);
 	}
 
