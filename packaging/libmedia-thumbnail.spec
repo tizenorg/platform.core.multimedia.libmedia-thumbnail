@@ -50,7 +50,7 @@ Description: Media Thumbnail Server.
 
 
 %build
-cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
+%cmake .
 make %{?jobs:-j%jobs}
 
 %install
