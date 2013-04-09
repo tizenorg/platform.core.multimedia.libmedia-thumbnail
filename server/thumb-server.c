@@ -82,7 +82,12 @@ int main()
 	/* Set VCONFKEY_SYSMAN_MMC_FORMAT callback to get noti for SD card format */
 	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_FORMAT, (vconf_callback_fn) _thumb_daemon_vconf_cb, NULL);
 	if (err == -1)
-		thumb_err("vconf_notify_key_changed %s fails", VCONFKEY_SYSMAN_MMC_FORMAT);
+		thumb_err("vconf_notify_key_changed : %s fails", VCONFKEY_SYSMAN_MMC_FORMAT);
+
+	/* Set VCONFKEY_SYSMAN_MMC_STATUS callback to get noti when SD card is ejected */
+	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_STATUS, (vconf_callback_fn) _thumb_daemon_mmc_eject_vconf_cb, NULL);
+	if (err == -1)
+		thumb_err("vconf_notify_key_changed : %s fails", VCONFKEY_SYSMAN_MMC_STATUS);
 
 	/* Create and bind new UDP socket */
 	if (!_thumb_server_prepare_socket(&sockfd)) {

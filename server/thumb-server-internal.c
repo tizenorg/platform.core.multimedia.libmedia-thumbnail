@@ -72,6 +72,46 @@ void _thumb_daemon_finish_jobs()
 	return;
 }
 
+int _thumb_daemon_mmc_status()
+{
+	int err = -1;
+	int status = -1;
+
+	err = vconf_get_int(VCONFKEY_SYSMAN_MMC_STATUS, &status);
+	if (err == 0) {
+		return status;
+	} else if (err == -1) {
+		thumb_err("vconf_get_int failed : %d", err);
+	} else {
+		thumb_err("vconf_get_int Unexpected error code: %d", err);
+	}
+
+	return status;
+}
+
+void _thumb_daemon_mmc_eject_vconf_cb(void *data)
+{
+	int err = -1;
+	int status = 0;
+
+	thumb_warn("_thumb_daemon_vconf_cb called");
+
+	err = vconf_get_int(VCONFKEY_SYSMAN_MMC_STATUS, &status);
+	if (err == 0) {
+		if (status == VCONFKEY_SYSMAN_MMC_REMOVED || status == VCONFKEY_SYSMAN_MMC_INSERTED_NOT_MOUNTED) {
+			thumb_warn("SD card is ejected or not mounted. So media-thumbnail-server stops jobs to extract all thumbnails");
+
+			_thumb_daemon_stop_job();
+		}
+	} else if (err == -1) {
+		thumb_err("vconf_get_int failed : %d", err);
+	} else {
+		thumb_err("vconf_get_int Unexpected error code: %d", err);
+	}
+
+	return;
+}
+
 void _thumb_daemon_vconf_cb(void *data)
 {
 	int err = -1;
@@ -153,8 +193,13 @@ int _thumb_daemon_all_extract()
 		return MEDIA_THUMB_ERROR_DB;
 	}
 
-	snprintf(query_string, sizeof(query_string), SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA);
-	thumb_dbg("Query: %s", query_string);
+	if (_thumb_daemon_mmc_status() == VCONFKEY_SYSMAN_MMC_MOUNTED) {
+		snprintf(query_string, sizeof(query_string), SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA);
+	} else {
+		snprintf(query_string, sizeof(query_string), SELECT_PATH_FROM_UNEXTRACTED_THUMB_INTERNAL_MEDIA);
+	}
+	
+	thumb_warn("Query: %s", query_string);
 
 	err = sqlite3_prepare_v2(sqlite_db_handle, query_string, strlen(query_string), &sqlite_stmt, NULL);
 	if (SQLITE_OK != err) {

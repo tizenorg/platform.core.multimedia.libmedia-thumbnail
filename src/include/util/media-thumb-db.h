@@ -39,6 +39,7 @@
 
 #else
 #define SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA "SELECT path from media where thumbnail_path is null and validity=1 and (media_type=0 or media_type=1);"
+#define SELECT_PATH_FROM_UNEXTRACTED_THUMB_INTERNAL_MEDIA "SELECT path from media where thumbnail_path is null and validity=1 and (media_type=0 or media_type=1) and storage_type=0;"
 #define SELECT_MEDIA_BY_PATH "SELECT thumbnail_path FROM media WHERE path='%q';"
 #define SELECT_TYPE_BY_PATH "SELECT media_type FROM media WHERE path='%q';"
 #define SELECT_WH_BY_PATH "SELECT width, height FROM media WHERE path='%q';"
