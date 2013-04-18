@@ -297,7 +297,11 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 									GIOCondition condition,
 									gpointer data)
 {
+#ifdef _USE_UDS_SOCKET_
+	struct sockaddr_un client_addr;
+#else
 	struct sockaddr_in client_addr;
+#endif
 	unsigned int client_addr_len;
 #ifndef _USE_MEDIA_UTIL_
 	int client_sock;
@@ -379,6 +383,9 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	close(client_sock);
 #else
+#ifdef _USE_UDS_SOCKET_
+	thumb_dbg("+++++++++++++++++++++%s", client_addr.sun_path);
+#endif
 	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
 		thumb_err("sendto failed: %s\n", strerror(errno));
 		SAFE_FREE(buf);
@@ -403,24 +410,31 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 {
 	int sock;
 	const char *serv_ip = "127.0.0.1";
+#ifdef _USE_UDS_SOCKET_
+	struct sockaddr_un serv_addr;
+#else
 	struct sockaddr_in serv_addr;
-	ms_thumb_server_msg send_msg;
-#if 0
-	/* Creaete a UDP socket */
-	if (_media_thumb_create_udp_socket(&sock) < 0) {
-		thumb_err("_media_thumb_create_udp_socket failed");
-		return FALSE;
-	}
 #endif
+	ms_thumb_server_msg send_msg;
+
+#ifdef _USE_UDS_SOCKET_
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
+#else
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock) < 0) {
+#endif
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+#ifdef _USE_UDS_SOCKET_
+	serv_addr.sun_family = AF_UNIX;
+	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcomm.dat");
+#else
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
 	serv_addr.sin_port = htons(MS_THUMB_COMM_PORT);
+#endif
 
 	send_msg.msg_type = msg_type;
 
@@ -454,16 +468,13 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
-#if 0
-	/* Creaete a UDP socket */
-	if (_media_thumb_create_udp_socket(&sock) < 0) {
-		thumb_err("_media_thumb_create_udp_socket failed");
-		return FALSE;
-	}
-#endif
 #else
 	char thumb_path[MAX_PATH_SIZE + 1];
+#ifdef _USE_UDS_SOCKET_
+	struct sockaddr_un serv_addr;
+#else
 	struct sockaddr_in serv_addr;
+#endif
 	serv_port = THUMB_DAEMON_PORT;
 
 	/* Creaete a TCP socket */

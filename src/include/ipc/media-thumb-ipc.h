@@ -30,7 +30,12 @@
 #include "media-server-ipc.h"
 #endif
 
+#ifdef _USE_UDS_SOCKET_
+#include <sys/un.h>
+#else
 #include <sys/socket.h>
+#endif
+
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,8 +104,13 @@ _media_thumb_create_udp_socket(int *sock);
 int
 _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg);
 
+#ifdef _USE_UDS_SOCKET_
+int
+_media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_un *from_addr, unsigned int *from_size);
+#else
 int
 _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_in *from_addr, unsigned int *from_size);
+#endif
 
 int
 _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size);

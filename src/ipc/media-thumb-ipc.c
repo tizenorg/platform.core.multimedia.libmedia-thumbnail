@@ -232,12 +232,20 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-
+#ifdef _USE_UDS_SOCKET_
+int
+_media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_un *from_addr, unsigned int *from_size)
+#else
 int
 _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_in *from_addr, unsigned int *from_size)
+#endif
 {
 	int recv_msg_len = 0;
+#ifdef _USE_UDS_SOCKET_
+	unsigned int from_addr_size = sizeof(struct sockaddr_un);
+#else
 	unsigned int from_addr_size = sizeof(struct sockaddr_in);
+#endif
 	unsigned char *buf = NULL;
 
 	buf = (unsigned char*)malloc(sizeof(thumbMsg));
@@ -307,8 +315,14 @@ int
 _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info)
 {
 	int sock;
+#ifdef _USE_UDS_SOCKET_
+	struct sockaddr_un serv_addr;
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	struct sockaddr_un serv_addr;
+#else
 	const char *serv_ip = "127.0.0.1";
 	struct sockaddr_in serv_addr;
+#endif
 
 	int recv_str_len = 0;
 	int err;
@@ -316,7 +330,13 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 
 #ifdef _USE_MEDIA_UTIL_
+#ifdef _USE_UDS_SOCKET_
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_PORT) < 0) {
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	if (ms_ipc_create_client_tcp_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_TCP_PORT) < 0) {
+#else
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
+#endif
 		thumb_err("ms_ipc_create_client_socket failed");
 		return MEDIA_THUMB_ERROR_NETWORK;
 	}
@@ -329,10 +349,24 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 #endif
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+#ifdef _USE_UDS_SOCKET_
+	serv_addr.sun_family = AF_UNIX;
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	serv_addr.sun_family = AF_UNIX;
+#else
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
+#endif
+
 #ifdef _USE_MEDIA_UTIL_
+#ifdef _USE_UDS_SOCKET_
+	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	thumb_dbg("");
+	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+#else
 	serv_addr.sin_port = htons(MS_THUMB_CREATOR_PORT);
+#endif
 #else
 	serv_addr.sin_port = htons(THUMB_DAEMON_PORT);
 #endif
@@ -631,8 +665,14 @@ int
 _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData)
 {
 	int sock;
+#ifdef _USE_UDS_SOCKET_
+	struct sockaddr_un serv_addr;
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	struct sockaddr_un serv_addr;
+#else
 	const char *serv_ip = "127.0.0.1";
 	struct sockaddr_in serv_addr;
+#endif
 
 	int pid;
 
@@ -641,7 +681,13 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	}
 
 #ifdef _USE_MEDIA_UTIL_
+#ifdef _USE_UDS_SOCKET_
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_PORT) < 0) {
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	if (ms_ipc_create_client_tcp_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_TCP_PORT) < 0) {
+#else
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
+#endif
 		thumb_err("ms_ipc_create_client_socket failed");
 		return MEDIA_THUMB_ERROR_NETWORK;
 	}
@@ -659,10 +705,23 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+#ifdef _USE_UDS_SOCKET_
+	serv_addr.sun_family = AF_UNIX;
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	serv_addr.sun_family = AF_UNIX;
+#else
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
+#endif
+
 #ifdef _USE_MEDIA_UTIL_
+#ifdef _USE_UDS_SOCKET_
+	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+#elif defined(_USE_UDS_SOCKET_TCP_)
+	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+#else
 	serv_addr.sin_port = htons(MS_THUMB_CREATOR_PORT);
+#endif
 #else
 	serv_addr.sin_port = htons(THUMB_DAEMON_PORT);
 #endif
