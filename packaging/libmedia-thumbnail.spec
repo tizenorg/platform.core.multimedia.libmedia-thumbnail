@@ -5,6 +5,7 @@ Release:    1
 Group:      utils
 License:    Apache
 Source0:    %{name}-%{version}.tar.gz
+Source1001: 	libmedia-thumbnail.manifest
 
 Requires: media-server
 BuildRequires: cmake
@@ -47,6 +48,7 @@ Description: Media Thumbnail Server.
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 
 %build
@@ -62,7 +64,7 @@ mkdir -p %{buildroot}/%{_datadir}/license
 cp -rf %{_builddir}/%{name}-%{version}/LICENSE %{buildroot}/%{_datadir}/license/%{name}
 
 %files
-%manifest libmedia-thumbnail.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libmedia-thumbnail.so
 %{_libdir}/libmedia-thumbnail.so.*
@@ -73,12 +75,13 @@ cp -rf %{_builddir}/%{name}-%{version}/LICENSE %{buildroot}/%{_datadir}/license/
 %{_datadir}/license/%{name}
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/pkgconfig/media-thumbnail.pc
 %{_includedir}/media-thumbnail/*.h
 
 %files -n media-thumbnail-server
-%manifest media-thumbnail-server.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/media-thumbnail-server
 /usr/local/bin/test-thumb
