@@ -1,9 +1,0 @@
-<manifest>
-	<request>
-		<domain name="media-server"/>
-	</request>
-	<assign>
-		<filesystem path="/usr/bin/media-thumbnail-server" label="media-server" exec_label="media-server"/>
-	</assign>
-</manifest>
-
