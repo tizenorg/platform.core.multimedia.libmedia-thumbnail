@@ -1,0 +1,12 @@
+* Tue Sep 03 2013 Victor Hakoun <victor.hakoun@eurogiciel.fr> accepted/tizen/20130710.221413@1ceb4c8
+- Fix RPMLINT error
+- Fix manifests
+- resetting manifest requested domain to floor
+- Change from INET tcp to Unix domain socket
+- 1. Monitoring MMC_STATUS 2. Fix prevent defects
+- Fix for 64 bit compatibility.
+- Some debug msg is changed
+- merge with master
+- Tizen 2.1 base
+- Initial empty repository
+
