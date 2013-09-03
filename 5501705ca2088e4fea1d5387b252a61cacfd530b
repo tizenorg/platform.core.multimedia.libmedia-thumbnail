@@ -1,0 +1,8 @@
+Code-Review+1: Patrick McCarty <patrick.mccarty@linux.intel.com>
+Code-Review+2: Anas Nashif <anas.nashif@intel.com>
+Verified+1: Anas Nashif <anas.nashif@intel.com>
+Submitted-by: Anas Nashif <anas.nashif@intel.com>
+Submitted-at: Tue, 03 Sep 2013 12:53:54 -0700
+Reviewed-on: https://review.tizen.org/gerrit/8580
+Project: platform/core/multimedia/libmedia-thumbnail
+Branch: refs/heads/tizen
