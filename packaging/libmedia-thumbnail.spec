@@ -1,9 +1,9 @@
 Name:       libmedia-thumbnail
-Summary:    Media thumbnail service library for multimedia applications.
+Summary:    Media thumbnail service library for multimedia applications
 Version: 0.1.77
 Release:    1
-Group:      utils
-License:    Apache
+Group:      Multimedia/Libraries
+License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1001:	%{name}.manifest
 Source1002:	%{name}-devel.manifest
@@ -30,7 +30,7 @@ Description: Media thumbnail service library for multimedia applications.
 
 
 %package devel
-License:        Apache
+License:        Apache-2.0
 Summary:        Media thumbnail service library for multimedia applications. (development)
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
@@ -39,8 +39,8 @@ Group:          Development/Libraries
 Description: Media thumbnail service library for multimedia applications. (development)
 
 %package -n media-thumbnail-server
-License:        Apache
-Summary:        Thumbnail generator.
+License:        Apache-2.0
+Summary:        Thumbnail generator
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
 
@@ -64,6 +64,10 @@ rm -rf %{buildroot}
 #License
 mkdir -p %{buildroot}/%{_datadir}/license
 cp -rf %{_builddir}/%{name}-%{version}/LICENSE %{buildroot}/%{_datadir}/license/%{name}
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
 
 %files
 %manifest %{name}.manifest
