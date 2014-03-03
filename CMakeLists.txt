@@ -44,7 +44,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/include 
 INCLUDE(FindPkgConfig)
 pkg_check_modules(pkgs REQUIRED
 glib-2.0 gthread-2.0 dlog mm-fileinfo drm-client aul
-libexif ecore-evas evas mmutil-imgp mmutil-jpeg heynoti libmedia-utils vconf)
+libexif ecore-evas evas mmutil-imgp mmutil-jpeg heynoti libmedia-utils vconf libtzplatform-config)
 
 
 FOREACH(flag ${pkgs_CFLAGS})

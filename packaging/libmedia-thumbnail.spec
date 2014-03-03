@@ -22,6 +22,7 @@ BuildRequires:  pkgconfig(mm-fileinfo)
 BuildRequires:  pkgconfig(mmutil-imgp)
 BuildRequires:  pkgconfig(mmutil-jpeg)
 BuildRequires:  pkgconfig(vconf)
+BuildRequires:  pkgconfig(libtzplatform-config)
 Requires:       media-server
 
 %description
