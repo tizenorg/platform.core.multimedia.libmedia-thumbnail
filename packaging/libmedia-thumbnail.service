@@ -1,0 +1,11 @@
+[Unit]
+Description=Media Thumbnail server
+After=media-server.service 
+Requires=media-server.service 
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/media-thumbnail-server
+
+[Install]
+WantedBy=multi-user.target

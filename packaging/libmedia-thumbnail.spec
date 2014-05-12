@@ -8,6 +8,7 @@ Source0:        %{name}-%{version}.tar.gz
 Source1001:     %{name}.manifest
 Source1002:     %{name}-devel.manifest
 Source1003:     media-thumbnail-server.manifest
+Source1004:     %{name}.service
 
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(aul)
@@ -51,7 +52,7 @@ Media Thumbnail Tests.
 
 %prep
 %setup -q
-cp %{SOURCE1001} %{SOURCE1002} %{SOURCE1003} .
+cp %{SOURCE1001} %{SOURCE1002} %{SOURCE1003}  %{SOURCE1004} .
 
 
 %build
@@ -60,7 +61,9 @@ make %{?_smp_mflags}
 
 %install
 %make_install
-
+mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
+install -m 644 %{SOURCE1004} %{buildroot}%{_unitdir}/%{name}.service
+ln -s ../%{name}.service %{buildroot}%{_unitdir}/multi-user.target.wants/%{name}.service
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -85,6 +88,8 @@ make %{?_smp_mflags}
 %manifest media-thumbnail-server.manifest
 %defattr(-,root,root,-)
 %{_bindir}/media-thumbnail-server
+%{_unitdir}/%{name}.service
+%{_unitdir}/multi-user.target.wants/%{name}.service
 
 %files test
 %{_bindir}/test-thumb
