@@ -29,6 +29,10 @@
 
 #include <Evas.h>
 #include <Ecore_Evas.h>
+#include <grp.h>
+#include <pwd.h>
+
+#define GLOBAL_USER	0 //#define 	tzplatform_getenv(TZ_GLOBAL) //TODO
 
 int _media_thumb_get_width(media_thumb_type thumb_type)
 {
@@ -195,9 +199,103 @@ int _media_thumb_remove_file(const char *path)
 	}
 }
 
+static int _mkdir(const char *dir, mode_t mode) {
+        char tmp[256];
+        char *p = NULL;
+        size_t len;
+
+        snprintf(tmp, sizeof(tmp),"%s",dir);
+        len = strlen(tmp);
+        if(tmp[len - 1] == '/')
+                tmp[len - 1] = 0;
+        for(p = tmp + 1; *p; p++)
+                if(*p == '/') {
+                        *p = 0;
+                        mkdir(tmp, mode);
+                        *p = '/';
+                }
+        return mkdir(tmp, mode);
+}
+
+static char* _media_thumb_mmc_get_path(uid_t uid)
+{
+	char *result_psswd = NULL;
+	struct group *grpinfo = NULL;
+	if(uid == getuid())
+	{
+		result_psswd = strdup(THUMB_MMC_PATH);
+		grpinfo = getgrnam("users");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+	}
+	else
+	{
+		struct passwd *userinfo = getpwuid(uid);
+		if(userinfo == NULL) {
+			thumb_err("getpwuid(%d) returns NULL !", uid);
+			return NULL;
+		}
+		grpinfo = getgrnam("users");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+		// Compare git_t type and not group name
+		if (grpinfo->gr_gid != userinfo->pw_gid) {
+			thumb_err("UID [%d] does not belong to 'users' group!", uid);
+			return NULL;
+		}
+		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/mmc", userinfo->pw_dir);
+	}
+	
+	_mkdir(result_psswd,S_IRWXU | S_IRWXG | S_IRWXO);
+
+	return result_psswd;
+}
+
+static char* _media_thumb_phone_get_path(uid_t uid)
+{
+	char *result_psswd = NULL;
+	struct group *grpinfo = NULL;
+	if(uid == getuid())
+	{
+		result_psswd = strdup(THUMB_PHONE_PATH);
+		grpinfo = getgrnam("users");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+	}
+	else
+	{
+		struct passwd *userinfo = getpwuid(uid);
+		if(userinfo == NULL) {
+			thumb_err("getpwuid(%d) returns NULL !", uid);
+			return NULL;
+		}
+		grpinfo = getgrnam("users");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+		// Compare git_t type and not group name
+		if (grpinfo->gr_gid != userinfo->pw_gid) {
+			thumb_err("UID [%d] does not belong to 'users' group!", uid);
+			return NULL;
+		}
+		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/phone", userinfo->pw_dir);
+	}
+
+	_mkdir(result_psswd,S_IRWXU | S_IRWXG | S_IRWXO);
+
+	return result_psswd;
+}
+
 int
 _media_thumb_get_hash_name(const char *file_full_path,
-				 char *thumb_hash_path, size_t max_thumb_path)
+				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid)
 {
 	char *hash_name;
 	char *thumb_dir = NULL;
@@ -215,11 +313,11 @@ _media_thumb_get_hash_name(const char *file_full_path,
 
 	store_type = _media_thumb_get_store_type_by_path(file_full_path);
 	if (store_type == THUMB_PHONE) {
-		thumb_dir = THUMB_PHONE_PATH;
+		thumb_dir = _media_thumb_phone_get_path(uid);
 	} else if (store_type == THUMB_MMC) {
-		thumb_dir = THUMB_MMC_PATH;
+		thumb_dir = _media_thumb_mmc_get_path(uid);
 	} else {
-		thumb_dir = THUMB_PHONE_PATH;
+		thumb_dir = _media_thumb_phone_get_path(uid);
 	}
 
 	hash_name = _media_thumb_generate_hash_name(file_full_path);
@@ -303,7 +401,8 @@ int _thumbnail_get_data(const char *origin_path,
 						int *height,
 						int *origin_width,
 						int *origin_height,
-						int *alpha)
+						int *alpha,
+						uid_t uid)
 {
 	int err = -1;
 	int thumb_width = -1;
@@ -345,14 +444,14 @@ int _thumbnail_get_data(const char *origin_path,
 	file_type = _media_thumb_get_file_type(origin_path);
 
 	if (file_type == THUMB_IMAGE_TYPE) {
-		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info);
+		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info, uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_image failed");
 			return err;
 		}
 
 	} else if (file_type == THUMB_VIDEO_TYPE) {
-		err = _media_thumb_video(origin_path, thumb_width, thumb_height, format, &thumb_info);
+		err = _media_thumb_video(origin_path, thumb_width, thumb_height, format, &thumb_info,uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_image failed");
 			return err;

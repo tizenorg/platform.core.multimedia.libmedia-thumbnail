@@ -43,10 +43,10 @@
 #define THUMB_PATH_PHONE 	MEDIA_ROOT_PATH_INTERNAL 	/**< File path prefix of files stored in phone */
 #define THUMB_PATH_MMC 		MEDIA_ROOT_PATH_SDCARD		/**< File path prefix of files stored in mmc card */
 
-#define THUMB_PHONE_PATH	tzplatform_mkpath(TZ_SYS_DATA, "file-manager-service/.thumb/phone")
-#define THUMB_MMC_PATH		tzplatform_mkpath(TZ_SYS_DATA, "file-manager-service/.thumb/mmc")
+#define THUMB_PHONE_PATH	tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/phone")
+#define THUMB_MMC_PATH		tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/mmc")
 
-#define THUMB_DEFAULT_PATH	tzplatform_mkpath(TZ_SYS_DATA, "file-manager-service/.thumb/thumb_default.png")
+#define THUMB_DEFAULT_PATH	tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/thumb_default.png")
 
 typedef enum
 {
@@ -72,7 +72,7 @@ char
 
 int
 _media_thumb_get_hash_name(const char *file_full_path,
-				 char *thumb_hash_path, size_t max_thumb_path);
+				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
 
 int
 _media_thumb_save_to_file_with_evas(unsigned char *data, 
@@ -141,7 +141,8 @@ int _thumbnail_get_data(const char *origin_path,
 						int *height,
 						int *origin_width,
 						int *origin_height,
-						int *alpha);
+						int *alpha,
+						uid_t uid);
 
 #endif /*_MEDIA_THUMB_UTIL_H_*/
 

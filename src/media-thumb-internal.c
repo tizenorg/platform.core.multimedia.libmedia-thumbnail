@@ -169,7 +169,7 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 								int orientation,
 								int required_width,
 								int required_height,
-								media_thumb_info *thumb_info)
+								media_thumb_info *thumb_info, uid_t uid)
 {
 	ExifEntry *entry;
 	ExifIfd ifd;
@@ -278,7 +278,7 @@ _media_thumb_get_thumb_from_exif(ExifData *ed,
 	err =
 	    _media_thumb_get_hash_name(file_full_path,
 					     thumb_path,
-					     sizeof(thumb_path));
+					     sizeof(thumb_path), uid);
 	if (err < 0) {
 		thumb_dbg("_media_thumb_get_hash_name failed\n");
 		SAFE_FREE(thumb);
@@ -951,7 +951,8 @@ int _media_thumb_jpeg(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info)
+					media_thumb_info *thumb_info,
+					uid_t uid)
 {
 	int err = -1;
 	ExifData *ed = NULL;
@@ -970,7 +971,7 @@ int _media_thumb_jpeg(const char *origin_path,
 		}
 
 		/* Second, Get thumb from exif */
-		err = _media_thumb_get_thumb_from_exif(ed, origin_path, orientation, thumb_width, thumb_height, thumb_info);
+		err = _media_thumb_get_thumb_from_exif(ed, origin_path, orientation, thumb_width, thumb_height, thumb_info, uid);
 
 		if (err < 0) {
 			thumb_dbg("_media_thumb_get_thumb_from_exif failed");
@@ -1021,7 +1022,7 @@ _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info)
+					media_thumb_info *thumb_info, uid_t uid)
 {
 	int err = -1;
 	int image_type = 0;
@@ -1045,7 +1046,7 @@ _media_thumb_image(const char *origin_path,
 	if (image_type == IMG_CODEC_AGIF) {
 		err = _media_thumb_agif(origin_path, &image_info, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_JPEG) {
-		err = _media_thumb_jpeg(origin_path, thumb_width, thumb_height, format, thumb_info);
+		err = _media_thumb_jpeg(origin_path, thumb_width, thumb_height, format, thumb_info, uid);
 	} else if (image_type == IMG_CODEC_PNG) {
 		err = _media_thumb_png(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_GIF) {
@@ -1095,7 +1096,8 @@ _media_thumb_video(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info)
+					media_thumb_info *thumb_info,
+					uid_t uid)
 {
 	int err = -1;
 	

@@ -28,7 +28,7 @@
 
 #include <glib.h>
 
-int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length)
+int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length, uid_t uid)
 {
 	int err = -1;
 	//int need_update_db = 0;
@@ -73,7 +73,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	}
 */
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		//_media_thumb_db_disconnect();
@@ -93,7 +93,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thumb_type, const char *thumb_path)
+int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thumb_type, const char *thumb_path, uid_t uid)
 {
 	int err = -1;
 
@@ -109,7 +109,7 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 	tmp_thumb_path[sizeof(tmp_thumb_path) - 1] = '\0';
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_SAVE_FILE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_SAVE_FILE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -118,7 +118,7 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height)
+int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height, uid_t uid)
 {
 	int err = -1;
 	//int need_update_db = 0;
@@ -168,7 +168,7 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 	}
 */
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		//_media_thumb_db_disconnect();
@@ -182,7 +182,7 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_extract_all_thumbs(void)
+int thumbnail_request_extract_all_thumbs(uid_t uid)
 {
 	int err = -1;
 
@@ -192,7 +192,7 @@ int thumbnail_request_extract_all_thumbs(void)
 	char tmp_thumb_path[MAX_PATH_SIZE] = {0,};
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_ALL_MEDIA, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_ALL_MEDIA, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -201,7 +201,7 @@ int thumbnail_request_extract_all_thumbs(void)
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data)
+int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data, uid_t uid)
 {
 	int err = -1;
 
@@ -231,7 +231,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 	userData->user_data = user_data;
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request_async(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, userData);
+	err = _media_thumb_request_async(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, userData, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		SAFE_FREE(userData);
@@ -249,7 +249,7 @@ int _media_thumbnail_cancel_cb(int error_code, char* path, void* data)
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_cancel_media(const char *origin_path)
+int thumbnail_request_cancel_media(const char *origin_path, uid_t uid)
 {
 	int err = -1;
 
@@ -260,7 +260,7 @@ int thumbnail_request_cancel_media(const char *origin_path)
 		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
-	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA, thumb_type, origin_path, NULL);
+	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA, thumb_type, origin_path, NULL, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -269,7 +269,7 @@ int thumbnail_request_cancel_media(const char *origin_path)
 	return MEDIA_THUMB_ERROR_NONE;
 }
 
-int thumbnail_request_cancel_all()
+int thumbnail_request_cancel_all(uid_t uid)
 {
 	int err = -1;
 
@@ -279,7 +279,7 @@ int thumbnail_request_cancel_all()
 	char tmp_thumb_path[MAX_PATH_SIZE] = {0,};
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
-	err = _media_thumb_request(THUMB_REQUEST_CANCEL_ALL, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info);
+	err = _media_thumb_request(THUMB_REQUEST_CANCEL_ALL, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
