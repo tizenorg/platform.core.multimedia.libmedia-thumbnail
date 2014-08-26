@@ -27,6 +27,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <grp.h>
+#include <pwd.h>
+
+#define GLOBAL_USER    0 //#define     tzplatform_getenv(TZ_GLOBAL) //TODO
 
 static __thread GQueue *g_request_queue = NULL;
 typedef struct {
@@ -312,7 +316,7 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 }
 
 int
-_media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info)
+_media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info, uid_t uid)
 {
 	int sock;
 #ifdef _USE_UDS_SOCKET_
@@ -360,10 +364,10 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 #ifdef _USE_MEDIA_UTIL_
 #ifdef _USE_UDS_SOCKET_
-	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
 #elif defined(_USE_UDS_SOCKET_TCP_)
 	thumb_dbg("");
-	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
 #else
 	serv_addr.sin_port = htons(MS_THUMB_CREATOR_PORT);
 #endif
@@ -390,6 +394,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	/* Set requset message */
 	req_msg.msg_type = msg_type;
 	req_msg.thumb_type = thumb_type;
+	req_msg.uid = uid;
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
 
@@ -456,8 +461,66 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	return 0;
 }
 
+static int _mkdir(const char *dir, mode_t mode) {
+        char tmp[256];
+        char *p = NULL;
+        size_t len;
+
+        snprintf(tmp, sizeof(tmp),"%s",dir);
+        len = strlen(tmp);
+        if(tmp[len - 1] == '/')
+                tmp[len - 1] = 0;
+        for(p = tmp + 1; *p; p++)
+                if(*p == '/') {
+                        *p = 0;
+                        mkdir(tmp, mode);
+                        *p = '/';
+                }
+        return mkdir(tmp, mode);
+}
+
+static char* _media_thumb_get_default_path(uid_t uid)
+{
+	char *result_psswd = NULL;
+	struct group *grpinfo = NULL;
+	char * dir = NULL;
+	if(uid == GLOBAL_USER)
+	{
+		result_psswd = strdup(THUMB_DEFAULT_PATH);
+		grpinfo = getgrnam("root");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+	}
+	else
+	{
+		struct passwd *userinfo = getpwuid(uid);
+		if(userinfo == NULL) {
+			thumb_err("getpwuid(%d) returns NULL !", uid);
+			return NULL;
+		}
+		grpinfo = getgrnam("users");
+		if(grpinfo == NULL) {
+			thumb_err("getgrnam(users) returns NULL !");
+			return NULL;
+		}
+		// Compare git_t type and not group name
+		if (grpinfo->gr_gid != userinfo->pw_gid) {
+			thumb_err("UID [%d] does not belong to 'users' group!", uid);
+			return NULL;
+		}
+		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/phone", userinfo->pw_dir);
+	}
+
+	/* create dir */
+	_mkdir(result_psswd,S_IRWXU | S_IRWXG | S_IRWXO);
+
+	return result_psswd;
+}
+
 int
-_media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
+_media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 {
 	int err = -1;
 	unsigned char *data = NULL;
@@ -486,7 +549,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 	thumb_path[0] = '\0';
 	max_length = sizeof(res_msg->dst_path);
 
-	err = _media_thumb_db_connect();
+	err = _media_thumb_db_connect(uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
 		return MEDIA_THUMB_ERROR_DB;
@@ -501,10 +564,10 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 			return MEDIA_THUMB_ERROR_NONE;
 		} else {
 			if (strlen(thumb_path) == 0) {
-				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length);
+				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 				if (err < 0) {
 					thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-					strncpy(thumb_path, THUMB_DEFAULT_PATH, max_length);
+					strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 					_media_thumb_db_disconnect();
 					return err;
 				}
@@ -517,10 +580,10 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		strncpy(thumb_path, req_msg->dst_path, max_length);
 
 	} else if (msg_type == THUMB_REQUEST_ALL_MEDIA) {
-		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length);
+		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-			strncpy(thumb_path, THUMB_DEFAULT_PATH, max_length);
+			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 			_media_thumb_db_disconnect();
 			return err;
 		}
@@ -528,20 +591,18 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		thumb_path[strlen(thumb_path)] = '\0';
 	}
 
-	thumb_dbg("Thumb path : %s", thumb_path);
-
 	if (g_file_test(thumb_path, 
 					G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 		thumb_warn("thumb path already exists in file system.. remove the existed file");
 		_media_thumb_remove_file(thumb_path);
 	}
 
-	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha);
+	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
 	if (err < 0) {
 		thumb_err("_thumbnail_get_data failed - %d\n", err);
 		SAFE_FREE(data);
 
-		strncpy(thumb_path, THUMB_DEFAULT_PATH, max_length);
+		strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 		_media_thumb_db_disconnect();
 		return err;
 	}
@@ -576,7 +637,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 		SAFE_FREE(data);
 
 		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA)
-			strncpy(thumb_path, THUMB_DEFAULT_PATH, max_length);
+			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 
 		_media_thumb_db_disconnect();
 		return err;
@@ -603,7 +664,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 
 	/* DB update if needed */
 	if (need_update_db == 1) {
-		err = _media_thumb_update_db(origin_path, thumb_path, res_msg->origin_width, res_msg->origin_height);
+		err = _media_thumb_update_db(origin_path, thumb_path, res_msg->origin_width, res_msg->origin_height, uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_update_db failed : %d", err);
 		}
@@ -662,7 +723,7 @@ callback:
 }
 
 int
-_media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData)
+_media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData, uid_t uid)
 {
 	int sock;
 #ifdef _USE_UDS_SOCKET_
@@ -752,6 +813,8 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	req_msg.pid = pid;
 	req_msg.msg_type = msg_type;
 	req_msg.thumb_type = thumb_type;
+	req_msg.uid = uid;	
+	
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
 

@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
 
 #ifndef _MEDIA_THUMB_IPC_H_
 #define _MEDIA_THUMB_IPC_H_
@@ -83,6 +84,7 @@ typedef struct _thumbMsg{
 	media_thumb_type thumb_type;
 	int status;
 	int pid;
+	uid_t uid;
 	int thumb_size;
 	int thumb_width;
 	int thumb_height;
@@ -121,15 +123,17 @@ _media_thumb_request(int msg_type,
 					const char *origin_path,
 					char *thumb_path,
 					int max_length,
-					media_thumb_info *thumb_info);
+					media_thumb_info *thumb_info,
+					uid_t uid);
 
 int
 _media_thumb_request_async(int msg_type,
 					media_thumb_type thumb_type,
 					const char *origin_path,
-					thumbUserData *userData);
+					thumbUserData *userData,
+					uid_t uid);
 
 int
-_media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg);
+_media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
 
 #endif /*_MEDIA_THUMB_IPC_H_*/

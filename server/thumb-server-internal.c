@@ -35,6 +35,7 @@
 #define LOG_TAG "MEDIA_THUMBNAIL_SERVER"
 
 static __thread char **arr_path;
+static __thread uid_t *arr_uid;
 static __thread int g_idx = 0;
 static __thread int g_cur_idx = 0;
 
@@ -48,8 +49,6 @@ void _thumb_daemon_stop_job();
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
 	thumb_dbg("");
-	/* Initialize ecore-evas to use evas library */
-	ecore_evas_init();
 
 #ifdef _USE_MEDIA_UTIL_
 	_thumb_server_send_msg_to_agent(MS_MSG_THUMB_SERVER_READY);
@@ -152,11 +151,11 @@ void _thumb_daemon_stop_job()
 	return;
 }
 
-int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg)
+int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 {
 	int err = -1;
 
-	err = _media_thumb_process(req_msg, res_msg);
+	err = _media_thumb_process(req_msg, res_msg, uid);
 	if (err < 0) {
 		if (req_msg->msg_type == THUMB_REQUEST_SAVE_FILE) {
 			thumb_err("_media_thumb_process is failed: %d", err);
@@ -172,7 +171,7 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg)
 	return err;
 }
 
-int _thumb_daemon_all_extract()
+int _thumb_daemon_all_extract(uid_t uid)
 {
 	int err = -1;
 	int count = 0;
@@ -181,7 +180,7 @@ int _thumb_daemon_all_extract()
 	sqlite3 *sqlite_db_handle = NULL;
 	sqlite3_stmt *sqlite_stmt = NULL;
 
-	err = _media_thumb_db_connect();
+	err = _media_thumb_db_connect(uid);
 	if (err < 0) {
 		thumb_err("_media_thumb_db_connect failed: %d", err);
 		return MEDIA_THUMB_ERROR_DB;
@@ -223,10 +222,12 @@ int _thumb_daemon_all_extract()
 
 		if (g_idx == 0) {
 			arr_path = (char**)malloc(sizeof(char*));
+			arr_uid = (uid_t*)malloc(sizeof(uid_t));
 		} else {
 			arr_path = (char**)realloc(arr_path, (g_idx + 1) * sizeof(char*));
+			arr_uid = (uid_t*)realloc(arr_uid, (g_idx + 1) * sizeof(uid_t));
 		}
-
+		arr_uid[g_idx] = uid;
 		arr_path[g_idx++] = strdup(path);
 	}
 
@@ -240,10 +241,12 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 {
 	int err = -1;
 	char *path = NULL;
+	uid_t uid = NULL;
 
 	if (g_cur_idx < g_idx) {
 		thumb_dbg("There are %d jobs in the queue", g_idx - g_cur_idx);
 		thumb_dbg("Current idx : [%d]", g_cur_idx);
+		uid = arr_uid[g_cur_idx];
 		path = arr_path[g_cur_idx++];
 
 		thumbMsg recv_msg, res_msg;
@@ -255,11 +258,11 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 		strncpy(recv_msg.org_path, path, sizeof(recv_msg.org_path));
 		recv_msg.org_path[sizeof(recv_msg.org_path) - 1] = '\0';
 
-		_thumb_daemon_process_job(&recv_msg, &res_msg);
+		_thumb_daemon_process_job(&recv_msg, &res_msg,uid );
 
 		if (res_msg.status == THUMB_SUCCESS) {
 
-			err = _media_thumb_db_connect();
+			err = _media_thumb_db_connect(uid);
 			if (err < 0) {
 				thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
 				return TRUE;
@@ -269,7 +272,8 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 			err = _media_thumb_update_db(recv_msg.org_path,
 										res_msg.dst_path,
 										res_msg.origin_width,
-										res_msg.origin_height);
+										res_msg.origin_height,
+										uid);
 			if (err < 0) {
 				thumb_err("_media_thumb_update_db failed : %d", err);
 			}
@@ -283,6 +287,7 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 		g_idx = 0;
 		thumb_warn("Deleting array");
 		SAFE_FREE(arr_path);
+		SAFE_FREE(arr_uid);
 		//_media_thumb_db_disconnect();
 
 		_thumb_server_send_msg_to_agent(MS_MSG_THUMB_EXTRACT_ALL_DONE); // MS_MSG_THUMB_EXTRACT_ALL_DONE
@@ -350,14 +355,14 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	if (recv_msg.msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		thumb_dbg("All thumbnails are being extracted now");
-		_thumb_daemon_all_extract();
+		_thumb_daemon_all_extract(recv_msg.uid);
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
 		long start = thumb_get_debug_time();
 
-		_thumb_daemon_process_job(&recv_msg, &res_msg);
+		_thumb_daemon_process_job(&recv_msg, &res_msg,recv_msg.uid);
 
 		long end = thumb_get_debug_time();
 		thumb_dbg("Time : %f (%s)", ((double)(end - start) / (double)CLOCKS_PER_SEC), recv_msg.org_path);
@@ -399,7 +404,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("Shutting down...");
-		g_main_loop_quit(g_thumb_server_mainloop);
+		ecore_main_loop_quit();
 	}
 
 	return TRUE;
@@ -429,7 +434,7 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	memset(&serv_addr, 0, sizeof(serv_addr));
 #ifdef _USE_UDS_SOCKET_
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcomm.dat");
+	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcomm.socket");
 #else
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);

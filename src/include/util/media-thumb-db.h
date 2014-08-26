@@ -51,7 +51,7 @@
 sqlite3 *_media_thumb_db_get_handle();
 
 int
-_media_thumb_db_connect();
+_media_thumb_db_connect(uid_t uid);
 
 int
 _media_thumb_db_disconnect();
@@ -74,7 +74,8 @@ int
 _media_thumb_update_db(const char *origin_path,
 									char *thumb_path,
 									int width,
-									int height);
+									int height,
+									uid_t uid);
 
 #endif /*_MEDIA_THUMB_DB_H_*/
 

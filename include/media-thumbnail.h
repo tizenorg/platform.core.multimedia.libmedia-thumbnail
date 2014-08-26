@@ -23,6 +23,8 @@
 #ifndef _MEDIA_THUMBNAIL_H_
 #define _MEDIA_THUMBNAIL_H_
 
+#include <sys/types.h>
+
 #include "media-thumb-types.h"
 #include "media-thumb-error.h"
 
@@ -92,7 +94,7 @@ void gen_thumbs()
 
  * 	@endcode
  */
-int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length);
+int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length, uid_t uid);
 
 /**
  *	thumbnail_request_from_db_async:
@@ -137,7 +139,7 @@ void gen_thumbs()
 
  * 	@endcode
  */
-int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data);
+int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data, uid_t uid);
 
 /**
  *	thumbnail_request_save_to_file:
@@ -176,7 +178,7 @@ void save_thumbs()
  */
 int thumbnail_request_save_to_file(const char *origin_path,
 									media_thumb_type thumb_type,
-									const char *thumb_path);
+									const char *thumb_path, uid_t uid);
 
 
 /**
@@ -210,12 +212,12 @@ void extract_all_thumbs()
  * 	@endcode
  */
 
-int thumbnail_request_extract_all_thumbs(void);
+int thumbnail_request_extract_all_thumbs(uid_t uid);
 
-int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height);
+int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height, uid_t uid);
 
 /* Cancel APIs that a request to extract thumbnail */
-int thumbnail_request_cancel_media(const char *origin_path);
+int thumbnail_request_cancel_media(const char *origin_path, uid_t uid);
 
 /* Cancel APIs that all requests to extract thumbnail of a process */
 int thumbnail_request_cancel_all();
