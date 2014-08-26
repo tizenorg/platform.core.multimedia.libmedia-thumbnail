@@ -49,41 +49,25 @@ static void _media_thumb_signal_handler(void *user_data)
 	thumb_dbg("Singal Hander for HEYNOTI \"power_off_start\"");
 
 	if (g_thumb_server_mainloop)
-		g_main_loop_quit(g_thumb_server_mainloop);
-	else 
+		ecore_main_loop_quit();
+	else
 		exit(1);
 
 	return;
 }
 
-
-void* gmainloop_thread(void *data)
-{
-	GSource *source = NULL;
-	GIOChannel *channel = (GIOChannel *)data;
-	GMainContext *context = NULL;
-
-        g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
-        context = g_main_loop_get_context(g_thumb_server_mainloop);
-
-        source = g_io_create_watch(channel, G_IO_IN);
-
-        /* Set callback to be called when socket is readable */
-        g_source_set_callback(source, (GSourceFunc)_thumb_server_read_socket, NULL, NULL);
-        g_source_attach(source, context);
-
-	g_main_loop_run(g_thumb_server_mainloop);
-
-	pthread_exit(NULL);
-}
-
 int main()
 {
+	
+	int sockfd = -1;
+
+    GSource *source = NULL;
+	GIOChannel *channel = NULL;
+ 	GMainContext *context = NULL;
+
 	/*heynoti for power off*/
 	int err = 0;
 	int heynoti_id = heynoti_init();
-
-        int sockfd = -1;
 
 	if (heynoti_id < 0) {
 		thumb_err("heynoti_init failed");
@@ -98,12 +82,6 @@ int main()
 		}
 	}
 
-	/* Create and bind new UDP socket */
-	if (!_thumb_server_prepare_socket(&sockfd)) {
-		thumb_err("Failed to create socket\n");
-		return -1;
-	}
-
 	/* Set VCONFKEY_SYSMAN_MMC_FORMAT callback to get noti for SD card format */
 	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_FORMAT, (vconf_callback_fn) _thumb_daemon_vconf_cb, NULL);
 	if (err == -1)
@@ -114,6 +92,27 @@ int main()
 	if (err == -1)
 		thumb_err("vconf_notify_key_changed : %s fails", VCONFKEY_SYSMAN_MMC_STATUS);
 
+	/* Create and bind new UDP socket */
+	if (!_thumb_server_prepare_socket(&sockfd)) {
+		thumb_err("Failed to create socket\n");
+		return -1;
+	}
+
+	context = g_main_context_default ();
+	
+	/* Create new channel to watch udp socket */
+	channel = g_io_channel_unix_new(sockfd);
+	source = g_io_create_watch(channel, G_IO_IN);
+
+	/* Set callback to be called when socket is readable */
+	g_source_set_callback(source, (GSourceFunc)_thumb_server_read_socket, NULL, NULL);
+	g_source_attach(source, context);
+
+	GSource *source_evas_init = NULL;
+	source_evas_init = g_idle_source_new ();
+	g_source_set_callback (source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
+	g_source_attach (source_evas_init, context);
+
 /*	Would be used when glib 2.32 is installed
 	GSource *sig_handler_src = NULL;
 	sig_handler_src = g_unix_signal_source_new (SIGTERM);
@@ -121,13 +120,6 @@ int main()
 	g_source_attach(sig_handler_src, context);
 */
 	ecore_evas_init();
-
-	GIOChannel *channel = NULL;
-        /* Create new channel to watch udp socket */
-        channel = g_io_channel_unix_new(sockfd);
-
-	static pthread_t thread;
-	pthread_create(&thread, NULL, gmainloop_thread, channel);
 
 	thumb_dbg("************************************");
 	thumb_dbg("*** Thumbnail server is running ***");
@@ -140,7 +132,6 @@ int main()
 	g_io_channel_shutdown(channel,  FALSE, NULL);
 	g_io_channel_unref(channel);
 	_thumb_daemon_finish_jobs();
-	g_main_loop_unref(g_thumb_server_mainloop);
 
 	return 0;
 }

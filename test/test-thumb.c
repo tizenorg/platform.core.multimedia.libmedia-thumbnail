@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
 		long start = thumb_get_debug_time();
 
-		err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha);
+		err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("_thumbnail_get_data failed - %d\n", err);
 			return -1;
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		//const char *origin_path = "/opt/media/test/movie2.avi";
 		char thumb_path[MAX_PATH_SIZE + 1];
 
-		err = thumbnail_request_from_db(origin_path, thumb_path, sizeof(thumb_path));
+		err = thumbnail_request_from_db(origin_path, thumb_path, sizeof(thumb_path), tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("thumbnail_request_from_db failed : %d\n", err);
 			return -1;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 
-		err = thumbnail_request_save_to_file(origin_path, MEDIA_THUMB_LARGE, thumb_path);
+		err = thumbnail_request_save_to_file(origin_path, MEDIA_THUMB_LARGE, thumb_path, tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("thumbnail_request_save_to_file failed : %d\n", err);
 			return -1;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 5) {
 		printf("Test thumbnail_request_extract_all_thumbs\n");
 
-		err = thumbnail_request_extract_all_thumbs();
+		err = thumbnail_request_extract_all_thumbs(tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("thumbnail_request_extract_all_thumbs failed : %d\n", err);
 			return -1;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 6) {
 		printf("Test thumbnail_request_cancel_media\n");
 
-		err = thumbnail_request_cancel_media(origin_path);
+		err = thumbnail_request_cancel_media(origin_path,tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("thumbnail_request_cancel_media failed : %d\n", err);
 			return -1;

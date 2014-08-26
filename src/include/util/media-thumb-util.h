@@ -72,7 +72,7 @@ char
 
 int
 _media_thumb_get_hash_name(const char *file_full_path,
-				 char *thumb_hash_path, size_t max_thumb_path);
+				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
 
 int
 _media_thumb_save_to_file_with_evas(unsigned char *data, 
@@ -141,7 +141,8 @@ int _thumbnail_get_data(const char *origin_path,
 						int *height,
 						int *origin_width,
 						int *origin_height,
-						int *alpha);
+						int *alpha,
+						uid_t uid);
 
 #endif /*_MEDIA_THUMB_UTIL_H_*/
 
