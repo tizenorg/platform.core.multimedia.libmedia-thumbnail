@@ -421,7 +421,7 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	ms_thumb_server_msg send_msg;
 
 #ifdef _USE_UDS_SOCKET_
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
 #else
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock) < 0) {
 #endif
@@ -441,7 +441,14 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 
 	send_msg.msg_type = msg_type;
 
-	if (sendto(sock, &send_msg, sizeof(ms_thumb_server_msg), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(ms_thumb_server_msg)) {
+
+    if (connect(sock, &serv_addr, sizeof(serv_addr)) < 0) {
+        thumb_err("connect failed [%s]",strerror(errno));
+        close(sock);
+        return FALSE;
+    }
+
+	if (send(sock, &send_msg, sizeof(ms_thumb_server_msg), 0) != sizeof(ms_thumb_server_msg)) {
 		thumb_err("sendto failed: %s\n", strerror(errno));
 		close(sock);
 		return FALSE;

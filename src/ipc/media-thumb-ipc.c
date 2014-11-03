@@ -164,6 +164,7 @@ int __media_thumb_check_req_queue(const char *path)
 {
 	int req_len = 0, i;
 
+	if (g_request_queue == NULL) return MEDIA_THUMB_ERROR_NONE;
 	req_len = g_queue_get_length(g_request_queue);
 
 //	thumb_dbg("Queue length : %d", req_len);
@@ -776,7 +777,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 
 #ifdef _USE_MEDIA_UTIL_
 #ifdef _USE_UDS_SOCKET_
-	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
+	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
 #elif defined(_USE_UDS_SOCKET_TCP_)
 	strcpy(serv_addr.sun_path, "/tmp/media_ipc_thumbcreator.dat");
 #else
