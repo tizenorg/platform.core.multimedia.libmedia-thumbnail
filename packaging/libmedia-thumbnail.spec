@@ -13,8 +13,6 @@ BuildRequires:  cmake
 BuildRequires:  pkgconfig(aul)
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(drm-client)
-BuildRequires:  pkgconfig(ecore)
-BuildRequires:  pkgconfig(evas)
 BuildRequires:  pkgconfig(heynoti)
 BuildRequires:  pkgconfig(libexif)
 BuildRequires:  pkgconfig(libmedia-utils)
@@ -23,6 +21,7 @@ BuildRequires:  pkgconfig(mmutil-imgp)
 BuildRequires:  pkgconfig(mmutil-jpeg)
 BuildRequires:  pkgconfig(vconf)
 BuildRequires:  pkgconfig(libtzplatform-config)
+BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
 Requires:       media-server
 
 %description

@@ -30,8 +30,6 @@
 #include <vconf.h>
 //#include <signal.h>
 //#include <glib-unix.h>
-#include <Ecore.h>
-#include <Ecore_Evas.h>
 
 
 #ifdef LOG_TAG
@@ -49,7 +47,7 @@ static void _media_thumb_signal_handler(void *user_data)
 	thumb_dbg("Singal Hander for HEYNOTI \"power_off_start\"");
 
 	if (g_thumb_server_mainloop)
-		ecore_main_loop_quit();
+		g_main_loop_quit(g_thumb_server_mainloop);
 	else
 		exit(1);
 
@@ -98,7 +96,7 @@ int main()
 		return -1;
 	}
 
-	context = g_main_context_default ();
+	g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
 	
 	/* Create new channel to watch udp socket */
 	channel = g_io_channel_unix_new(sockfd);
@@ -108,10 +106,10 @@ int main()
 	g_source_set_callback(source, (GSourceFunc)_thumb_server_read_socket, NULL, NULL);
 	g_source_attach(source, context);
 
-	GSource *source_evas_init = NULL;
-	source_evas_init = g_idle_source_new ();
-	g_source_set_callback (source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
-	g_source_attach (source_evas_init, context);
+	GSource *source_init = NULL;
+	source_init = g_idle_source_new ();
+	g_source_set_callback (source_init, _thumb_daemon_start_jobs, NULL, NULL);
+	g_source_attach (source_init, context);
 
 /*	Would be used when glib 2.32 is installed
 	GSource *sig_handler_src = NULL;
@@ -119,14 +117,13 @@ int main()
 	g_source_set_callback(sig_handler_src, (GSourceFunc)_media_thumb_signal_handler, NULL, NULL);
 	g_source_attach(sig_handler_src, context);
 */
-	ecore_evas_init();
 
 	thumb_dbg("************************************");
 	thumb_dbg("*** Thumbnail server is running ***");
 	thumb_dbg("************************************");
 
-	ecore_main_loop_begin();
-
+	g_main_loop_run(g_thumb_server_mainloop);
+	
 	thumb_dbg("Thumbnail server is shutting down...");
 
 	g_io_channel_shutdown(channel,  FALSE, NULL);

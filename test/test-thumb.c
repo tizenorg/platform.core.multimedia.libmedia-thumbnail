@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <Evas.h>
-#include <Ecore_Evas.h>
 #include <mm_util_imgp.h>
 #include <mm_util_jpeg.h>
 
@@ -34,75 +32,16 @@
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"
 
-int save_to_file_with_evas(unsigned char *data, int w, int h, int is_bgra)
+int save_to_file_with_gdk(unsigned char *data, int w, int h, int is_bgra)
 {
-	ecore_evas_init();
+	GError *error = NULL;
 	
-	Ecore_Evas *ee =
-		ecore_evas_buffer_new(w, h);
-	Evas *evas = ecore_evas_get(ee);
-
-	Evas_Object *img = NULL;
-	img = evas_object_image_add(evas);
-
-	if (img == NULL) {
-		printf("image object is NULL\n");
-		ecore_evas_free(ee);
-		ecore_evas_shutdown();
+	gdk_pixbuf_save(data,"/mnt/nfs/test.jpg","jpeg", &error, NULL);
+	if (error) {
+		thumb_dbg ("Error saving image file /mnt/nfs/test.jpg ");
+		g_error_free (error);
 		return -1;
 	}
-
-	evas_object_image_colorspace_set(img, EVAS_COLORSPACE_ARGB8888);
-	evas_object_image_size_set(img, w, h);
-	evas_object_image_fill_set(img, 0, 0, w, h);
-
-	if (!is_bgra) {
-	unsigned char *m = NULL;
-	m = evas_object_image_data_get(img, 1);
-#if 1				/* Use self-logic to convert from RGB888 to RGBA */
-	int i = 0, j;
-	for (j = 0; j < w * 3 * h;
-		j += 3) {
-		m[i++] = (data[j + 2]);
-		m[i++] = (data[j + 1]);
-		m[i++] = (data[j]);
-		m[i++] = 0x0;
-	}
-
-#else				/* Use mmf api to convert from RGB888 to RGBA */
-	int mm_ret = 0;
-	if ((mm_ret =
-		mm_util_convert_colorspace(data,
-					w,
-					h,
-					MM_UTIL_IMG_FMT_RGB888,
-					m,
-					MM_UTIL_IMG_FMT_BGRA8888))
-		< 0) {
-		printf
-			("Failed to change from rgb888 to argb8888 %d\n",
-			mm_ret);
-		return -1;
-	}
-#endif				/* End of use mmf api to convert from RGB888 to RGBA */
-
-	evas_object_image_data_set(img, m);
-	evas_object_image_data_update_add(img, 0, 0, w, h);
-	} else {
-	evas_object_image_data_set(img, data);
-	evas_object_image_data_update_add(img, 0, 0, w, h);
-	}
-
-	if (evas_object_image_save
-		(img, "/mnt/nfs/test.jpg", NULL,
-		"quality=50 compress=2")) {
-		printf("evas_object_image_save success\n");
-	} else {
-		printf("evas_object_image_save failed\n");
-	}
-
-	ecore_evas_shutdown();
-
 	return 0;
 }
 
@@ -123,7 +62,7 @@ int main(int argc, char *argv[])
 	if (origin_path && (mode == 1)) {
 		printf("Test _thumbnail_get_data\n");
 
-		unsigned char *data = NULL;
+		GdkPixbuf *data = NULL;
 		int thumb_size = 0;
 		int thumb_w = 0;
 		int thumb_h = 0;
@@ -149,7 +88,7 @@ int main(int argc, char *argv[])
 		printf("Size : %d, W:%d, H:%d\n", thumb_size, thumb_w, thumb_h);	
 		printf("Origin W:%d, Origin H:%d\n", origin_w, origin_h);
 
-		err = save_to_file_with_evas(data, thumb_w, thumb_h, is_bgra);
+		err = save_to_file_with_gdk(data, thumb_w, thumb_h, is_bgra);
 		if (err < 0) {
 			printf("_thumbnail_get_data failed - %d\n", err);
 			return -1;

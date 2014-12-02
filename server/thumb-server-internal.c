@@ -25,7 +25,6 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
-#include <Ecore_Evas.h>
 #include <vconf.h>
 
 #ifdef LOG_TAG
@@ -65,9 +64,8 @@ void _thumb_daemon_finish_jobs()
 		thumb_dbg("sqlite3 handle is alive. So disconnect to sqlite3");
 	}
 
-	/* Shutdown ecore-evas */
-	ecore_evas_shutdown();
-
+	g_main_loop_quit(g_thumb_server_mainloop);
+	
 	return;
 }
 
@@ -404,7 +402,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("Shutting down...");
-		ecore_main_loop_quit();
+		g_main_loop_quit(g_thumb_server_mainloop);
 	}
 
 	return TRUE;

@@ -24,6 +24,7 @@
 #include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #ifndef _MEDIA_THUMB_INTERNAL_H_
 #define _MEDIA_THUMB_INTERNAL_H_
@@ -43,8 +44,8 @@ typedef struct {
 	int height;
 	int origin_width;
 	int origin_height;
-	int alpha;
-	unsigned char *data;
+	gboolean alpha;
+	GdkPixbuf *data;
 } media_thumb_info;
 
 enum Exif_Orientation {

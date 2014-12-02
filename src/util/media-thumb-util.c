@@ -26,11 +26,10 @@
 #include <aul.h>
 #include <string.h>
 #include <drm_client.h>
-
-#include <Evas.h>
-#include <Ecore_Evas.h>
+#include <sys/stat.h>
 #include <grp.h>
 #include <pwd.h>
+#include <sys/smack.h>
 
 #define GLOBAL_USER	0 //#define 	tzplatform_getenv(TZ_GLOBAL) //TODO
 
@@ -339,58 +338,30 @@ _media_thumb_get_hash_name(const char *file_full_path,
 	return 0;
 }
 
-
-int _media_thumb_save_to_file_with_evas(unsigned char *data, 
+int _media_thumb_save_to_file_with_gdk(GdkPixbuf *data, 
 											int w,
 											int h,
-											int alpha,
+											gboolean alpha,
 											char *thumb_path)
 {	
-	Ecore_Evas *ee =
-		ecore_evas_buffer_new(w, h);
-	if (ee == NULL) {
-		thumb_err("Failed to create a new ecore evas buffer\n");
+	GError *error = NULL;
+	
+	gdk_pixbuf_save(data,thumb_path,"jpeg", &error, NULL);
+	if (error) {
+		thumb_dbg ("Error saving image file %s", thumb_path);
+		g_error_free (error);
 		return -1;
 	}
 
-	Evas *evas = ecore_evas_get(ee);
-	if (evas == NULL) {
-		thumb_err("Failed to ecore_evas_get\n");
-		ecore_evas_free(ee);
+	if(smack_setlabel(thumb_path, "User", SMACK_LABEL_ACCESS)){
+		thumb_dbg("failed chsmack -a \"User\" %s", thumb_path);
 		return -1;
-	}
-
-	Evas_Object *img = NULL;
-	img = evas_object_image_add(evas);
-
-	if (img == NULL) {
-		thumb_err("image object is NULL\n");
-		ecore_evas_free(ee);
-		return -1;
-	}
-
-	evas_object_image_colorspace_set(img, EVAS_COLORSPACE_ARGB8888);
-	evas_object_image_size_set(img, w, h);
-	evas_object_image_fill_set(img, 0, 0, w, h);
-
-	if (alpha) evas_object_image_alpha_set(img, 1);
-
-	evas_object_image_data_set(img, data);
-	evas_object_image_data_update_add(img, 0, 0, w, h);
-
-	if (evas_object_image_save
-		(img, thumb_path, NULL,	"quality=100 compress=1")) {
-		thumb_dbg("evas_object_image_save success\n");
-		ecore_evas_free(ee);
-
-		return 0;
 	} else {
-		thumb_dbg("evas_object_image_save failed\n");
-		ecore_evas_free(ee);
-		return -1;
+		thumb_dbg("chsmack -a \"User\" %s", thumb_path);
 	}
-}
 
+	return 0;
+}
 
 int _thumbnail_get_data(const char *origin_path, 
 						media_thumb_type thumb_type, 
