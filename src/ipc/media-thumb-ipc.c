@@ -489,6 +489,8 @@ static char* _media_thumb_get_default_path(uid_t uid)
 		grpinfo = getgrnam("users");
 		if(grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
+			if(result_psswd)
+			    free(result_psswd);
 			return NULL;
 		}
 	}
@@ -565,8 +567,11 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 			if (strlen(thumb_path) == 0) {
 				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 				if (err < 0) {
+					char *default_path = _media_thumb_get_default_path(uid);
 					thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-					strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+					strncpy(thumb_path, default_path, max_length);
+					if(default_path)
+					    free(default_path);
 					_media_thumb_db_disconnect();
 					return err;
 				}
@@ -581,8 +586,11 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	} else if (msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 		if (err < 0) {
+		    char *default_path = _media_thumb_get_default_path(uid);
 			thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+			strncpy(thumb_path, default_path, max_length);
+			if(default_path)
+			    free(default_path);
 			_media_thumb_db_disconnect();
 			return err;
 		}
@@ -598,10 +606,13 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
 	if (err < 0) {
+	    char *default_path = _media_thumb_get_default_path(uid);
 		thumb_err("_thumbnail_get_data failed - %d\n", err);
 		SAFE_FREE(data);
 
-		strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+		strncpy(thumb_path, default_path, max_length);
+		if(default_path)
+		    free(default_path);
 		_media_thumb_db_disconnect();
 		return err;
 	}
@@ -632,12 +643,14 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 	err = _media_thumb_save_to_file_with_evas(data, thumb_w, thumb_h, alpha, thumb_path);
 	if (err < 0) {
+		char *default_path = _media_thumb_get_default_path(uid);
 		thumb_err("save_to_file_with_evas failed - %d\n", err);
 		SAFE_FREE(data);
 
 		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA)
-			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
-
+			strncpy(thumb_path, default_path, max_length);
+		if(default_path)
+		    free(default_path);
 		_media_thumb_db_disconnect();
 		return err;
 	} else {
