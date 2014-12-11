@@ -1,6 +1,6 @@
 Name:           libmedia-thumbnail
 Version:        0.1.78
-Release:        1
+Release:        0
 License:        Apache-2.0
 Summary:        Media thumbnail service Library
 Group:          Multimedia/Libraries
@@ -29,21 +29,21 @@ Media thumbnail service library for multimedia applications.
 
 %package devel
 Summary:        Media Thumbnail Service Library (development)
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description devel
 Media thumbnail service library for multimedia applications. (development)
 
 %package -n media-thumbnail-server
 Summary:        Thumbnail generator
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description -n media-thumbnail-server
 Media Thumbnail Server.
 
 %package test
 Summary:        Thumbnail generator Tests
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description test
 Media Thumbnail Tests.
