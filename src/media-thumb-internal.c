@@ -1100,8 +1100,14 @@ _media_thumb_video(const char *origin_path,
 			thumb_info->size = size;
 			thumb_info->width = width;
 			thumb_info->height = height;
-			thumb_info->data = malloc(size);
-			memcpy(thumb_info->data, frame, size);
+//			thumb_info->data = malloc(size);
+//			memcpy(thumb_info->data, frame, size);
+			
+			GdkPixbuf *pixbuf;
+
+			pixbuf = gdk_pixbuf_new_from_data (frame, GDK_COLORSPACE_RGB, FALSE, 8, width, height, 3*width, NULL, NULL);
+			
+			thumb_info->data = gdk_pixbuf_copy(pixbuf);
 		}
 
 		mm_file_destroy_content_attrs(content);
@@ -1186,12 +1192,12 @@ _media_thumb_video(const char *origin_path,
 			thumb_info->height = r_h;
 		}
 
-		err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
-		if (err < 0) {
-			thumb_err("_media_thumb_convert_format falied: %d", err);
-			SAFE_FREE(thumb_info->data);
-			return err;
-		}
+//		err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
+//		if (err < 0) {
+//			thumb_err("_media_thumb_convert_format falied: %d", err);
+//			SAFE_FREE(thumb_info->data);
+//			return err;
+//		}
 	} else {
 		thumb_dbg("no contents information\n");
 		frame = NULL;
