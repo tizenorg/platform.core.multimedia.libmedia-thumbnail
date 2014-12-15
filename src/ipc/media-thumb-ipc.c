@@ -523,7 +523,7 @@ int
 _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 {
 	int err = -1;
-	GdkPixbuf *data = NULL;
+	GdkPixbuf *gdkdata = NULL;
 	int thumb_size = 0;
 	int thumb_w = 0;
 	int thumb_h = 0;
@@ -597,11 +597,12 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		_media_thumb_remove_file(thumb_path);
 	}
 
-	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
+	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &gdkdata, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
 	if (err < 0) {
 		thumb_err("_thumbnail_get_data failed - %d\n", err);
-		g_object_unref(data);
-
+		if ( gdkdata != NULL ){
+			g_object_unref(gdkdata);
+		}
 		strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 		_media_thumb_db_disconnect();
 		return err;
@@ -631,10 +632,12 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		thumb_dbg("Thumb path is changed : %s", thumb_path);
 	}
 
-	err = _media_thumb_save_to_file_with_gdk(data, thumb_w, thumb_h, alpha, thumb_path);
+	err = _media_thumb_save_to_file_with_gdk(gdkdata, thumb_w, thumb_h, alpha, thumb_path);
 	if (err < 0) {
 		thumb_err("save_to_file_with_gdk failed - %d\n", err);
-		g_object_unref(data);
+		if ( gdkdata != NULL ){
+			g_object_unref(gdkdata);
+		}
 
 		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA)
 			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
@@ -660,7 +663,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	}
 	/* End of fsync */
 
-	g_object_unref(data);
+	g_object_unref(gdkdata);
 
 	/* DB update if needed */
 	if (need_update_db == 1) {

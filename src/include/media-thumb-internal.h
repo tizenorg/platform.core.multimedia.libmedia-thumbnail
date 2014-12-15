@@ -45,7 +45,8 @@ typedef struct {
 	int origin_width;
 	int origin_height;
 	gboolean alpha;
-	GdkPixbuf *data;
+	unsigned char *data;
+	GdkPixbuf *gdkdata;
 } media_thumb_info;
 
 enum Exif_Orientation {
