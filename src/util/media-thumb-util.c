@@ -432,7 +432,7 @@ int _thumbnail_get_data(const char *origin_path,
 	if (size) *size = thumb_info.size;
 	if (width) *width = thumb_info.width;
 	if (height) *height = thumb_info.height;
-	*data = thumb_info.data;
+	*data = thumb_info.gdkdata;
 	if (origin_width) *origin_width = thumb_info.origin_width;
 	if (origin_height) *origin_height = thumb_info.origin_height;
 	if (alpha) *alpha = thumb_info.alpha;

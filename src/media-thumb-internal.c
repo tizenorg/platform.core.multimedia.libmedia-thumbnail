@@ -581,7 +581,7 @@ int _media_thumb_decode_with_gdk(const char *origin_path,
 	thumb_info->alpha = gdk_pixbuf_get_has_alpha(pixbuf);
 	thumb_info->width = thumb_width;
 	thumb_info->height = thumb_height;
-	thumb_info->data = gdk_pixbuf_copy(pixbuf);
+	thumb_info->gdkdata = gdk_pixbuf_copy(pixbuf);
 
 	g_object_unref(pixbuf);
 	return 0;
@@ -1012,6 +1012,7 @@ _media_thumb_video(const char *origin_path,
 	int width = 0;
 	int height = 0;
 	int ret = 0;
+	GdkPixbuf *pixbuf;
 	drm_bool_type_e drm_type;
 
 	ret = (drm_is_drm_file(origin_path, &drm_type) == 1);
@@ -1192,6 +1193,10 @@ _media_thumb_video(const char *origin_path,
 			SAFE_FREE(thumb_info->data);
 			return err;
 		}
+		pixbuf = gdk_pixbuf_new_from_data (thumb_info->data, GDK_COLORSPACE_RGB, FALSE, 8, thumb_info->width, thumb_info->height, 3*thumb_info->width, NULL, NULL);
+		thumb_info->gdkdata = gdk_pixbuf_copy(pixbuf);
+		g_object_unref(pixbuf);
+		
 	} else {
 		thumb_dbg("no contents information\n");
 		frame = NULL;
