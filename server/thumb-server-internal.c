@@ -421,9 +421,9 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	ms_thumb_server_msg send_msg;
 
 #ifdef _USE_UDS_SOCKET_
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
 #else
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock) < 0) {
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
 #endif
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
