@@ -767,7 +767,7 @@ int _media_thumb_png(const char *origin_path,
 		return err;
 	}
 
-	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_BGRA, format);
+	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 	if (err < 0) {
 		thumb_err("_media_thumb_convert_format falied: %d", err);
 		SAFE_FREE(thumb_info->data);
@@ -791,7 +791,7 @@ int _media_thumb_bmp(const char *origin_path,
 		return err;
 	}
 
-	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_BGRA, format);
+	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 	if (err < 0) {
 		thumb_err("_media_thumb_convert_format falied: %d", err);
 		SAFE_FREE(thumb_info->data);
@@ -815,7 +815,7 @@ int _media_thumb_wbmp(const char *origin_path,
 		return err;
 	}
 
-	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_BGRA, format);
+	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 	if (err < 0) {
 		thumb_err("_media_thumb_convert_format falied: %d", err);
 		SAFE_FREE(thumb_info->data);
@@ -839,7 +839,7 @@ int _media_thumb_gif(const char *origin_path,
 		return err;
 	}
 
-	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_BGRA, format);
+	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 	if (err < 0) {
 		thumb_err("_media_thumb_convert_format falied: %d", err);
 		SAFE_FREE(thumb_info->data);
@@ -908,7 +908,7 @@ int _media_thumb_jpeg(const char *origin_path,
 			return err;
 		}
 
-		err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_BGRA, format);
+		err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 		if (err < 0) {
 			thumb_err("_media_thumb_convert_format falied: %d", err);
 			SAFE_FREE(thumb_info->data);
