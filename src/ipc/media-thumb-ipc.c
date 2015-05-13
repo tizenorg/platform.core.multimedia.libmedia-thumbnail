@@ -543,7 +543,8 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	media_thumb_type thumb_type = req_msg->thumb_type;
 	const char *origin_path = req_msg->org_path;
 
-	media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
+	// Currently, The color space that is supported by the gdk-pixbuf is only RGB.
+	media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
 
 	thumb_path = res_msg->dst_path;
 	thumb_path[0] = '\0';

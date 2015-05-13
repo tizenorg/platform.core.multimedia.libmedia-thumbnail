@@ -72,8 +72,8 @@ int main(int argc, char *argv[])
 
 		media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
 		//media_thumb_type thumb_type = MEDIA_THUMB_SMALL;
-		media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
-		//media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
+		//media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
+		media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
 		int is_bgra = 1;
 		//int is_bgra = 0;
 

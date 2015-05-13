@@ -1,5 +1,5 @@
 Name:           libmedia-thumbnail
-Version:        0.1.79
+Version:        0.1.80
 Release:        0
 License:        Apache-2.0
 Summary:        Media thumbnail service Library
