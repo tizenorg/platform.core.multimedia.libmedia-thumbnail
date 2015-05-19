@@ -1,7 +1,7 @@
 /*
  * media-thumbnail-server
  *
- * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd. All rights reserved.
  *
  * Contact: Hyunjun Ko <zzoon.ko@samsung.com>
  *
@@ -42,8 +42,10 @@ GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 
 #ifdef _USE_MEDIA_UTIL_
 gboolean _thumb_server_send_msg_to_agent(int msg_type);
+static gboolean _thumb_server_send_deny_message(int sockfd, struct sockaddr *client_addr, int client_addr_len);
 #endif
 void _thumb_daemon_stop_job();
+
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
@@ -309,6 +311,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 #ifndef _USE_MEDIA_UTIL_
 	int client_sock;
 #endif
+	ms_peer_credentials credentials;
 
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
@@ -341,13 +344,41 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		close(client_sock);
 		return TRUE;
 	}
-#else
 
-	if (_media_thumb_recv_udp_msg(sock, header_size, &recv_msg, &client_addr, &client_addr_len) < 0) {
-		thumb_err("_media_thumb_recv_udp_msg failed");
-		return FALSE;
+	if (ms_cynara_get_credentials_from_connected_socket(client_sock, &credentials)) {
+		thumb_err("ms_cynara_get_credentials_from_connected_socket failed ");
+		_thumb_server_send_deny_message(client_sock);
+		close(client_sock);
+		return TRUE;
+	}
+#else
+	if (ms_cynara_receive_untrusted_message(sock, &recv_msg, header_size, &client_addr, &client_addr_len, &credentials) != MS_MEDIA_ERR_NONE) {
+	    thumb_err("_media_thumb_recv_udp_msg failed");
+	    return FALSE;
 	}
 #endif
+
+	if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER && credentials.uid != 0) {
+		thumb_dbg("Only root can send THUMB_REQUEST_KILL_SERVER request");
+#ifndef _USE_MEDIA_UTIL_
+		_thumb_server_send_deny_message(client_sock);
+		close(client_sock);
+#else
+		_thumb_server_send_deny_message(sock, (struct sockaddr *)&client_addr, client_addr_len);
+#endif
+		return TRUE;
+	}
+
+	if (ms_cynara_check(&credentials, MEDIA_STORAGE_PRIVILEGE) != MS_MEDIA_ERR_NONE) {
+		thumb_dbg("Cynara denied access to process request");
+#ifndef _USE_MEDIA_UTIL_
+		_thumb_server_send_deny_message(client_sock);
+		close(client_sock);
+#else
+		_thumb_server_send_deny_message(sock, (struct sockaddr *)&client_addr, client_addr_len);
+#endif
+		return TRUE;
+	}
 
 	thumb_warn("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
@@ -389,7 +420,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 #ifdef _USE_UDS_SOCKET_
 	thumb_dbg("+++++++++++++++++++++%s", client_addr.sun_path);
 #endif
-	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
+	if (TEMP_FAILURE_RETRY(sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr))) != buf_size) {
 		thumb_err("sendto failed: %s\n", strerror(errno));
 		SAFE_FREE(buf);
 		return FALSE;
@@ -459,6 +490,40 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	close(sock);
  	return TRUE;
 }
+
+
+static gboolean _thumb_server_send_deny_message(int sockfd, struct sockaddr *client_addr, int client_addr_len)
+{
+    thumbMsg msg = {0};
+    int bytes_to_send = sizeof(msg) - sizeof(msg.org_path) - sizeof(msg.dst_path);
+
+    msg.msg_type = THUMB_RESPONSE;
+    msg.status = THUMB_FAIL;
+
+    if (TEMP_FAILURE_RETRY(sendto(sockfd, &msg, bytes_to_send, 0, client_addr, client_addr_len)) != bytes_to_send) {
+        thumb_err("sendto failed: %s\n", strerror(errno));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#else
+static gboolean _thumb_server_send_deny_message(int sockfd)
+{
+    thumbMsg msg = {0};
+    int bytes_to_send = sizeof(msg) - sizeof(msg.org_path) - sizeof(msg.dst_path);
+
+    msg.msg_type = THUMB_RESPONSE;
+    msg.status = THUMB_FAIL;
+
+    if (TEMP_FAILURE_RETRY(send(sockfd, &msg, bytes_to_send, 0)) != bytes_to_send) {
+        thumb_err("sendto failed: %s\n", strerror(errno));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 #endif
 
 gboolean _thumb_server_prepare_socket(int *sock_fd)
@@ -474,9 +539,14 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 #ifdef _USE_MEDIA_UTIL_
 	serv_port = MS_THUMB_DAEMON_PORT;
 
-	if (ms_ipc_create_server_socket(MS_PROTOCOL_UDP, serv_port, &sock) < 0) {
+	if (ms_ipc_create_server_socket(MS_PROTOCOL_UDP, serv_port, 0, &sock) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
+	}
+
+	if (ms_cynara_enable_credentials_passing(sock) != MS_MEDIA_ERR_NONE) {
+	    thumb_err("ms_cynara_enable_credentials_passing failed");
+	    return FALSE;
 	}
 #else
 	char thumb_path[MAX_PATH_SIZE + 1];
