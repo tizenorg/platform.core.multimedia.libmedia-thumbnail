@@ -1,7 +1,7 @@
 /*
  * media-thumbnail-server
  *
- * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd. All rights reserved.
  *
  * Contact: Hyunjun Ko <zzoon.ko@samsung.com>
  *
@@ -80,6 +80,11 @@ int main()
 		}
 	}
 
+	if (ms_cynara_initialize() != MS_MEDIA_ERR_NONE) {
+		thumb_err("Cynara initialization failed");
+		return -1;
+	}
+
 	/* Set VCONFKEY_SYSMAN_MMC_FORMAT callback to get noti for SD card format */
 	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_FORMAT, (vconf_callback_fn) _thumb_daemon_vconf_cb, NULL);
 	if (err == -1)
@@ -129,6 +134,7 @@ int main()
 	g_io_channel_shutdown(channel,  FALSE, NULL);
 	g_io_channel_unref(channel);
 	_thumb_daemon_finish_jobs();
+	ms_cynara_finish();
 
 	return 0;
 }
