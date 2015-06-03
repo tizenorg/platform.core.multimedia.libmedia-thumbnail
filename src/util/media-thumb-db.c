@@ -21,6 +21,7 @@
 
 #include "media-thumb-db.h"
 #include "media-thumb-util.h"
+#include "media-thumb-debug.h"
 
 #include <glib.h>
 #include <string.h>
@@ -50,14 +51,14 @@ sqlite3 *_media_thumb_db_get_handle()
 int
 _media_thumb_sqlite_connect(sqlite3 **handle)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	err = db_util_open(MEDIA_DATABASE_NAME, handle,
 			 DB_UTIL_REGISTER_HOOK_METHOD);
 
 	if (SQLITE_OK != err) {
 		*handle = NULL;
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	/*Register busy handler*/
@@ -70,30 +71,30 @@ _media_thumb_sqlite_connect(sqlite3 **handle)
 			}
 			*handle = NULL;
 
-			return -1;
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
 		}
 	} else {
 		*handle = NULL;
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
 _media_thumb_sqlite_disconnect(sqlite3 *handle)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	if (handle != NULL) {
 		err = db_util_close(handle);
 
 		if (SQLITE_OK != err) {
 			handle = NULL;
-			return -1;
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
 		}
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
@@ -105,7 +106,7 @@ _media_thumb_get_type_from_db(sqlite3 *handle,
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int err = -1;
@@ -124,21 +125,21 @@ _media_thumb_get_type_from_db(sqlite3 *handle,
 	sqlite3_free(path_string);
 
 	if (SQLITE_OK != err) {
-		thumb_err("prepare error [%s]\n", sqlite3_errmsg(handle));
-		return -1;
+		thumb_err("prepare error [%s]", sqlite3_errmsg(handle));
+		return MS_MEDIA_ERR_DB_INTERNAL;
 	}
 
 	err = sqlite3_step(stmt);
 	if (err != SQLITE_ROW) {
-		thumb_err("end of row [%s]\n", sqlite3_errmsg(handle));
+		thumb_err("end of row [%s]", sqlite3_errmsg(handle));
 		sqlite3_finalize(stmt);
-		return -1;
+		return MS_MEDIA_ERR_DB_NO_RECORD;
 	}
 
 	*type = sqlite3_column_int(stmt, 0);
 	sqlite3_finalize(stmt);
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 
@@ -185,11 +186,10 @@ int _media_thumb_get_wh_from_db(sqlite3 *handle,
 	*height = sqlite3_column_int(stmt, 1);
 	sqlite3_finalize(stmt);
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_get_thumb_path_from_db(sqlite3 *handle,
+int _media_thumb_get_thumb_path_from_db(sqlite3 *handle,
 									const char *origin_path,
 									char *thumb_path,
 									int max_length)
@@ -217,13 +217,13 @@ _media_thumb_get_thumb_path_from_db(sqlite3 *handle,
 	sqlite3_free(path_string);
 
 	if (SQLITE_OK != err) {
-		thumb_err("prepare error [%s]\n", sqlite3_errmsg(handle));
+		thumb_err("prepare error [%s]", sqlite3_errmsg(handle));
 		return -1;
 	}
 
 	err = sqlite3_step(stmt);
 	if (err != SQLITE_ROW) {
-		thumb_err("end of row [%s]\n", sqlite3_errmsg(handle));
+		thumb_err("end of row [%s]", sqlite3_errmsg(handle));
 		sqlite3_finalize(stmt);
 		return -1;
 	}
@@ -235,24 +235,23 @@ _media_thumb_get_thumb_path_from_db(sqlite3 *handle,
 
 	sqlite3_finalize(stmt);
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_update_thumb_path_to_db(sqlite3 *handle,
+int _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 									const char *origin_path,
 									char *thumb_path,
 									uid_t uid)
 {
 	thumb_dbg("");
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	char *path_string = NULL;
 	char *thumbpath_string = NULL;
 	char *query_string = NULL;
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	path_string = sqlite3_mprintf("%s", origin_path);
@@ -276,7 +275,7 @@ _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 			err_msg = NULL;
 		}
 
-		return -1;
+		return MS_MEDIA_ERR_DB_UPDATE_FAIL;
 	}
 
 	if (err_msg)
@@ -290,7 +289,7 @@ _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 #endif
 	thumb_dbg("Query success");
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
@@ -300,14 +299,13 @@ _media_thumb_update_wh_to_db(sqlite3 *handle,
 								int height,
 								uid_t uid)
 {
-	thumb_dbg("");
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	char *path_string = NULL;
 	char *query_string = NULL;
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	path_string = sqlite3_mprintf("%s", origin_path);
@@ -329,33 +327,31 @@ _media_thumb_update_wh_to_db(sqlite3 *handle,
 			err_msg = NULL;
 		}
 
-		return -1;
+		return MS_MEDIA_ERR_DB_UPDATE_FAIL;
 	}
 
 	if (err_msg)
 		sqlite3_free(err_msg);
 #else
 	err = media_db_request_update_db(query_string, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
 		return err;
 	}
 #endif
 	thumb_dbg("Query success");
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return err;
 }
 
-int
-_media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
+int _media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
 								const char *origin_path,
 								char *thumb_path,
 								int width,
 								int height,
 								uid_t uid)
 {
-	thumb_dbg("");
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	char *path_string = NULL;
 	char *query_string = NULL;
 
@@ -368,23 +364,22 @@ _media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
 	query_string = sqlite3_mprintf(UPDATE_THUMB_WH_BY_PATH, thumb_path, width, height, path_string);
 
 	err = media_db_request_update_db(query_string, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
 		return err;
 	}
 
 	thumb_dbg("Query success");
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return err;
 }
 
-int
-_media_thumb_db_connect(uid_t uid)
+int _media_thumb_db_connect(uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 /*
 	err = media_svc_connect(&mb_svc_handle);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_svc_connect failed: %d", err);
 		mb_svc_handle = NULL;
 		return err;
@@ -392,31 +387,31 @@ _media_thumb_db_connect(uid_t uid)
 */
 #ifndef _USE_MEDIA_UTIL_
 	err = _media_thumb_sqlite_connect(&db_handle);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_sqlite_connect failed: %d", err);
 		db_handle = NULL;
 		return err;
 	}
 #else
 	err = media_db_connect(&db_handle,uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_connect failed: %d", err);
 		db_handle = NULL;
-		return MEDIA_THUMB_ERROR_DB;
+		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
 	}
 #endif
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
 _media_thumb_db_disconnect()
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 /*
 	err = media_svc_disconnect(mb_svc_handle);
 
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_svc_disconnect failed: %d", err);
 	}
 
@@ -424,17 +419,17 @@ _media_thumb_db_disconnect()
 */
 #ifndef _USE_MEDIA_UTIL_
 	err = _media_thumb_sqlite_disconnect(db_handle);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_sqlite_disconnect failed: %d", err);
 		db_handle = NULL;
 		return err;
 	}
 #else
 	err = media_db_disconnect(db_handle);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_disconnect failed: %d", err);
 		db_handle = NULL;
-		return MEDIA_THUMB_ERROR_DB;
+		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
 	}
 #endif
 
@@ -442,13 +437,11 @@ _media_thumb_db_disconnect()
 	return err;
 }
 
-int
-_media_thumb_get_thumb_from_db(const char *origin_path,
+int _media_thumb_get_thumb_from_db(const char *origin_path,
 								char *thumb_path,
 								int max_length,
 								int *need_update_db)
 {
-	thumb_dbg("");
 	int err = -1;
 
 	//err = minfo_get_thumb_path(mb_svc_handle, origin_path, thumb_path, max_length);
@@ -475,18 +468,16 @@ _media_thumb_get_thumb_from_db(const char *origin_path,
 		thumb_dbg("This thumb path already exist");
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_get_thumb_from_db_with_size(const char *origin_path,
+int _media_thumb_get_thumb_from_db_with_size(const char *origin_path,
 								char *thumb_path,
 								int max_length,
 								int *need_update_db,
 								int *width,
 								int *height)
 {
-	thumb_dbg("");
 	int err = -1;
 
 	//err = minfo_get_thumb_path(mb_svc_handle, origin_path, thumb_path, max_length);
@@ -524,34 +515,32 @@ _media_thumb_get_thumb_from_db_with_size(const char *origin_path,
 		}
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_update_db(const char *origin_path,
+int _media_thumb_update_db(const char *origin_path,
 									char *thumb_path,
 									int width,
 									int height,
 									uid_t uid)
 {
-	thumb_dbg("");
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 #if 0
 	Mitem *item = NULL;
 
 	err = minfo_get_item(mb_svc_handle, origin_path, &item);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("minfo_get_item (%s) failed: %d", origin_path, err);
-		return MEDIA_THUMB_ERROR_DB;
+		return err;
 	}
 
 	err = minfo_update_media_thumb(mb_svc_handle, item->uuid, thumb_path);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("minfo_update_media_thumb (ID:%s, %s) failed: %d",
 							item->uuid, thumb_path, err);
 		minfo_destroy_mtype_item(item);
-		return MEDIA_THUMB_ERROR_DB;
+		return err;
 	}
 
 	if (item->type == MINFO_ITEM_IMAGE) {
@@ -559,10 +548,10 @@ _media_thumb_update_db(const char *origin_path,
 												MINFO_IMAGE_META_WIDTH, width,
 												MINFO_IMAGE_META_HEIGHT, height, -1);
 	
-		if (err < 0) {
+		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("minfo_update_image_meta_info_int failed: %d", err);
 			minfo_destroy_mtype_item(item);
-			return MEDIA_THUMB_ERROR_DB;
+			return err;
 		}
 	}
 	
@@ -573,21 +562,21 @@ _media_thumb_update_db(const char *origin_path,
 	err = _media_thumb_get_type_from_db(db_handle, origin_path, &media_type);
 	if (err < 0) {
 		thumb_err("_media_thumb_get_type_from_db (%s) failed: %d", origin_path, err);
-		return MEDIA_THUMB_ERROR_DB;
+		return err;
 	}
 
 #if 0
 	err = _media_thumb_update_thumb_path_to_db(db_handle, origin_path, thumb_path);
 	if (err < 0) {
 		thumb_err("_media_thumb_update_thumb_path_to_db (%s) failed: %d", origin_path, err);
-		return MEDIA_THUMB_ERROR_DB;
+		return err;
 	}
 
 	if (media_type == THUMB_IMAGE_TYPE && width > 0 && height > 0) {
 		err = _media_thumb_update_wh_to_db(db_handle, origin_path, width, height);
 		if (err < 0) {
 			thumb_err("_media_thumb_update_wh_to_db (%s) failed: %d", origin_path, err);
-			return MEDIA_THUMB_ERROR_DB;
+			return err;
 		}
 	}
 #else
@@ -595,19 +584,19 @@ _media_thumb_update_db(const char *origin_path,
 		err = _media_thumb_update_thumb_path_wh_to_db(db_handle, origin_path, thumb_path, width, height,uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_update_wh_to_db (%s) failed: %d", origin_path, err);
-			return MEDIA_THUMB_ERROR_DB;
+			return err;
 		}
 	} else {
 		err = _media_thumb_update_thumb_path_to_db(db_handle, origin_path, thumb_path, uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_update_thumb_path_to_db (%s) failed: %d", origin_path, err);
-			return MEDIA_THUMB_ERROR_DB;
+			return err;
 		}
 	}
 #endif
 
 	thumb_dbg("_media_thumb_update_db success");
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
