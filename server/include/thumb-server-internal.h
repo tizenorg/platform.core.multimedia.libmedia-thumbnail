@@ -54,4 +54,3 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 									gpointer data);
 
 #endif /*_THUMB_DAEMON_INTERNAL_H_*/
-
