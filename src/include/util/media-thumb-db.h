@@ -21,6 +21,7 @@
 
 #include <sqlite3.h>
 #include <media-util.h>
+#include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
 

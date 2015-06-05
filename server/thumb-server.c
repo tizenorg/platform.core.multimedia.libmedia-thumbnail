@@ -24,6 +24,7 @@
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"
 #include "thumb-server-internal.h"
+
 #include <pthread.h>
 #include <heynoti.h>
 #include <vconf.h>
@@ -91,12 +92,12 @@ int main()
 
 	/* Create and bind new UDP socket */
 	if (!_thumb_server_prepare_socket(&sockfd)) {
-		thumb_err("Failed to create socket");
+		thumb_err("Failed to create socket\n");
 		return -1;
 	}
 
 	g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
-
+	
 	/* Create new channel to watch udp socket */
 	channel = g_io_channel_unix_new(sockfd);
 	source = g_io_create_watch(channel, G_IO_IN);
@@ -116,13 +117,15 @@ int main()
 	g_source_set_callback(sig_handler_src, (GSourceFunc)_media_thumb_signal_handler, NULL, NULL);
 	g_source_attach(sig_handler_src, context);
 */
+
 	thumb_dbg("************************************");
 	thumb_dbg("*** Thumbnail server is running ***");
 	thumb_dbg("************************************");
 
 	g_main_loop_run(g_thumb_server_mainloop);
-
+	
 	thumb_dbg("Thumbnail server is shutting down...");
+
 	g_io_channel_shutdown(channel,  FALSE, NULL);
 	g_io_channel_unref(channel);
 	_thumb_daemon_finish_jobs();

@@ -83,7 +83,7 @@ _media_thumb_get_file_type(const char *file_full_path)
 	char mimetype[255];
 
 	if (file_full_path == NULL)
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 
 	ret = drm_is_drm_file(file_full_path, &drm_type);
 	if (ret < 0) {
@@ -382,30 +382,30 @@ int _thumbnail_get_data(const char *origin_path,
 	if (origin_path == NULL || size == NULL 
 			|| width == NULL || height == NULL) {
 		thumb_err("Invalid parameter");
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	if (format < MEDIA_THUMB_BGRA || format > MEDIA_THUMB_RGB888) {
 		thumb_err("parameter format is invalid");
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	if (!g_file_test
 	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path (%s) does not exist", origin_path);
-			return MS_MEDIA_ERR_INVALID_PARAMETER;
+			return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	thumb_width = _media_thumb_get_width(thumb_type);
 	if (thumb_width < 0) {
 		thumb_err("media_thumb_type is invalid");
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	thumb_height = _media_thumb_get_height(thumb_type);
 	if (thumb_height < 0) {
 		thumb_err("media_thumb_type is invalid");
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	thumb_dbg("Origin path : %s", origin_path);
@@ -440,5 +440,5 @@ int _thumbnail_get_data(const char *origin_path,
 	thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x",
 				*size, *width, *height, *data);
 
-	return MS_MEDIA_ERR_NONE;
+	return MEDIA_THUMB_ERROR_NONE;
 }

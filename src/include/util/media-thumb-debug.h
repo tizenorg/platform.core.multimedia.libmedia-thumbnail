@@ -28,7 +28,6 @@
 
 #include <unistd.h>
 #include <asm/unistd.h>
-#include <errno.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG

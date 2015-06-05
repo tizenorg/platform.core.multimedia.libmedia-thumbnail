@@ -26,6 +26,7 @@
 #include "img-codec-parser.h"
 #include "img-codec-agif.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

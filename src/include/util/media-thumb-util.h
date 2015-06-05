@@ -19,6 +19,7 @@
  *
  */
 
+#include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
 #include "media-util.h"

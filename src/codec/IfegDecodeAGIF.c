@@ -47,7 +47,7 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 	int inputPos = 0;
 	int inputPos_temp = 0;
 
-	AGifFrameInfo *pFrameData;
+    AGifFrameInfo *pFrameData;
 	if (0 == (pFrameData = IfegMemAlloc(sizeof(AGifFrameInfo)))) {
 		return 0;
 	}
@@ -126,7 +126,7 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 		backcolor_parsing = (unsigned short)((pEncodedData[inputPos+backcolor_index*3] >> 3)<<11) | ((pEncodedData[inputPos+backcolor_index*3+1] >> 2)<<5) | (pEncodedData[inputPos+backcolor_index*3+2] >> 3);
 	}
 
-	/* graphic extension block */
+    /* graphic extension block */
 	if (pEncodedData[14+header_temp] == 0xF9 || pEncodedData[14+19+header_temp] == 0xF9) {
 
 		if (transparent == 1 && backcolor_index == transIndex) {
@@ -690,7 +690,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 			if (pFrameData->nLoopCount == -1) {
 				break;
 			} else if (pFrameData->bLoop || (pFrameData->nRepeatCount <= pFrameData->nLoopCount) || (pFrameData->nLoopCount == 0)) {
-				/* Background Color */
+			    /* Background Color */
 				pImage16 = (unsigned short *)pFrameData->pPrevImg;
 
 				for (i = 0; i < expected_width * expected_height; i++) {

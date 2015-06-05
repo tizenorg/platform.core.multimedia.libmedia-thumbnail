@@ -23,6 +23,8 @@
 #ifndef _MEDIA_THUMBNAIL_PRIVATE_H_
 #define _MEDIA_THUMBNAIL_PRIVATE_H_
 
+#include "media-thumb-error.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

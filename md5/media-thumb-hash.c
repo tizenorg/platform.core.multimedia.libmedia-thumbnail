@@ -29,7 +29,6 @@
 #include "media-thumbnail-private.h"
 #include <string.h>
 #include <alloca.h>
-#include <media-util-err.h>
 
 
 static const char ACCEPTABLE_URI_CHARS[96] = {
@@ -116,18 +115,18 @@ int thumbnail_generate_hash_code(const char *origin_path, char *hash_code, int m
 	char *hash = NULL;
 
 	if (max_length < ((2 * MD5_HASHBYTES) + 1)) {
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
+		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
 	}
 
 	hash = _media_thumb_generate_hash_name(origin_path);
 
 	if (hash == NULL) {
-		return MS_MEDIA_ERR_INTERNAL;
+		return MEDIA_THUMB_ERROR_HASHCODE;
 	}
 
 	strncpy(hash_code, hash, max_length);
 	hash_code[strlen(hash_code)] ='\0';
 
-	return MS_MEDIA_ERR_NONE;
+	return MEDIA_THUMB_ERROR_NONE;
 }
 

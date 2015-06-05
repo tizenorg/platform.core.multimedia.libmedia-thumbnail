@@ -5,7 +5,7 @@ SET(VERSION "${VERSION_MAJOR}.0.0")
 
 SET(MEDIATHUMB-LIB "media-thumbnail")
 SET(MEDIAHASH-LIB "media-hash")
-SET(SRCS
+SET(SRCS 
 	src/media-thumbnail.c
 	src/media-thumb-internal.c
 	src/util/media-thumb-debug.c
@@ -98,6 +98,7 @@ INSTALL(TARGETS test-thumb DESTINATION ${BINDIR})
 
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumbnail.h DESTINATION include/${MEDIATHUMB-LIB})
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumbnail-private.h DESTINATION include/${MEDIATHUMB-LIB})
+INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumb-error.h DESTINATION include/${MEDIATHUMB-LIB})
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumb-types.h DESTINATION include/${MEDIATHUMB-LIB})
 #INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/thumbsvr DESTINATION /etc/init.d)
 

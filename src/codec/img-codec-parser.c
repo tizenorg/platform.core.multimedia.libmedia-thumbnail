@@ -28,7 +28,6 @@
 #include <sys/time.h>
 #endif
 
-#include <media-util-err.h>
 #include "media-thumb-debug.h"
 #include "img-codec-common.h"
 #include "img-codec-parser.h"
@@ -424,7 +423,7 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 		unsigned char tmp;
 
 		if (DrmReadFile(hFile, EncodedDataBuffer, 32, &fileread) ==
-			FALSE) {
+		    FALSE) {
 			thumb_err("DrmReadFile was failed");
 			return IMG_CODEC_NONE;
 		}
@@ -446,7 +445,7 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 		tmp = *(EncodedDataBuffer + 20);
 		/* If image is interlaced then multiple should be 2 */
 		if (tmp) {
-			thumb_dbg("Interlaced PNG Image.");
+			thumb_dbg("Interlaced PNG Image.\n");
 		}
 		thumb_dbg("IMG_CODEC_PNG\n");
 		return IMG_CODEC_PNG;
@@ -470,22 +469,23 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 		}
 		if (pWidth) {
 			*pWidth =
-				EncodedDataBuffer[18] | (EncodedDataBuffer[19] << 8)
-				| (EncodedDataBuffer[20] << 16) |
-				(EncodedDataBuffer[21] << 24);
+			    EncodedDataBuffer[18] | (EncodedDataBuffer[19] << 8)
+			    | (EncodedDataBuffer[20] << 16) |
+			    (EncodedDataBuffer[21] << 24);
 		}
 		if (pHeight) {
 			*pHeight =
-				EncodedDataBuffer[22] | (EncodedDataBuffer[23] << 8)
-				| (EncodedDataBuffer[24] << 16) |
-				(EncodedDataBuffer[25] << 24);
+			    EncodedDataBuffer[22] | (EncodedDataBuffer[23] << 8)
+			    | (EncodedDataBuffer[24] << 16) |
+			    (EncodedDataBuffer[25] << 24);
 		}
 
 		thumb_dbg("IMG_CODEC_BMP");
 		return IMG_CODEC_BMP;
 	}
 	/***********************  GIF  *************************/
-	else if (AcMemcmp(EncodedDataBuffer, gIfegGIFHeader, GIF_HEADER_LENGTH) == 0) {
+	else if (AcMemcmp(EncodedDataBuffer, gIfegGIFHeader, GIF_HEADER_LENGTH)
+		 == 0) {
 		unsigned int tablelength = 0;
 		unsigned int imagecount = 0;
 		int finished = 0;
@@ -498,7 +498,8 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 			return IMG_CODEC_UNKNOWN_TYPE;
 		}
 
-		if (DrmReadFile(hFile, &EncodedDataBuffer[8], 5, &fileread) == FALSE) {
+		if (DrmReadFile(hFile, &EncodedDataBuffer[8], 5, &fileread) ==
+		    FALSE) {
 			thumb_err("DrmReadFile was failed");
 
 			return IMG_CODEC_NONE;
@@ -509,10 +510,10 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 		}
 
 		if (EncodedDataBuffer[0] != 'G' || EncodedDataBuffer[1] != 'I'
-			|| EncodedDataBuffer[2] != 'F' || EncodedDataBuffer[3] < '0'
-			|| EncodedDataBuffer[3] > '9' || EncodedDataBuffer[4] < '0'
-			|| EncodedDataBuffer[4] > '9' || EncodedDataBuffer[5] < 'A'
-			|| EncodedDataBuffer[5] > 'z') {
+		    || EncodedDataBuffer[2] != 'F' || EncodedDataBuffer[3] < '0'
+		    || EncodedDataBuffer[3] > '9' || EncodedDataBuffer[4] < '0'
+		    || EncodedDataBuffer[4] > '9' || EncodedDataBuffer[5] < 'A'
+		    || EncodedDataBuffer[5] > 'z') {
 			thumb_warn("IMG_CODEC_UNKNOWN_TYPE in GIF");
 			return IMG_CODEC_UNKNOWN_TYPE;
 		}
@@ -526,14 +527,17 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 			    EncodedDataBuffer[8] | (EncodedDataBuffer[9] << 8);
 		}
 
-		thumb_dbg("Logical width : %d, Height : %d", *pWidth, *pHeight);
+		thumb_dbg("Logical width : %d, Height : %d", *pWidth,
+			     *pHeight);
 
 		if ((EncodedDataBuffer[10] & 0x80) != 0) {	/* Global color table */
 			temp = (EncodedDataBuffer[10] & 0x7) + 1;
 			tablelength = (1 << temp) * 3;
 
-			if ((tablelength * sizeof(char)) > sizeof(EncodedDataBuffer)) {
-				thumb_warn("_ImgGetInfoStreaming :table length is more than buffer length");
+			if ((tablelength * sizeof(char)) >
+			    sizeof(EncodedDataBuffer)) {
+				thumb_warn
+				    ("_ImgGetInfoStreaming :table length is more than buffer length");
 				return IMG_CODEC_UNKNOWN_TYPE;
 			}
 
@@ -542,7 +546,9 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 				return IMG_CODEC_UNKNOWN_TYPE;
 			}
 			/* coverity[ -tainted_data_argument : EncodedDataBuffer ] */
-			if (DrmReadFile(hFile, EncodedDataBuffer, tablelength, &fileread) == FALSE) {
+			if (DrmReadFile
+			    (hFile, EncodedDataBuffer, tablelength,
+			     &fileread) == FALSE) {
 				thumb_err("DrmReadFile was failed");
 
 				return IMG_CODEC_NONE;
@@ -582,11 +588,14 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 					return IMG_CODEC_UNKNOWN_TYPE;
 				}
 
-				switch (EncodedDataBuffer[ifegstreamctrl.buffpos++]) {
+				switch (EncodedDataBuffer
+					[ifegstreamctrl.buffpos++]) {
 
 				case 0xf9:	/* Graphic control extension block */
-					if (_CheckBuffer(&ifegstreamctrl, 6) == 0) {
-						thumb_warn("_CheckBuffer was failed");
+					if (_CheckBuffer(&ifegstreamctrl, 6) ==
+					    0) {
+						thumb_warn
+						    ("_CheckBuffer was failed");
 						return IMG_CODEC_UNKNOWN_TYPE;
 					}
 
@@ -600,20 +609,28 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 				case 0x01:	/* Plain Text block */
 				case 0xfe:	/* Comment Extension block */
 				case 0xff:	/* Appliation Extension block */
-					if (_CheckBuffer(&ifegstreamctrl, 1) == 0) {
-						thumb_warn("_CheckBuffer was failed");
+					if (_CheckBuffer(&ifegstreamctrl, 1) ==
+					    0) {
+						thumb_warn
+						    ("_CheckBuffer was failed");
 						return IMG_CODEC_UNKNOWN_TYPE;
 					}
 
-					if (ifegstreamctrl.buffpos > sizeof(EncodedDataBuffer)) {
-						thumb_warn("buffer position exceeds buffer max length ");
+					if (ifegstreamctrl.buffpos >
+					    sizeof(EncodedDataBuffer)) {
+						thumb_warn
+						    ("buffer position exceeds buffer max length ");
 						return IMG_CODEC_UNKNOWN_TYPE;
 					}
 
 					while ((ifegstreamctrl.buffpos < sizeof(EncodedDataBuffer)) && ((length = EncodedDataBuffer[ifegstreamctrl.buffpos++]) > 0)) {	/* get the data length */
-						if (_CheckBuffer(&ifegstreamctrl, length) == 0) {
-							thumb_warn("_CheckBuffer was failed");
-							return IMG_CODEC_UNKNOWN_TYPE;
+						if (_CheckBuffer
+						    (&ifegstreamctrl,
+						     length) == 0) {
+							thumb_warn
+							    ("_CheckBuffer was failed");
+							return
+							    IMG_CODEC_UNKNOWN_TYPE;
 						}
 
 						/* Check integer overflow */
@@ -622,7 +639,8 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 							return IMG_CODEC_UNKNOWN_TYPE;
 						}
 
-						ifegstreamctrl.buffpos += (length);
+						ifegstreamctrl.buffpos +=
+						    (length);
 						/* File End Check */
 					}
 					break;
@@ -703,38 +721,51 @@ ImgCodecType _ImgGetInfoStreaming(HFile hFile, unsigned long fileSize,
 					return IMG_CODEC_UNKNOWN_TYPE;
 				}
 
-				temp = EncodedDataBuffer[ifegstreamctrl.buffpos++];
+				temp =
+				    EncodedDataBuffer[ifegstreamctrl.buffpos++];
 				if (temp < 2 || 9 < temp) {
 					return IMG_CODEC_UNKNOWN_TYPE;
 				}
 
 				do {
-					if (_CheckBuffer(&ifegstreamctrl, 1) == 0) {
-						thumb_warn("_CheckBuffer was failed");
+					if (_CheckBuffer(&ifegstreamctrl, 1) ==
+					    0) {
+						thumb_warn
+						    ("_CheckBuffer was failed");
 						return IMG_CODEC_UNKNOWN_TYPE;
 					}
 
-					length =EncodedDataBuffer[ifegstreamctrl.buffpos++];
+					length =
+					    EncodedDataBuffer[ifegstreamctrl.
+							      buffpos++];
 					if ((length + ifegstreamctrl.buffpos) > ifegstreamctrl.buffend) {
 						length =
-							length +
-							ifegstreamctrl.buffpos -
-							ifegstreamctrl.buffend;
-						if (DrmSeekFile(ifegstreamctrl.fd, SEEK_CUR, length) == FALSE) {
+						    length +
+						    ifegstreamctrl.buffpos -
+						    ifegstreamctrl.buffend;
+						if (DrmSeekFile
+						    (ifegstreamctrl.fd,
+						     SEEK_CUR,
+						     length) == FALSE) {
 							if (imagecount) {
 								if (pNumberOfFrames)
 									*pNumberOfFrames
 									    = 2;
-								thumb_dbg("IMG_CODEC_AGIF");
-								return IMG_CODEC_AGIF;
+								thumb_dbg
+								    ("IMG_CODEC_AGIF");
+								return
+								    IMG_CODEC_AGIF;
 							}
-							return IMG_CODEC_UNKNOWN_TYPE;
+							return
+							    IMG_CODEC_UNKNOWN_TYPE;
 						}
-						ifegstreamctrl.filepos += length;
+						ifegstreamctrl.filepos +=
+						    length;
 						ifegstreamctrl.buffpos = 0;
 						ifegstreamctrl.buffend = 0;
 					} else {
-						ifegstreamctrl.buffpos +=length;
+						ifegstreamctrl.buffpos +=
+						    length;
 					}
 
 					/* File End Check */

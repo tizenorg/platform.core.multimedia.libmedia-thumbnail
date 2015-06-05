@@ -151,10 +151,10 @@ void _thumb_daemon_stop_job()
 
 int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 {
-	int err = MS_MEDIA_ERR_NONE;
+	int err = -1;
 
 	err = _media_thumb_process(req_msg, res_msg, uid);
-	if (err != MS_MEDIA_ERR_NONE) {
+	if (err < 0) {
 		if (req_msg->msg_type == THUMB_REQUEST_SAVE_FILE) {
 			thumb_err("_media_thumb_process is failed: %d", err);
 			res_msg->status = THUMB_FAIL;
@@ -171,7 +171,7 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 int _thumb_daemon_all_extract(uid_t uid)
 {
-	int err = MS_MEDIA_ERR_NONE;
+	int err = -1;
 	int count = 0;
 	char query_string[MAX_PATH_SIZE + 1] = { 0, };
 	char path[MAX_PATH_SIZE + 1] = { 0, };
@@ -179,15 +179,15 @@ int _thumb_daemon_all_extract(uid_t uid)
 	sqlite3_stmt *sqlite_stmt = NULL;
 
 	err = _media_thumb_db_connect(uid);
-	if (err != MS_MEDIA_ERR_NONE) {
+	if (err < 0) {
 		thumb_err("_media_thumb_db_connect failed: %d", err);
-		return err;
+		return MEDIA_THUMB_ERROR_DB;
 	}
 
 	sqlite_db_handle = _media_thumb_db_get_handle();
 	if (sqlite_db_handle == NULL) {
 		thumb_err("sqlite handle is NULL");
-		return MS_MEDIA_ERR_INTERNAL;
+		return MEDIA_THUMB_ERROR_DB;
 	}
 
 	if (_thumb_daemon_mmc_status() == VCONFKEY_SYSMAN_MMC_MOUNTED) {
@@ -195,20 +195,20 @@ int _thumb_daemon_all_extract(uid_t uid)
 	} else {
 		snprintf(query_string, sizeof(query_string), SELECT_PATH_FROM_UNEXTRACTED_THUMB_INTERNAL_MEDIA);
 	}
-
+	
 	thumb_warn("Query: %s", query_string);
 
 	err = sqlite3_prepare_v2(sqlite_db_handle, query_string, strlen(query_string), &sqlite_stmt, NULL);
 	if (SQLITE_OK != err) {
-		thumb_err("prepare error [%s]", sqlite3_errmsg(sqlite_db_handle));
+		thumb_err("prepare error [%s]\n", sqlite3_errmsg(sqlite_db_handle));
 		_media_thumb_db_disconnect();
-		return MS_MEDIA_ERR_INTERNAL;
+		return MEDIA_THUMB_ERROR_DB;
 	}
 
 	while(1) {
 		err = sqlite3_step(sqlite_stmt);
 		if (err != SQLITE_ROW) {
-			thumb_dbg("end of row [%s]", sqlite3_errmsg(sqlite_db_handle));
+			thumb_dbg("end of row [%s]\n", sqlite3_errmsg(sqlite_db_handle));
 			break;
 		}
 
@@ -232,17 +232,17 @@ int _thumb_daemon_all_extract(uid_t uid)
 	sqlite3_finalize(sqlite_stmt);
 	_media_thumb_db_disconnect();
 
-	return MS_MEDIA_ERR_NONE;
+	return MEDIA_THUMB_ERROR_NONE;
 }
 
 int _thumb_daemon_process_queue_jobs(gpointer data)
 {
-	int err = MS_MEDIA_ERR_NONE;
+	int err = -1;
 	char *path = NULL;
 	uid_t uid = NULL;
 
 	if (g_cur_idx < g_idx) {
-		thumb_warn("There are %d jobs in the queue", g_idx - g_cur_idx);
+		thumb_dbg("There are %d jobs in the queue", g_idx - g_cur_idx);
 		thumb_dbg("Current idx : [%d]", g_cur_idx);
 		uid = arr_uid[g_cur_idx];
 		path = arr_path[g_cur_idx++];
@@ -261,7 +261,7 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 		if (res_msg.status == THUMB_SUCCESS) {
 
 			err = _media_thumb_db_connect(uid);
-			if (err != MS_MEDIA_ERR_NONE) {
+			if (err < 0) {
 				thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
 				return TRUE;
 			}
