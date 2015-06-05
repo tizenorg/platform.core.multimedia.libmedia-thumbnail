@@ -92,7 +92,7 @@ _media_thumb_get_height(media_thumb_type thumb_type);
  *  This function generates thumbnail raw data, which is wanted by user
  *  This api is closed for a while until being independent from evas object to be thread-safe
  *
- *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *	@return		This function returns zero(MS_MEDIA_ERR_gNONE) on success, or negative value with error code.
  *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
  *  @param[in]				origin_path      The path of the original image
  *  @param[in]				thumb_type       The type of the returned thumbnail data
@@ -114,7 +114,7 @@ _media_thumb_get_height(media_thumb_type thumb_type);
 
 void test_get_thumb_data()
 {
-	int ret = MEDIA_THUMB_ERROR_NONE;
+	int ret = MS_MEDIA_ERR_gNONE;
 	int thumb_type = 0;
 	const char *origin_path = "/opt/usr/media/test.jpg";
 	void *data = NULL;

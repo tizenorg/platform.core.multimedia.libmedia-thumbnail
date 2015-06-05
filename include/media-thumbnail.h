@@ -61,7 +61,7 @@ typedef int (*ThumbFunc) (int error_code, char* path, void* data);
  * 	This function connects to the media database and find thumbnail path of the passed original image. 
  *  If found, the thumbnail path will be returned, or starts to generate thumbnail
  *
- *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *	@return		This function returns zero(MS_MEDIA_ERR_NONE) on success, or negative value with error code.
  *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
  *  @param[in]				origin_path      The path of the original image
  *  @param[out]				thumb_path       The path of generated thumbnail image.
@@ -77,7 +77,7 @@ typedef int (*ThumbFunc) (int error_code, char* path, void* data);
 
 void gen_thumbs()
 {
-	int ret = MEDIA_THUMB_ERROR_NONE;
+	int ret = MS_MEDIA_ERR_NONE;
 	const char *origin_path = "/opt/usr/media/test.jpg";
 	char thumb_path[255];
 
@@ -100,7 +100,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
  * 	This function connects to the media database and find thumbnail path of the passed original image. 
  *  If found, the thumbnail path will be returned through callback, which is registered by user.
  *
- *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *	@return		This function returns zero(MS_MEDIA_ERR_NONE) on success, or negative value with error code.
  *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
  *  @param[in]				origin_path     The path of the original image
  *  @param[in]				func            The callback, which is registered by user
@@ -122,7 +122,7 @@ int _thumb_cb(int error_code, char *path, void *user_data)
 
 void gen_thumbs()
 {
-	int ret = MEDIA_THUMB_ERROR_NONE;
+	int ret = MS_MEDIA_ERR_NONE;
 	const char *origin_path = "/opt/usr/media/test.jpg";
 	char thumb_path[255];
 
@@ -145,7 +145,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
  * 	This function generates thumbnail of the original path and save it to the file system as jpeg format with the passed thumbnail path.
  *  This function doesn't care about media DB.
  *
- *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *	@return		This function returns zero(MS_MEDIA_ERR_NONE) on success, or negative value with error code.
  *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
  *  @param[in]				origin_path      The path of the original image
  *  @param[in]				thumb_type       The type of the returned thumbnail data.
@@ -160,7 +160,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 
 void save_thumbs()
 {
-	int ret = MEDIA_THUMB_ERROR_NONE;
+	int ret = MS_MEDIA_ERR_NONE;
 	const char *origin_path = "/opt/usr/media/test.jpg";
 	const char *thumb_path = "/my_dir/thumb.jpg";
 
@@ -185,7 +185,7 @@ int thumbnail_request_save_to_file(const char *origin_path,
  * 	This function generates thumbnail of all media, which don't have thumbnail yet and save it to the file system as jpeg format.
  *  Once thumbnail generated, the thumbnail path and original image's width and height will be updated to media database.
  *
- *	@return		This function returns zero(MEDIA_THUMB_ERROR_NONE) on success, or negative value with error code.
+ *	@return		This function returns zero(MS_MEDIA_ERR_NONE) on success, or negative value with error code.
  *				Please refer 'media-thumb-error.h' to know the exact meaning of the error.
  *	@see		None.
  *	@pre		None.
@@ -197,7 +197,7 @@ int thumbnail_request_save_to_file(const char *origin_path,
 
 void extract_all_thumbs()
 {
-	int ret = MEDIA_THUMB_ERROR_NONE;
+	int ret = MS_MEDIA_ERR_NONE;
 
 	ret = thumbnail_request_extract_all_thumbs();
 
