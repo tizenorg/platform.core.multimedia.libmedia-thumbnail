@@ -23,6 +23,7 @@
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"
 #include "media-thumb-db.h"
+#include "media-thumb-debug.h"
 #include <glib.h>
 #include <fcntl.h>
 #include <string.h>
@@ -46,7 +47,7 @@ _media_thumb_create_socket(int sock_type, int *sock)
 
 	if ((sock_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		thumb_err("socket failed: %s", strerror(errno));
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 	if (sock_type == CLIENT_SOCKET) {
@@ -60,7 +61,7 @@ _media_thumb_create_socket(int sock_type, int *sock)
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout)) == -1) {
 			thumb_err("setsockopt failed: %s", strerror(errno));
 			close(sock_fd);
-			return MEDIA_THUMB_ERROR_NETWORK;
+			return MS_MEDIA_ERR_SOCKET_CONN;
 		}
 	} else if (sock_type == SERVER_SOCKET) {
 
@@ -69,13 +70,13 @@ _media_thumb_create_socket(int sock_type, int *sock)
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &n_reuse, sizeof(n_reuse)) == -1) {
 			thumb_err("setsockopt failed: %s", strerror(errno));
 			close(sock_fd);
-			return MEDIA_THUMB_ERROR_NETWORK;
+			return MS_MEDIA_ERR_SOCKET_CONN;
 		}
 	}
 
 	*sock = sock_fd;
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 
@@ -86,7 +87,7 @@ _media_thumb_create_udp_socket(int *sock)
 
 	if ((sock_fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		thumb_err("socket failed: %s", strerror(errno));
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 #ifdef _USE_MEDIA_UTIL_
@@ -98,22 +99,22 @@ _media_thumb_create_udp_socket(int *sock)
 	if (setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv_timeout, sizeof(tv_timeout)) == -1) {
 		thumb_err("setsockopt failed: %s", strerror(errno));
 		close(sock_fd);
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 	*sock = sock_fd;
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int _media_thumb_get_error()
 {
 	if (errno == EWOULDBLOCK) {
 		thumb_err("Timeout. Can't try any more");
-		return MEDIA_THUMB_ERROR_TIMEOUT;
+		return MS_MEDIA_ERR_SOCKET_RECEIVE_TIMEOUT;
 	} else {
 		thumb_err("recvfrom failed : %s", strerror(errno));
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_RECEIVE;
 	}
 }
 
@@ -157,14 +158,14 @@ int __media_thumb_pop_req_queue(const char *path, bool shutdown_channel)
 		}
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int __media_thumb_check_req_queue(const char *path)
 {
 	int req_len = 0, i;
 
-	if (g_request_queue == NULL) return MEDIA_THUMB_ERROR_NONE;
+	if (g_request_queue == NULL) return MS_MEDIA_ERR_NONE;
 	req_len = g_queue_get_length(g_request_queue);
 
 //	thumb_dbg("Queue length : %d", req_len);
@@ -181,14 +182,14 @@ int __media_thumb_check_req_queue(const char *path)
 
 			if (strncmp(path, req->path, strlen(path)) == 0) {
 				//thumb_dbg("Same Request - %s", path);
-				return -1;
+				return MS_MEDIA_ERR_INVALID_PARAMETER;
 
 				break;
 			}
 		}
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
@@ -234,7 +235,7 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	//thumb_dbg("destination path : %s", msg->dst_path);
 
 	SAFE_FREE(buf);
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 #ifdef _USE_UDS_SOCKET_
@@ -266,7 +267,7 @@ _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct socka
 	if (msg->origin_path_size <= 0  || msg->origin_path_size > MAX_PATH_SIZE) {
 		SAFE_FREE(buf);
 		thumb_err("msg->origin_path_size is invalid %d", msg->origin_path_size );
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	strncpy(msg->org_path, (char*)buf + header_size, msg->origin_path_size);
@@ -275,7 +276,7 @@ _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct socka
 	if (msg->dest_path_size <= 0  || msg->dest_path_size > MAX_PATH_SIZE) {
 		SAFE_FREE(buf);
 		thumb_err("msg->origin_path_size is invalid %d", msg->dest_path_size );
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	strncpy(msg->dst_path, (char*)buf + header_size + msg->origin_path_size, msg->dest_path_size);
@@ -284,14 +285,14 @@ _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct socka
 	SAFE_FREE(buf);
 	*from_size = from_addr_size;
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
 _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 {
 	if (req_msg == NULL || buf == NULL) {
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int org_path_len = 0;
@@ -313,7 +314,7 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 
 	*buf_size = size;
 
-	return 0;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int
@@ -330,7 +331,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 #endif
 
 	int recv_str_len = 0;
-	int err;
+	int err = MS_MEDIA_ERR_NONE;
 	int pid;
 
 
@@ -343,13 +344,13 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
 #endif
 		thumb_err("ms_ipc_create_client_socket failed");
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 #else
 	/* Creaete a TCP socket */
 	if (_media_thumb_create_socket(CLIENT_SOCKET, &sock) < 0) {
 		thumb_err("_media_thumb_create_socket failed");
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 #endif
 
@@ -379,7 +380,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	/* Connecting to the thumbnail server */
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
 		thumb_err("connect error : %s", strerror(errno));
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 	thumbMsg req_msg;
@@ -410,7 +411,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
 		close(sock);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	unsigned char *buf = NULL;
@@ -424,7 +425,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 		thumb_err("sendto failed: %d\n", errno);
 		SAFE_FREE(buf);
 		close(sock);
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_SEND;
 	}
 
 	thumb_dbg("Sending msg to thumbnail daemon is successful");
@@ -444,12 +445,12 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	if (recv_str_len > max_length) {
 		thumb_err("user buffer is too small. Output's length is %d", recv_str_len);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (recv_msg.status == THUMB_FAIL) {
 		thumb_err("Failed to make thumbnail");
-		return -1;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (msg_type != THUMB_REQUEST_SAVE_FILE) {
@@ -459,7 +460,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	thumb_info->origin_width = recv_msg.origin_width;
 	thumb_info->origin_height = recv_msg.origin_height;
 
-	return 0;
+	return MS_MEDIA_ERR_NONE;
 }
 
 static int _mkdir(const char *dir, mode_t mode) {
@@ -536,7 +537,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 	if (req_msg == NULL || res_msg == NULL) {
 		thumb_err("Invalid msg!");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int msg_type = req_msg->msg_type;
@@ -551,22 +552,22 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	max_length = sizeof(res_msg->dst_path);
 
 	err = _media_thumb_db_connect(uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
-		return MEDIA_THUMB_ERROR_DB;
+		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
 	}
 
 	if (msg_type == THUMB_REQUEST_DB_INSERT) {
 		err = _media_thumb_get_thumb_from_db_with_size(origin_path, thumb_path, max_length, &need_update_db, &origin_w, &origin_h);
-		if (err == 0) {
+		if (err == MS_MEDIA_ERR_NONE) {
 			res_msg->origin_width = origin_w;
 			res_msg->origin_height = origin_h;
 			_media_thumb_db_disconnect();
-			return MEDIA_THUMB_ERROR_NONE;
+			return MS_MEDIA_ERR_NONE;
 		} else {
 			if (strlen(thumb_path) == 0) {
 				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
-				if (err < 0) {
+				if (err != MS_MEDIA_ERR_NONE) {
 					thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
 					strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
 					_media_thumb_db_disconnect();
@@ -599,7 +600,7 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	}
 
 	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &gdkdata, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_thumbnail_get_data failed - %d\n", err);
 		if ( gdkdata != NULL ){
 			g_object_unref(gdkdata);
@@ -669,14 +670,14 @@ _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	/* DB update if needed */
 	if (need_update_db == 1) {
 		err = _media_thumb_update_db(origin_path, thumb_path, res_msg->origin_width, res_msg->origin_height, uid);
-		if (err < 0) {
+		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("_media_thumb_update_db failed : %d", err);
 		}
 	}
 
 	_media_thumb_db_disconnect();
 
-	return 0;
+	return MS_MEDIA_ERR_NONE;
 }
 
 gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpointer data)
@@ -685,7 +686,7 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 	int header_size = 0;
 	int recv_str_len = 0;
 	int sock = 0;
-	int err = MEDIA_THUMB_ERROR_NONE;
+	int err = MS_MEDIA_ERR_NONE;
 
 	memset((void *)&recv_msg, 0, sizeof(thumbMsg));
 	sock = g_io_channel_unix_get_fd(src);
@@ -710,7 +711,7 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 
 	if (recv_msg.status == THUMB_FAIL) {
 		thumb_err("Failed to make thumbnail");
-		err = MEDIA_THUMB_ERROR_UNSUPPORTED;
+		err = MS_MEDIA_ERR_INTERNAL;
 		goto callback;
 	}
 
@@ -742,7 +743,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	int pid;
 
 	if ((msg_type == THUMB_REQUEST_DB_INSERT) && (__media_thumb_check_req_queue(origin_path) < 0)) {
-		return MEDIA_THUMB_ERROR_DUPLICATED_REQUEST;
+		return MS_MEDIA_ERR_THUMB_DUPLICATED_REQUEST;
 	}
 
 #ifdef _USE_MEDIA_UTIL_
@@ -754,13 +755,13 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
 #endif
 		thumb_err("ms_ipc_create_client_socket failed");
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 #else
 	/* Creaete a TCP socket */
 	if (_media_thumb_create_socket(CLIENT_SOCKET, &sock) < 0) {
 		thumb_err("_media_thumb_create_socket failed");
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 #endif
 
@@ -795,7 +796,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
 		thumb_err("connect error : %s", strerror(errno));
 		g_io_channel_shutdown(channel, TRUE, NULL);
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 	if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
@@ -828,7 +829,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
 		g_io_channel_shutdown(channel, TRUE, NULL);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	unsigned char *buf = NULL;
@@ -842,7 +843,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 		SAFE_FREE(buf);
 		g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), source_id));
 		g_io_channel_shutdown(channel, TRUE, NULL);
-		return MEDIA_THUMB_ERROR_NETWORK;
+		return MS_MEDIA_ERR_SOCKET_SEND;
 	}
 
 	SAFE_FREE(buf);
@@ -867,7 +868,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 		thumb_req = calloc(1, sizeof(thumbReq));
 		if (thumb_req == NULL) {
 			thumb_err("Failed to create request element");
-			return 0;
+			return MS_MEDIA_ERR_NONE;
 		}
 
 		thumb_req->channel = channel;
@@ -879,6 +880,5 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	}
 #endif
 
-	return 0;
+	return MS_MEDIA_ERR_NONE;
 }
-

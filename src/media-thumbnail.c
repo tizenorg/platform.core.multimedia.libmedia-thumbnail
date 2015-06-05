@@ -30,24 +30,24 @@
 
 int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max_length, uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	//int need_update_db = 0;
 	media_thumb_info thumb_info;
 
 	if (origin_path == NULL || thumb_path == NULL) {
 		thumb_err("Invalid parameter");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (!g_file_test
 	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
-			return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (max_length <= 0) {
 		thumb_err("Length is invalid");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int store_type = -1;
@@ -55,51 +55,28 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 
 	if ((store_type != THUMB_PHONE) && (store_type != THUMB_MMC)) {
 		thumb_err("origin path(%s) is invalid", origin_path);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	thumb_err("Path : %s", origin_path);
-/*
-	err = _media_thumb_db_connect();
-	if (err < 0) {
-		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
-		return MEDIA_THUMB_ERROR_DB;
-	}
 
-	err = _media_thumb_get_thumb_from_db(origin_path, thumb_path, max_length, &need_update_db);
-	if (err == 0) {
-		_media_thumb_db_disconnect();
-		return MEDIA_THUMB_ERROR_NONE;
-	}
-*/
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
-		//_media_thumb_db_disconnect();
 		return err;
 	}
-/*
-	// Need to update DB once generating thumb is done
-	if (need_update_db) {
-		err = _media_thumb_update_db(origin_path, thumb_path, thumb_info.origin_width, thumb_info.origin_height);
-		if (err < 0) {
-			thumb_err("_media_thumb_update_db failed : %d", err);
-		}
-	}
 
-	_media_thumb_db_disconnect();
-*/
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thumb_type, const char *thumb_path, uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	if (origin_path == NULL || thumb_path == NULL) {
 		thumb_err("Invalid parameter");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	media_thumb_info thumb_info;
@@ -110,39 +87,39 @@ int thumbnail_request_save_to_file(const char *origin_path, media_thumb_type thu
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_SAVE_FILE, thumb_type, origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height, uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 	//int need_update_db = 0;
 	media_thumb_info thumb_info;
 
 	if (origin_path == NULL || thumb_path == NULL) {
 		thumb_err("Invalid parameter");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (origin_width == NULL || origin_height == NULL) {
 		thumb_err("Invalid parameter ( width or height )");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (!g_file_test
 	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
-			return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (max_length <= 0) {
 		thumb_err("Length is invalid");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int store_type = -1;
@@ -150,26 +127,14 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 
 	if ((store_type != THUMB_PHONE) && (store_type != THUMB_MMC)) {
 		thumb_err("origin path(%s) is invalid", origin_path);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	thumb_err("Path : %s", origin_path);
-/*
-	err = _media_thumb_db_connect();
-	if (err < 0) {
-		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
-		return MEDIA_THUMB_ERROR_DB;
-	}
 
-	err = _media_thumb_get_thumb_from_db_with_size(origin_path, thumb_path, max_length, &need_update_db, &width, &height);
-	if (err == 0) {
-		_media_thumb_db_disconnect();
-		return MEDIA_THUMB_ERROR_NONE;
-	}
-*/
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		//_media_thumb_db_disconnect();
 		return err;
@@ -178,13 +143,12 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 	*origin_width = thumb_info.origin_width;
 	*origin_height = thumb_info.origin_height;
 
-	//_media_thumb_db_disconnect();
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_extract_all_thumbs(uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	media_thumb_info thumb_info;
 	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
@@ -193,27 +157,27 @@ int thumbnail_request_extract_all_thumbs(uid_t uid)
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_ALL_MEDIA, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data, uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	if (origin_path == NULL) {
 		thumb_err("Invalid parameter");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	if (!g_file_test
 	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
-			return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int store_type = -1;
@@ -221,7 +185,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 
 	if ((store_type != THUMB_PHONE) && (store_type != THUMB_MMC)) {
 		thumb_err("origin path(%s) is invalid", origin_path);
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	thumb_err("Path : %s", origin_path);
@@ -232,13 +196,13 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request_async(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, userData, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		SAFE_FREE(userData);
 		return err;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int _media_thumbnail_cancel_cb(int error_code, char* path, void* data)
@@ -246,32 +210,32 @@ int _media_thumbnail_cancel_cb(int error_code, char* path, void* data)
 	thumb_dbg("Error code : %d", error_code);
 	if (path) thumb_dbg("Cancel : %s", path);
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_cancel_media(const char *origin_path, uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
 
 	if (origin_path == NULL) {
 		thumb_err("Invalid parameter");
-		return MEDIA_THUMB_ERROR_INVALID_PARAMETER;
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA, thumb_type, origin_path, NULL, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return MS_MEDIA_ERR_NONE;
 }
 
 int thumbnail_request_cancel_all(uid_t uid)
 {
-	int err = -1;
+	int err = MS_MEDIA_ERR_NONE;
 
 	media_thumb_info thumb_info;
 	media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
@@ -280,10 +244,10 @@ int thumbnail_request_cancel_all(uid_t uid)
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_CANCEL_ALL, thumb_type, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
 	}
 
-	return MEDIA_THUMB_ERROR_NONE;
+	return err;
 }

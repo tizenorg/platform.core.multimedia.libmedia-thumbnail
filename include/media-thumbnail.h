@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "media-thumb-types.h"
-#include "media-thumb-error.h"
 
 #ifdef __cplusplus
 extern "C" {

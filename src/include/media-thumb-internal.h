@@ -19,9 +19,9 @@
  *
  */
 
-
+#include <stdbool.h>
+#include <media-util-err.h>
 #include "media-thumbnail.h"
-#include "media-thumb-error.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
 #include <gdk-pixbuf/gdk-pixbuf.h>

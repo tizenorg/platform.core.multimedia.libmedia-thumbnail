@@ -9,6 +9,7 @@ Source1001:     %{name}.manifest
 Source1002:     %{name}-devel.manifest
 Source1003:     media-thumbnail-server.manifest
 
+Requires: media-server
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(aul)
 BuildRequires:  pkgconfig(dlog)
@@ -22,7 +23,6 @@ BuildRequires:  pkgconfig(mmutil-jpeg)
 BuildRequires:  pkgconfig(vconf)
 BuildRequires:  pkgconfig(libtzplatform-config)
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
-Requires:       media-server
 
 %description
 Media thumbnail service library for multimedia applications.
