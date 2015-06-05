@@ -66,16 +66,14 @@ typedef struct {
 	void *user_data;
 } thumbUserData;
 
-int
-_media_thumb_image(const char *origin_path,
+int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info,
 					uid_t uid);
 
-int
-_media_thumb_video(const char *origin_path,
+int _media_thumb_video(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
