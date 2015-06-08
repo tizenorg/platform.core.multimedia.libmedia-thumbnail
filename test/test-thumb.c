@@ -27,7 +27,6 @@
 #include <mm_util_jpeg.h>
 
 #include "media-thumbnail.h"
-#include "media-thumbnail-private.h"
 #include "media-thumb-debug.h"
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"

@@ -26,7 +26,6 @@
  */
 
 #include "md5.h"
-#include "media-thumbnail-private.h"
 #include <string.h>
 #include <alloca.h>
 #include <media-util-err.h>
