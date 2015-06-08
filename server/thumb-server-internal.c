@@ -40,22 +40,19 @@ static __thread int g_cur_idx = 0;
 
 GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 
-#ifdef _USE_MEDIA_UTIL_
 gboolean _thumb_server_send_msg_to_agent(int msg_type);
-#endif
 void _thumb_daemon_stop_job();
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
 	thumb_dbg("");
 
-#ifdef _USE_MEDIA_UTIL_
 	_thumb_server_send_msg_to_agent(MS_MSG_THUMB_SERVER_READY);
-#endif
+
 	return FALSE;
 }
 
-void _thumb_daemon_finish_jobs()
+void _thumb_daemon_finish_jobs(void)
 {
 	sqlite3 *sqlite_db_handle = _media_thumb_db_get_handle();
 
@@ -69,7 +66,7 @@ void _thumb_daemon_finish_jobs()
 	return;
 }
 
-int _thumb_daemon_mmc_status()
+int _thumb_daemon_mmc_status(void)
 {
 	int err = -1;
 	int status = -1;
@@ -300,16 +297,9 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 									GIOCondition condition,
 									gpointer data)
 {
-#ifdef _USE_UDS_SOCKET_
 	struct sockaddr_un client_addr;
-#else
-	struct sockaddr_in client_addr;
-#endif
 	unsigned int client_addr_len;
-#ifndef _USE_MEDIA_UTIL_
 	int client_sock;
-#endif
-
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
 
@@ -327,27 +317,10 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE*2;
 
-#ifndef _USE_MEDIA_UTIL_
-	if ((client_sock = accept(sock, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
-		thumb_err("accept failed : %s", strerror(errno));
-		return TRUE;
-	}
- 
-	thumb_dbg("Client[%d] is accepted", client_sock);
-
-
-	if (_media_thumb_recv_msg(client_sock, header_size, &recv_msg) < 0) {
-		thumb_err("_media_thumb_recv_msg failed ");
-		close(client_sock);
-		return TRUE;
-	}
-#else
-
 	if (_media_thumb_recv_udp_msg(sock, header_size, &recv_msg, &client_addr, &client_addr_len) < 0) {
 		thumb_err("_media_thumb_recv_udp_msg failed");
 		return FALSE;
 	}
-#endif
 
 	thumb_warn("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
@@ -375,26 +348,11 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	unsigned char *buf = NULL;
 	_media_thumb_set_buffer(&res_msg, &buf, &buf_size);
 
-	//thumb_dbg("buffer size : %d", buf_size);
-
-#ifndef _USE_MEDIA_UTIL_
-	if (send(client_sock, buf, buf_size, 0) != buf_size) {
-		thumb_err("sendto failed : %s", strerror(errno));
-	} else {
-		thumb_dbg("Sent %s(%d) \n", res_msg.dst_path, strlen(res_msg.dst_path));
-	}
-
-	close(client_sock);
-#else
-#ifdef _USE_UDS_SOCKET_
-	thumb_dbg("+++++++++++++++++++++%s", client_addr.sun_path);
-#endif
 	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
 		thumb_err("sendto failed: %s\n", strerror(errno));
 		SAFE_FREE(buf);
 		return FALSE;
 	}
-#endif
 
 	thumb_warn("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
 
@@ -408,36 +366,22 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	return TRUE;
 }
 
-#ifdef _USE_MEDIA_UTIL_
 gboolean _thumb_server_send_msg_to_agent(int msg_type)
 {
 	int sock;
 	const char *serv_ip = "127.0.0.1";
-#ifdef _USE_UDS_SOCKET_
 	struct sockaddr_un serv_addr;
-#else
-	struct sockaddr_in serv_addr;
-#endif
 	ms_thumb_server_msg send_msg;
 
-#ifdef _USE_UDS_SOCKET_
 	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
-#else
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock) < 0) {
-#endif
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
-#ifdef _USE_UDS_SOCKET_
+
 	serv_addr.sun_family = AF_UNIX;
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcomm.socket");
-#else
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
-	serv_addr.sin_port = htons(MS_THUMB_COMM_PORT);
-#endif
 
 	send_msg.msg_type = msg_type;
 
@@ -459,7 +403,6 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	close(sock);
  	return TRUE;
 }
-#endif
 
 gboolean _thumb_server_prepare_socket(int *sock_fd)
 {
@@ -471,49 +414,12 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 
 	memset((void *)&recv_msg, 0, sizeof(recv_msg));
 	memset((void *)&res_msg, 0, sizeof(res_msg));
-#ifdef _USE_MEDIA_UTIL_
 	serv_port = MS_THUMB_DAEMON_PORT;
 
 	if (ms_ipc_create_server_socket(MS_PROTOCOL_UDP, serv_port, &sock) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
-#else
-	char thumb_path[MAX_PATH_SIZE + 1];
-#ifdef _USE_UDS_SOCKET_
-	struct sockaddr_un serv_addr;
-#else
-	struct sockaddr_in serv_addr;
-#endif
-	serv_port = THUMB_DAEMON_PORT;
-
-	/* Creaete a TCP socket */
-	if (_media_thumb_create_socket(SERVER_SOCKET, &sock) < 0) {
-		thumb_err("_media_thumb_create_socket failed");
-		return FALSE;
-	}
-
-	memset(thumb_path, 0, sizeof(thumb_path));
-	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(serv_port);
-
-	/* Bind to the local address */
-	if (bind(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		thumb_err("bind failed : %s", strerror(errno));
-		return FALSE;
-	}
-
-	thumb_dbg("bind success");
-
-	/* Listening */
-	if (listen(sock, SOMAXCONN) < 0) {
-		thumb_err("listen failed : %s", strerror(errno));
-	}
-
-	thumb_dbg("Listening...");
-#endif
 
 	*sock_fd = sock;
 

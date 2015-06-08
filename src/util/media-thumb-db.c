@@ -28,12 +28,7 @@
 #include <unistd.h>
 #include <util-func.h>
 
-
-#ifdef _USE_MEDIA_UTIL_
 static __thread  MediaDBHandle *db_handle;
-#else
-static __thread  sqlite3 *db_handle;
-#endif
 
 static int _media_thumb_busy_handler(void *pData, int count)
 {
@@ -48,8 +43,7 @@ sqlite3 *_media_thumb_db_get_handle()
 	return db_handle;
 }
 
-int
-_media_thumb_sqlite_connect(sqlite3 **handle)
+int _media_thumb_sqlite_connect(sqlite3 **handle)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
@@ -81,8 +75,7 @@ _media_thumb_sqlite_connect(sqlite3 **handle)
 	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_sqlite_disconnect(sqlite3 *handle)
+int _media_thumb_sqlite_disconnect(sqlite3 *handle)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	if (handle != NULL) {
@@ -258,42 +251,17 @@ int _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 	thumbpath_string = sqlite3_mprintf("%s", thumb_path);
 	query_string = sqlite3_mprintf(UPDATE_THUMB_BY_PATH, thumbpath_string, path_string);
 
-#ifndef _USE_MEDIA_UTIL_
-	char *err_msg = NULL;
-	err = sqlite3_exec(handle, query_string, NULL, NULL, &err_msg);
-
-	thumb_dbg("Query : %s", query_string);
-
-	sqlite3_free(query_string);
-	sqlite3_free(thumbpath_string);
-	sqlite3_free(path_string);
-
-	if (SQLITE_OK != err) {
-		if (err_msg) {
-			thumb_err("Failed to query[ %s ]", err_msg);
-			sqlite3_free(err_msg);
-			err_msg = NULL;
-		}
-
-		return MS_MEDIA_ERR_DB_UPDATE_FAIL;
-	}
-
-	if (err_msg)
-		sqlite3_free(err_msg);
-#else
 	err = media_db_request_update_db(query_string, uid);
 	if (err < 0) {
 		thumb_err("media_db_request_update_db failed : %d", err);
 		return err;
 	}
-#endif
 	thumb_dbg("Query success");
 
 	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_update_wh_to_db(sqlite3 *handle,
+int _media_thumb_update_wh_to_db(sqlite3 *handle,
 								const char *origin_path,
 								int width,
 								int height,
@@ -311,34 +279,11 @@ _media_thumb_update_wh_to_db(sqlite3 *handle,
 	path_string = sqlite3_mprintf("%s", origin_path);
 	query_string = sqlite3_mprintf(UPDATE_WH_BY_PATH, width, height, path_string);
 
-#ifndef _USE_MEDIA_UTIL_
-	char *err_msg = NULL;
-	err = sqlite3_exec(handle, query_string, NULL, NULL, &err_msg);
-
-	thumb_dbg("Query : %s", query_string);
-
-	sqlite3_free(query_string);
-	sqlite3_free(path_string);
-
-	if (SQLITE_OK != err) {
-		if (err_msg) {
-			thumb_err("Failed to query[ %s ]", err_msg);
-			sqlite3_free(err_msg);
-			err_msg = NULL;
-		}
-
-		return MS_MEDIA_ERR_DB_UPDATE_FAIL;
-	}
-
-	if (err_msg)
-		sqlite3_free(err_msg);
-#else
 	err = media_db_request_update_db(query_string, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
 		return err;
 	}
-#endif
 	thumb_dbg("Query success");
 
 	return err;
@@ -377,61 +322,27 @@ int _media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
 int _media_thumb_db_connect(uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
-/*
-	err = media_svc_connect(&mb_svc_handle);
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("media_svc_connect failed: %d", err);
-		mb_svc_handle = NULL;
-		return err;
-	}
-*/
-#ifndef _USE_MEDIA_UTIL_
-	err = _media_thumb_sqlite_connect(&db_handle);
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("_media_thumb_sqlite_connect failed: %d", err);
-		db_handle = NULL;
-		return err;
-	}
-#else
+
 	err = media_db_connect(&db_handle,uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_connect failed: %d", err);
 		db_handle = NULL;
 		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
 	}
-#endif
 
 	return MS_MEDIA_ERR_NONE;
 }
 
-int
-_media_thumb_db_disconnect()
+int _media_thumb_db_disconnect()
 {
 	int err = MS_MEDIA_ERR_NONE;
-/*
-	err = media_svc_disconnect(mb_svc_handle);
 
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("media_svc_disconnect failed: %d", err);
-	}
-
-	mb_svc_handle = NULL;
-*/
-#ifndef _USE_MEDIA_UTIL_
-	err = _media_thumb_sqlite_disconnect(db_handle);
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("_media_thumb_sqlite_disconnect failed: %d", err);
-		db_handle = NULL;
-		return err;
-	}
-#else
 	err = media_db_disconnect(db_handle);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_disconnect failed: %d", err);
 		db_handle = NULL;
 		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
 	}
-#endif
 
 	db_handle = NULL;
 	return err;
@@ -525,40 +436,8 @@ int _media_thumb_update_db(const char *origin_path,
 									uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
-
-#if 0
-	Mitem *item = NULL;
-
-	err = minfo_get_item(mb_svc_handle, origin_path, &item);
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("minfo_get_item (%s) failed: %d", origin_path, err);
-		return err;
-	}
-
-	err = minfo_update_media_thumb(mb_svc_handle, item->uuid, thumb_path);
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("minfo_update_media_thumb (ID:%s, %s) failed: %d",
-							item->uuid, thumb_path, err);
-		minfo_destroy_mtype_item(item);
-		return err;
-	}
-
-	if (item->type == MINFO_ITEM_IMAGE) {
-		err = minfo_update_image_meta_info_int(mb_svc_handle, item->uuid, 
-												MINFO_IMAGE_META_WIDTH, width,
-												MINFO_IMAGE_META_HEIGHT, height, -1);
-	
-		if (err != MS_MEDIA_ERR_NONE) {
-			thumb_err("minfo_update_image_meta_info_int failed: %d", err);
-			minfo_destroy_mtype_item(item);
-			return err;
-		}
-	}
-	
-	err = minfo_destroy_mtype_item(item);
-#endif
-
 	int media_type = THUMB_NONE_TYPE;
+
 	err = _media_thumb_get_type_from_db(db_handle, origin_path, &media_type);
 	if (err < 0) {
 		thumb_err("_media_thumb_get_type_from_db (%s) failed: %d", origin_path, err);

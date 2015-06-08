@@ -36,7 +36,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-//#include <drm-service.h>
 #include <drm_client.h>
 #include <mm_file.h>
 #include <mm_error.h>
@@ -153,8 +152,7 @@ int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value
 			buf[strlen(buf)] = '\0';
 
 			if (*buf) {
-				thumb_dbg("%s: %s\n",
-					     exif_tag_get_name_in_ifd(tag, ifd), buf);
+				thumb_dbg("%s: %s\n", exif_tag_get_name_in_ifd(tag, ifd), buf);
 			}
 		}
 	}
@@ -913,8 +911,7 @@ int _media_thumb_jpeg(const char *origin_path,
 	return err;
 }
 
-int
-_media_thumb_image(const char *origin_path,
+int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,

@@ -49,28 +49,23 @@
 
 sqlite3 *_media_thumb_db_get_handle();
 
-int
-_media_thumb_db_connect(uid_t uid);
+int _media_thumb_db_connect(uid_t uid);
 
-int
-_media_thumb_db_disconnect();
+int _media_thumb_db_disconnect();
 
-int
-_media_thumb_get_thumb_from_db(const char *origin_path,
+int _media_thumb_get_thumb_from_db(const char *origin_path,
 								char *thumb_path,
 								int max_length,
 								int *need_update_db);
 
-int
-_media_thumb_get_thumb_from_db_with_size(const char *origin_path,
+int _media_thumb_get_thumb_from_db_with_size(const char *origin_path,
 								char *thumb_path,
 								int max_length,
 								int *need_update_db,
 								int *width,
 								int *height);
 
-int
-_media_thumb_update_db(const char *origin_path,
+int _media_thumb_update_db(const char *origin_path,
 									char *thumb_path,
 									int width,
 									int height,

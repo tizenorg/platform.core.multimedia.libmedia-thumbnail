@@ -20,21 +20,7 @@
  */
 
 
-#include "media-thumb-debug.h"
-#include "media-thumb-types.h"
-#include "media-thumb-internal.h"
-
-#ifdef _USE_MEDIA_UTIL_
-#include "media-util-ipc.h"
-#include "media-server-ipc.h"
-#endif
-
-#ifdef _USE_UDS_SOCKET_
 #include <sys/un.h>
-#else
-#include <sys/socket.h>
-#endif
-
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,18 +29,16 @@
 #include <signal.h>
 #include <sys/types.h>
 
+#include "media-thumb-debug.h"
+#include "media-thumb-types.h"
+#include "media-thumb-internal.h"
+#include "media-util-ipc.h"
+#include "media-server-ipc.h"
+
 #ifndef _MEDIA_THUMB_IPC_H_
 #define _MEDIA_THUMB_IPC_H_
 
-#ifndef _USE_MEDIA_UTIL_
-#define THUMB_DAEMON_PORT 10000
-#endif
 #define MAX_PATH_SIZE 4096
-
-#ifndef _USE_MEDIA_UTIL_
-#define TIMEOUT_SEC		10
-#endif
-
 #define MAX_TRIES		3
 
 enum {
@@ -72,52 +56,18 @@ enum {
 	THUMB_FAIL
 };
 
-#ifndef _USE_MEDIA_UTIL_
-enum {
-	CLIENT_SOCKET,
-	SERVER_SOCKET
-};
 
-typedef struct _thumbMsg{
-	int msg_type;
-	media_thumb_type thumb_type;
-	int status;
-	int pid;
-	uid_t uid;
-	int thumb_size;
-	int thumb_width;
-	int thumb_height;
-	int origin_width;
-	int origin_height;
-	int origin_path_size;
-	int dest_path_size;
-	char org_path[MAX_PATH_SIZE];
-	char dst_path[MAX_PATH_SIZE];
-} thumbMsg;
-#endif
+int _media_thumb_create_socket(int sock_type, int *sock);
 
-int
-_media_thumb_create_socket(int sock_type, int *sock);
+int _media_thumb_create_udp_socket(int *sock);
 
-int
-_media_thumb_create_udp_socket(int *sock);
+int _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg);
 
-int
-_media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg);
+int _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_un *from_addr, unsigned int *from_size);
 
-#ifdef _USE_UDS_SOCKET_
-int
-_media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_un *from_addr, unsigned int *from_size);
-#else
-int
-_media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_in *from_addr, unsigned int *from_size);
-#endif
+int _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
 
-int
-_media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
-
-int
-_media_thumb_request(int msg_type,
+int _media_thumb_request(int msg_type,
 					media_thumb_type thumb_type,
 					const char *origin_path,
 					char *thumb_path,
@@ -125,14 +75,12 @@ _media_thumb_request(int msg_type,
 					media_thumb_info *thumb_info,
 					uid_t uid);
 
-int
-_media_thumb_request_async(int msg_type,
+int _media_thumb_request_async(int msg_type,
 					media_thumb_type thumb_type,
 					const char *origin_path,
 					thumbUserData *userData,
 					uid_t uid);
 
-int
-_media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
+int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
 
 #endif /*_MEDIA_THUMB_IPC_H_*/
