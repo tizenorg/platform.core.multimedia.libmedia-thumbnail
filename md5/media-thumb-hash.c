@@ -110,24 +110,3 @@ char *_media_thumb_generate_hash_name(const char *file)
 
 	return md5out;
 }
-
-int thumbnail_generate_hash_code(const char *origin_path, char *hash_code, int max_length)
-{
-	char *hash = NULL;
-
-	if (max_length < ((2 * MD5_HASHBYTES) + 1)) {
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
-	}
-
-	hash = _media_thumb_generate_hash_name(origin_path);
-
-	if (hash == NULL) {
-		return MS_MEDIA_ERR_INTERNAL;
-	}
-
-	strncpy(hash_code, hash, max_length);
-	hash_code[strlen(hash_code)] ='\0';
-
-	return MS_MEDIA_ERR_NONE;
-}
-

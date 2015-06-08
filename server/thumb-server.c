@@ -27,9 +27,6 @@
 #include <pthread.h>
 #include <heynoti.h>
 #include <vconf.h>
-//#include <signal.h>
-//#include <glib-unix.h>
-
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -37,7 +34,6 @@
 
 #define LOG_TAG "MEDIA_THUMBNAIL_SERVER"
 #define POWEROFF_NOTI_NAME "power_off_start" /*poeroff noti from system-server*/
-
 
 extern GMainLoop *g_thumb_server_mainloop;
 
@@ -53,14 +49,13 @@ static void _media_thumb_signal_handler(void *user_data)
 	return;
 }
 
-int main()
+int main(void)
 {
-	
 	int sockfd = -1;
 
-    GSource *source = NULL;
+	GSource *source = NULL;
 	GIOChannel *channel = NULL;
- 	GMainContext *context = NULL;
+	GMainContext *context = NULL;
 
 	/*heynoti for power off*/
 	int err = 0;

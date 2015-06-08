@@ -39,11 +39,6 @@ typedef enum {
 	TIMEOUT_MODE = 1
 } _server_mode_e;
 
-#if 0
-int _thumb_daemon_get_sockfd();
-gboolean _thumb_daemon_udp_thread(void *data);
-#endif
-
 gboolean _thumb_daemon_start_jobs(gpointer data);
 void _thumb_daemon_finish_jobs();
 void _thumb_daemon_mmc_eject_vconf_cb(void *data);

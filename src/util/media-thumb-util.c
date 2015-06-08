@@ -169,14 +169,9 @@ _media_thumb_get_file_type(const char *file_full_path)
 int _media_thumb_get_store_type_by_path(const char *full_path)
 {
 	if (full_path != NULL) {
-		if (strncmp
-		    (full_path, THUMB_PATH_PHONE,
-		     strlen(THUMB_PATH_PHONE)) == 0) {
+		if (strncmp(full_path, THUMB_PATH_PHONE, strlen(THUMB_PATH_PHONE)) == 0) {
 			return THUMB_PHONE;
-		} else
-		    if (strncmp
-			(full_path, THUMB_PATH_MMC,
-			 strlen(THUMB_PATH_MMC)) == 0) {
+		} else if (strncmp(full_path, THUMB_PATH_MMC, strlen(THUMB_PATH_MMC)) == 0) {
 			return THUMB_MMC;
 		}
 	}
@@ -292,8 +287,7 @@ static char* _media_thumb_phone_get_path(uid_t uid)
 	return result_psswd;
 }
 
-int
-_media_thumb_get_hash_name(const char *file_full_path,
+int _media_thumb_get_hash_name(const char *file_full_path,
 				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid)
 {
 	char *hash_name;

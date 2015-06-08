@@ -135,16 +135,6 @@ int main(int argc, char *argv[])
 		printf("Success!!\n");
 	} else if (origin_path && mode == 4) {
 		printf("Test thumbnail_generate_hash_code\n");
-		char hash[255] = {0,};
-
-		err = thumbnail_generate_hash_code(origin_path, hash, sizeof(hash));
-		if (err < 0) {
-			printf("thumbnail_generate_hash_code failed : %d\n", err);
-			return -1;
-		} else {
-			printf("Hash : %s\n", hash);
-		}
-
 		printf("Success!!\n");
 	} else if (mode == 5) {
 		printf("Test thumbnail_request_extract_all_thumbs\n");
