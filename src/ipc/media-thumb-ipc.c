@@ -186,7 +186,7 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	buf = (unsigned char*)malloc(header_size);
 
 	if ((recv_msg_len = recv(sock, buf, header_size, 0)) <= 0) {
-		thumb_err("recvfrom failed : %s", strerror(errno));
+		thumb_stderror("recv failed");
 		SAFE_FREE(buf);
 		return _media_thumb_get_error();
 	}
@@ -233,7 +233,7 @@ _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct socka
 	buf = (unsigned char*)malloc(sizeof(thumbMsg));
 
 	if ((recv_msg_len = recvfrom(sock, buf, sizeof(thumbMsg), 0, (struct sockaddr *)from_addr, &from_addr_size)) < 0) {
-		thumb_err("recvfrom failed : %s", strerror(errno));
+		thumb_stderror("recvform failed");
 		SAFE_FREE(buf);
 		return _media_thumb_get_error();
 	}
@@ -313,7 +313,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	/* Connecting to the thumbnail server */
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-		thumb_err("connect error : %s", strerror(errno));
+		thumb_stderror("connect");
 		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
@@ -356,7 +356,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	_media_thumb_set_buffer(&req_msg, &buf, &buf_size);
 
 	if (send(sock, buf, buf_size, 0) != buf_size) {
-		thumb_err("sendto failed: %d\n", errno);
+		thumb_err("sendto failed: %d", errno);
 		SAFE_FREE(buf);
 		close(sock);
 		return MS_MEDIA_ERR_SOCKET_SEND;
@@ -373,7 +373,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	}
 
 	recv_str_len = strlen(recv_msg.org_path);
-	thumb_dbg("recv %s(%d) from thumb daemon is successful", recv_msg.org_path, recv_str_len);
+	thumb_dbg_slog("recv %s(%d) from thumb daemon is successful", recv_msg.org_path, recv_str_len);
 
 	close(sock);
 
@@ -710,7 +710,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	req_msg.pid = pid;
 	req_msg.msg_type = msg_type;
 	req_msg.thumb_type = thumb_type;
-	req_msg.uid = uid;	
+	req_msg.uid = uid;
 
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
@@ -729,7 +729,7 @@ _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char
 	_media_thumb_set_buffer(&req_msg, &buf, &buf_size);
 
 	if (send(sock, buf, buf_size, 0) != buf_size) {
-		thumb_err("sendto failed: %d\n", errno);
+		thumb_err("sendto failed: %d", errno);
 		SAFE_FREE(buf);
 		g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), source_id));
 		g_io_channel_shutdown(channel, TRUE, NULL);

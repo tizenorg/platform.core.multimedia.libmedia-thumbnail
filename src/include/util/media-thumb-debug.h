@@ -54,9 +54,33 @@ static pid_t gettid(void)
 #define FONT_COLOR_CYAN     "\033[36m"
 #define FONT_COLOR_GRAY     "\033[37m"
 
-#define thumb_dbg(fmt, arg...)	 LOGD(FONT_COLOR_RESET"[%d] " fmt "\n", gettid(), ##arg)
-#define thumb_warn(fmt, arg...)	 LOGW(FONT_COLOR_GREEN"[%d] " fmt "\n", gettid(), ##arg)
-#define thumb_err(fmt, arg...)	 LOGE(FONT_COLOR_RED"[%d] " fmt "\n", gettid(), ##arg)
+#define thumb_dbg(fmt, arg...)	do{ \
+		LOGD(FONT_COLOR_RESET"[%d] " fmt "\n", gettid(), ##arg); \
+		} while(0)
+
+#define thumb_warn(fmt, arg...)	do{ \
+		LOGW(FONT_COLOR_GREEN"[%d] " fmt "\n", gettid(), ##arg); \
+		} while(0)
+
+#define thumb_err(fmt, arg...)	do{ \
+		 LOGE(FONT_COLOR_RED"[%d] " fmt "\n", gettid(), ##arg); \
+		} while(0)
+
+#define thumb_dbg_slog(fmt, arg...)	do{ \
+		SECURE_LOGD(FONT_COLOR_RESET"[%d] " fmt "\n", gettid(), ##arg); \
+		} while(0)
+
+#define thumb_warn_slog(fmt, arg...)	do{ \
+		SECURE_LOGW(FONT_COLOR_GREEN"[%d] " fmt "\n", gettid(), ##arg); \
+		} while(0)
+
+
+#define ERR_BUF_LENGHT 256
+#define thumb_stderror(fmt) do { \
+			char buf[ERR_BUF_LENGHT] = {0,}; \
+			strerror_r(errno, buf, ERR_BUF_LENGHT); \
+			LOGE(FONT_COLOR_RED fmt" : standard error [%s]", buf); \
+		} while (0)
 
 #ifdef _USE_LOG_FILE_
 void thumb_init_file_debug();

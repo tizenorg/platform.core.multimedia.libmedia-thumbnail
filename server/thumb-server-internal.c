@@ -62,7 +62,7 @@ void _thumb_daemon_finish_jobs(void)
 	}
 
 	g_main_loop_quit(g_thumb_server_mainloop);
-	
+
 	return;
 }
 
@@ -349,7 +349,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	_media_thumb_set_buffer(&res_msg, &buf, &buf_size);
 
 	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
-		thumb_err("sendto failed: %s\n", strerror(errno));
+		thumb_stderror("sendto failed");
 		SAFE_FREE(buf);
 		return FALSE;
 	}

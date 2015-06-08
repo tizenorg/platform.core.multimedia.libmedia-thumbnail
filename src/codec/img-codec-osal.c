@@ -126,7 +126,7 @@ BOOL DrmSeekFile(HFile hFile, long position, long offset)
 	if (!_is_real_drm) {
 		ret = fseek(hFile, offset, position);
 		if (ret < 0) {
-			thumb_err("fseek failed : %s", strerror(errno));
+			thumb_stderror("fseek failed");
 			return FALSE;
 		}
 	} else {

@@ -95,7 +95,7 @@ _media_thumb_get_type_from_db(sqlite3 *handle,
 									const char *origin_path,
 									int *type)
 {
-	thumb_dbg("Origin path : %s", origin_path);
+	thumb_dbg_slog("Origin path : %s", origin_path);
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
@@ -141,7 +141,7 @@ int _media_thumb_get_wh_from_db(sqlite3 *handle,
 									int *width,
 									int *height)
 {
-	thumb_dbg("Origin path : %s", origin_path);
+	thumb_dbg_slog("Origin path : %s", origin_path);
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
@@ -156,7 +156,7 @@ int _media_thumb_get_wh_from_db(sqlite3 *handle,
 	path_string = sqlite3_mprintf("%s", origin_path);
 	query_string = sqlite3_mprintf(SELECT_WH_BY_PATH, path_string);
 
-	thumb_dbg("Query: %s", query_string);
+	thumb_dbg_slog("Query: %s", query_string);
 
 	err = sqlite3_prepare_v2(handle, query_string, strlen(query_string), &stmt, NULL);
 
@@ -164,13 +164,13 @@ int _media_thumb_get_wh_from_db(sqlite3 *handle,
 	sqlite3_free(path_string);
 
 	if (SQLITE_OK != err) {
-		thumb_err("prepare error [%s]\n", sqlite3_errmsg(handle));
+		thumb_err("prepare error [%s]", sqlite3_errmsg(handle));
 		return -1;
 	}
 
 	err = sqlite3_step(stmt);
 	if (err != SQLITE_ROW) {
-		thumb_err("end of row [%s]\n", sqlite3_errmsg(handle));
+		thumb_err("end of row [%s]", sqlite3_errmsg(handle));
 		sqlite3_finalize(stmt);
 		return -1;
 	}
@@ -187,7 +187,7 @@ int _media_thumb_get_thumb_path_from_db(sqlite3 *handle,
 									char *thumb_path,
 									int max_length)
 {
-	thumb_dbg("Origin path : %s", origin_path);
+	thumb_dbg_slog("Origin path : %s", origin_path);
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
@@ -202,7 +202,7 @@ int _media_thumb_get_thumb_path_from_db(sqlite3 *handle,
 	path_string = sqlite3_mprintf("%s", origin_path);
 	query_string = sqlite3_mprintf(SELECT_MEDIA_BY_PATH, path_string);
 
-	thumb_dbg("Query: %s", query_string);
+	thumb_dbg_slog("Query: %s", query_string);
 
 	err = sqlite3_prepare_v2(handle, query_string, strlen(query_string), &stmt, NULL);
 
@@ -236,7 +236,6 @@ int _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 									char *thumb_path,
 									uid_t uid)
 {
-	thumb_dbg("");
 	int err = MS_MEDIA_ERR_NONE;
 	char *path_string = NULL;
 	char *thumbpath_string = NULL;
@@ -252,13 +251,13 @@ int _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 	query_string = sqlite3_mprintf(UPDATE_THUMB_BY_PATH, thumbpath_string, path_string);
 
 	err = media_db_request_update_db(query_string, uid);
-	if (err < 0) {
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
-		return err;
+	} else {
+		thumb_dbg("Query success");
 	}
-	thumb_dbg("Query success");
 
-	return MS_MEDIA_ERR_NONE;
+	return err;
 }
 
 int _media_thumb_update_wh_to_db(sqlite3 *handle,
@@ -282,9 +281,9 @@ int _media_thumb_update_wh_to_db(sqlite3 *handle,
 	err = media_db_request_update_db(query_string, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
-		return err;
+	} else {
+		thumb_dbg("Query success");
 	}
-	thumb_dbg("Query success");
 
 	return err;
 }
@@ -311,10 +310,9 @@ int _media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
 	err = media_db_request_update_db(query_string, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_request_update_db failed : %d", err);
-		return err;
+	} else {
+		thumb_dbg("Query success");
 	}
-
-	thumb_dbg("Query success");
 
 	return err;
 }
@@ -327,7 +325,7 @@ int _media_thumb_db_connect(uid_t uid)
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_connect failed: %d", err);
 		db_handle = NULL;
-		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
+		return err;
 	}
 
 	return MS_MEDIA_ERR_NONE;
@@ -341,7 +339,7 @@ int _media_thumb_db_disconnect()
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_disconnect failed: %d", err);
 		db_handle = NULL;
-		return MS_MEDIA_ERR_DB_CONNECT_FAIL;
+		return err;
 	}
 
 	db_handle = NULL;
@@ -368,7 +366,7 @@ int _media_thumb_get_thumb_from_db(const char *origin_path,
 		return -1;
 	}
 
-	thumb_dbg("Thumb path in DB is %s", thumb_path);
+	thumb_dbg_slog("Thumb path in DB is %s", thumb_path);
 
 	if (!g_file_test(thumb_path, 
 					G_FILE_TEST_EXISTS)) {
@@ -404,7 +402,7 @@ int _media_thumb_get_thumb_from_db_with_size(const char *origin_path,
 		return -1;
 	}
 
-	thumb_dbg("Thumb path in DB is %s", thumb_path);
+	thumb_dbg_slog("Thumb path in DB is %s", thumb_path);
 
 	if (!g_file_test(thumb_path, 
 					G_FILE_TEST_EXISTS)) {

@@ -58,7 +58,7 @@ int thumbnail_request_from_db(const char *origin_path, char *thumb_path, int max
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	thumb_err("Path : %s", origin_path);
+	thumb_dbg_slog("Path : %s", origin_path);
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
@@ -130,13 +130,12 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	thumb_err("Path : %s", origin_path);
+	thumb_dbg_slog("Path : %s", origin_path);
 
 	/* Request for thumb file to the daemon "Thumbnail generator" */
 	err = _media_thumb_request(THUMB_REQUEST_DB_INSERT, MEDIA_THUMB_LARGE, origin_path, thumb_path, max_length, &thumb_info, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
-		//_media_thumb_db_disconnect();
 		return err;
 	}
 
@@ -188,7 +187,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	thumb_err("Path : %s", origin_path);
+	thumb_dbg_slog("Path : %s", origin_path);
 
 	thumbUserData *userData = (thumbUserData*)malloc(sizeof(thumbUserData));
 	userData->func = (ThumbFunc)func;
@@ -208,7 +207,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 int _media_thumbnail_cancel_cb(int error_code, char* path, void* data)
 {
 	thumb_dbg("Error code : %d", error_code);
-	if (path) thumb_dbg("Cancel : %s", path);
+	if (path) thumb_dbg_slog("Cancel : %s", path);
 
 	return MS_MEDIA_ERR_NONE;
 }

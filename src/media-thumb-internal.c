@@ -134,7 +134,7 @@ int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value
 				tag == EXIF_TAG_PIXEL_Y_DIMENSION) {
 
 			if (value == NULL) {
-				thumb_dbg("value is NULL");
+				thumb_err("value is NULL");
 				return MS_MEDIA_ERR_INVALID_PARAMETER;
 			}
 
@@ -145,7 +145,7 @@ int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value
 		} else {
 			/* Get the contents of the tag in human-readable form */
 			if (buf == NULL) {
-				thumb_dbg("buf is NULL");
+				thumb_err("buf is NULL");
 				return MS_MEDIA_ERR_INVALID_PARAMETER;
 			}
 			exif_entry_get_value(entry, buf, max_size);
@@ -160,8 +160,8 @@ int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value
 	return MS_MEDIA_ERR_NONE;
 }
 
-int _media_thumb_get_thumb_from_exif(ExifData *ed, 
-								const char *file_full_path, 
+int _media_thumb_get_thumb_from_exif(ExifData *ed,
+								const char *file_full_path,
 								int orientation,
 								int required_width,
 								int required_height,
@@ -191,7 +191,7 @@ int _media_thumb_get_thumb_from_exif(ExifData *ed,
 	if (entry) {
 		/* Get the contents of the tag in human-readable form */
 		ExifShort value = exif_get_short(entry->data, byte_order);
-		//thumb_dbg("%s: %d\n", exif_tag_get_name_in_ifd(tag,ifd), value);
+		//thumb_dbg("%s: %d", exif_tag_get_name_in_ifd(tag,ifd), value);
 
 		if (value == 6) {
 			thumb_dbg("There's jpeg thumb in this image");
@@ -1183,7 +1183,7 @@ int _media_thumb_video(const char *origin_path,
 		g_object_unref(pixbuf);
 		
 	} else {
-		thumb_dbg("no contents information\n");
+		thumb_dbg("no contents information");
 		frame = NULL;
 		mm_file_destroy_content_attrs(content);
 

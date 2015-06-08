@@ -21,6 +21,7 @@
 
 #include "media-thumb-util.h"
 #include "media-thumb-internal.h"
+#include "media-thumb-debug.h"
 
 #include <glib.h>
 #include <aul.h>
@@ -188,7 +189,7 @@ int _media_thumb_remove_file(const char *path)
 		thumb_dbg("success to remove file");
 		return TRUE;
 	} else {
-		thumb_err("fail to remove file[%s] result errno = %s", path, strerror(errno));
+		thumb_stderror("fail to remove file[%s] result");
 		return FALSE;
 	}
 }

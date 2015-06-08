@@ -10,22 +10,22 @@ Source1002:     %{name}-devel.manifest
 Source1003:     media-thumbnail-server.manifest
 
 Requires: media-server
-BuildRequires:  cmake
-BuildRequires:  pkgconfig(aul)
-BuildRequires:  pkgconfig(dlog)
-BuildRequires:  pkgconfig(drm-client)
-BuildRequires:  pkgconfig(heynoti)
-BuildRequires:  pkgconfig(libexif)
-BuildRequires:  pkgconfig(libmedia-utils)
-BuildRequires:  pkgconfig(mm-fileinfo)
-BuildRequires:  pkgconfig(mmutil-imgp)
-BuildRequires:  pkgconfig(mmutil-jpeg)
-BuildRequires:  pkgconfig(vconf)
-BuildRequires:  pkgconfig(libtzplatform-config)
-BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
+BuildRequires: cmake
+BuildRequires: pkgconfig(dlog)
+BuildRequires: pkgconfig(mm-fileinfo)
+BuildRequires: pkgconfig(mmutil-imgp)
+BuildRequires: pkgconfig(mmutil-jpeg)
+BuildRequires: pkgconfig(drm-client)
+BuildRequires: pkgconfig(heynoti)
+BuildRequires: pkgconfig(libexif)
+BuildRequires: pkgconfig(aul)
+BuildRequires: pkgconfig(vconf)
+BuildRequires: pkgconfig(libmedia-utils)
+BuildRequires: pkgconfig(libtzplatform-config)
+BuildRequires: pkgconfig(gdk-pixbuf-2.0)
 
 %description
-Media thumbnail service library for multimedia applications.
+Description: Media thumbnail service library for multimedia applications.
 
 %package devel
 Summary:        Media Thumbnail Service Library (development)
@@ -39,7 +39,7 @@ Summary:        Thumbnail generator
 Requires:       %{name} = %{version}-%{release}
 
 %description -n media-thumbnail-server
-Media Thumbnail Server.
+Description: Media Thumbnail Server.
 
 %package test
 Summary:        Thumbnail generator Tests
