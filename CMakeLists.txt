@@ -42,10 +42,7 @@ MESSAGE("Build type: ${CMAKE_BUILD_TYPE}")
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/include ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/codec ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/ipc ${CMAKE_SOURCE_DIR}/server/include ${CMAKE_SOURCE_DIR}/md5)
 
 INCLUDE(FindPkgConfig)
-pkg_check_modules(pkgs REQUIRED
-glib-2.0 gthread-2.0 dlog mm-fileinfo drm-client aul
-libexif mmutil-imgp mmutil-jpeg heynoti libmedia-utils vconf libtzplatform-config gdk-pixbuf-2.0)
-
+pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog mm-fileinfo aul libexif mmutil-imgp mmutil-jpeg heynoti libmedia-utils vconf libtzplatform-config gdk-pixbuf-2.0)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")

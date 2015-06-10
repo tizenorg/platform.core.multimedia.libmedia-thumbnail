@@ -26,7 +26,6 @@
 #include <glib.h>
 #include <aul.h>
 #include <string.h>
-#include <drm_client.h>
 #include <sys/stat.h>
 #include <grp.h>
 #include <pwd.h>
@@ -79,79 +78,43 @@ int
 _media_thumb_get_file_type(const char *file_full_path)
 {
 	int ret = 0;
-	drm_bool_type_e drm_type;
-	drm_file_type_e drm_file_type;
-	char mimetype[255];
+	char mimetype[255] = {0,};
 
 	if (file_full_path == NULL)
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 
-	ret = drm_is_drm_file(file_full_path, &drm_type);
+	/* get content type and mime type from file. */
+	ret = aul_get_mime_from_file(file_full_path, mimetype, sizeof(mimetype));
 	if (ret < 0) {
-		thumb_err("drm_is_drm_file falied : %d", ret);
-		drm_type = DRM_FALSE;
-	}
+		thumb_warn
+			("aul_get_mime_from_file fail.. Now trying to get type by extension");
 
-	if (drm_type == DRM_TRUE) {
-		thumb_dbg("DRM file : %s", file_full_path);
-
-		ret = drm_get_file_type(file_full_path, &drm_file_type);
+		char ext[255] = { 0 };
+		int ret = _media_thumb_get_file_ext(file_full_path, ext, sizeof(ext));
 		if (ret < 0) {
-			thumb_err("drm_get_file_type falied : %d", ret);
+			thumb_err("_media_thumb_get_file_ext failed");
 			return THUMB_NONE_TYPE;
 		}
 
-		if (drm_file_type == DRM_TYPE_UNDEFINED) {
-			return THUMB_NONE_TYPE;
+		if (strcasecmp(ext, "JPG") == 0 ||
+			strcasecmp(ext, "JPEG") == 0 ||
+			strcasecmp(ext, "PNG") == 0 ||
+			strcasecmp(ext, "GIF") == 0 ||
+			strcasecmp(ext, "AGIF") == 0 ||
+			strcasecmp(ext, "XWD") == 0 ||
+			strcasecmp(ext, "BMP") == 0 ||
+			strcasecmp(ext, "WBMP") == 0) {
+			return THUMB_IMAGE_TYPE;
+		} else if (strcasecmp(ext, "AVI") == 0 ||
+			strcasecmp(ext, "MPEG") == 0 ||
+			strcasecmp(ext, "MP4") == 0 ||
+			strcasecmp(ext, "DCF") == 0 ||
+			strcasecmp(ext, "WMV") == 0 ||
+			strcasecmp(ext, "3GPP") == 0 ||
+			strcasecmp(ext, "3GP") == 0) {
+			return THUMB_VIDEO_TYPE;
 		} else {
-			drm_content_info_s contentInfo;
-			memset(&contentInfo, 0x00, sizeof(drm_content_info_s));
-
-			ret = drm_get_content_info(file_full_path, &contentInfo);
-			if (ret != DRM_RETURN_SUCCESS) {
-				thumb_err("drm_get_content_info() fails. : %d", ret);
-				return THUMB_NONE_TYPE;
-			}
-			thumb_dbg("DRM mime type: %s", contentInfo.mime_type);
-
-			strncpy(mimetype, contentInfo.mime_type, sizeof(mimetype) - 1);
-			mimetype[sizeof(mimetype) - 1] = '\0';
-		}
-	} else {
-		/* get content type and mime type from file. */
-		ret =
-			aul_get_mime_from_file(file_full_path, mimetype, sizeof(mimetype));
-		if (ret < 0) {
-			thumb_warn
-				("aul_get_mime_from_file fail.. Now trying to get type by extension");
-	
-			char ext[255] = { 0 };
-			int ret = _media_thumb_get_file_ext(file_full_path, ext, sizeof(ext));
-			if (ret < 0) {
-				thumb_err("_media_thumb_get_file_ext failed");
-				return THUMB_NONE_TYPE;
-			}
-	
-			if (strcasecmp(ext, "JPG") == 0 ||
-				strcasecmp(ext, "JPEG") == 0 ||
-				strcasecmp(ext, "PNG") == 0 ||
-				strcasecmp(ext, "GIF") == 0 ||
-				strcasecmp(ext, "AGIF") == 0 ||
-				strcasecmp(ext, "XWD") == 0 ||
-				strcasecmp(ext, "BMP") == 0 ||
-				strcasecmp(ext, "WBMP") == 0) {
-				return THUMB_IMAGE_TYPE;
-			} else if (strcasecmp(ext, "AVI") == 0 ||
-				strcasecmp(ext, "MPEG") == 0 ||
-				strcasecmp(ext, "MP4") == 0 ||
-				strcasecmp(ext, "DCF") == 0 ||
-				strcasecmp(ext, "WMV") == 0 ||
-				strcasecmp(ext, "3GPP") == 0 ||
-				strcasecmp(ext, "3GP") == 0) {
-				return THUMB_VIDEO_TYPE;
-			} else {
-				return THUMB_NONE_TYPE;
-			}
+			return THUMB_NONE_TYPE;
 		}
 	}
 

@@ -36,7 +36,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <drm_client.h>
 #include <mm_file.h>
 #include <mm_error.h>
 #include <mm_util_imgp.h>
@@ -59,28 +58,6 @@ int _media_thumb_get_proper_thumb_size(media_thumb_type thumb_type,
 		portrait = TRUE;
 	}
 
-#if 0
-	/* Set Lager length to default size */
-	if (portrait) {
-		if (orig_h < _media_thumb_get_width(thumb_type)) {
-			*thumb_h = orig_h;
-		} else {
-			*thumb_h = _media_thumb_get_width(thumb_type);
-		}
-
-		ratio = (double)orig_w / (double)orig_h;
-		*thumb_w = *thumb_h * ratio;
-	} else {
-		if (orig_w < _media_thumb_get_width(thumb_type)) {
-			*thumb_w = orig_w;
-		} else {
-			*thumb_w = _media_thumb_get_width(thumb_type);
-		}
-
-		ratio = (double)orig_h / (double)orig_w;
-		*thumb_h = *thumb_w * ratio;
-	}
-#else
 	/* Set smaller length to default size */
 	if (portrait) {
 		if (orig_w < _media_thumb_get_width(thumb_type)) {
@@ -103,7 +80,6 @@ int _media_thumb_get_proper_thumb_size(media_thumb_type thumb_type,
 		ratio = (double)orig_w / (double)orig_h;
 		*thumb_w = *thumb_h * ratio;
 	}
-#endif
 
 	/* The width of RGB888 raw data has to be rounded by 4 */
 	*thumb_w = MEDA_THUMB_ROUND_UP_4(*thumb_w);
@@ -130,7 +106,7 @@ int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value
 	entry = exif_content_get_entry(ed->ifd[ifd], tag);
 	if (entry) {
 		if (tag == EXIF_TAG_ORIENTATION ||
-				tag == EXIF_TAG_PIXEL_X_DIMENSION || 
+				tag == EXIF_TAG_PIXEL_X_DIMENSION ||
 				tag == EXIF_TAG_PIXEL_Y_DIMENSION) {
 
 			if (value == NULL) {
@@ -1003,13 +979,7 @@ int _media_thumb_video(const char *origin_path,
 	int height = 0;
 	int ret = 0;
 	GdkPixbuf *pixbuf;
-	drm_bool_type_e drm_type;
-
-	ret = (drm_is_drm_file(origin_path, &drm_type) == 1);
-	if (ret != MS_MEDIA_ERR_NONE) {
-		thumb_err("drm_is_drm_file falied : %d", ret);
-		drm_type = DRM_FALSE;
-	}
+	bool drm_type = FALSE;
 
 	is_drm = drm_type;
 	err = mm_file_create_content_attrs(&content, origin_path);

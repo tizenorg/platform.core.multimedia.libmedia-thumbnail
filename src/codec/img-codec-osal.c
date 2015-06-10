@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <drm_client.h>
 
 void *IfegMemAlloc(unsigned int size)
 {
@@ -64,20 +63,7 @@ static BOOL _is_real_drm = FALSE;
 
 HFile DrmOpenFile(const char *szPathName)
 {
-	int ret = 0;
-	drm_bool_type_e drm_type;
-
-	ret = drm_is_drm_file(szPathName, &drm_type);
-	if (ret < 0) {
-		thumb_err("drm_is_drm_file falied : %d", ret);
-		drm_type = DRM_FALSE;
-	}
-
-	if (drm_type == DRM_TRUE) {
-		_is_real_drm = TRUE;
-	} else {
-		_is_real_drm = FALSE;
-	}
+	_is_real_drm = FALSE;
 
 	if (!_is_real_drm) {
 		FILE *fp = fopen(szPathName, "rb");
