@@ -90,5 +90,13 @@ int _thumbnail_get_data(const char *origin_path,
 						int *alpha,
 						uid_t uid);
 
+int _thumbnail_get_raw_data(const char *origin_path,
+						media_thumb_format format,
+						unsigned char **data,
+						int *size,
+						int *width,
+						int *height,
+						uid_t uid);
+
 #endif /*_MEDIA_THUMB_UTIL_H_*/
 
