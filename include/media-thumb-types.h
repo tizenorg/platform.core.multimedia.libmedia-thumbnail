@@ -18,7 +18,6 @@
  * limitations under the License.
  *
  */
-#include "media-util.h"
 
 #ifndef _MEDIA_THUMB_TYPES_H_
 #define _MEDIA_THUMB_TYPES_H_
