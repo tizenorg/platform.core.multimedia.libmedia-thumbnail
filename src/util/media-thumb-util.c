@@ -373,7 +373,7 @@ int _thumbnail_get_data(const char *origin_path,
 	file_type = _media_thumb_get_file_type(origin_path);
 
 	if (file_type == THUMB_IMAGE_TYPE) {
-		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info, uid);
+		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info, false, uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_image failed");
 			return err;
@@ -394,6 +394,68 @@ int _thumbnail_get_data(const char *origin_path,
 	if (origin_width) *origin_width = thumb_info.origin_width;
 	if (origin_height) *origin_height = thumb_info.origin_height;
 	if (alpha) *alpha = thumb_info.alpha;
+
+	thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x",
+				*size, *width, *height, *data);
+
+	return MS_MEDIA_ERR_NONE;
+}
+
+int _thumbnail_get_raw_data(const char *origin_path,
+						media_thumb_format format,
+						unsigned char **data,
+						int *size,
+						int *width,
+						int *height,
+						uid_t uid)
+{
+	int err = -1;
+	int thumb_width = -1;
+	int thumb_height = -1;
+
+	if (origin_path == NULL || * width >= 0 || *height >= 0) {
+		thumb_err("Invalid parameter");
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
+	}
+
+	if (format < MEDIA_THUMB_BGRA || format > MEDIA_THUMB_RGB888) {
+		thumb_err("parameter format is invalid");
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
+	}
+
+	if (!g_file_test
+	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+			thumb_err("Original path (%s) does not exist", origin_path);
+			return MS_MEDIA_ERR_INVALID_PARAMETER;
+	}
+
+	thumb_dbg("Origin path : %s", origin_path);
+
+	int file_type = THUMB_NONE_TYPE;
+	media_thumb_info thumb_info = {0,};
+	file_type = _media_thumb_get_file_type(origin_path);
+	thumb_width = *width;
+	thumb_height = *height;
+
+	if (file_type == THUMB_IMAGE_TYPE) {
+		err = _media_thumb_image(origin_path, thumb_width, thumb_height, format, &thumb_info, true, uid);
+		if (err < 0) {
+			thumb_err("_media_thumb_image failed");
+			return err;
+		}
+
+	} else if (file_type == THUMB_VIDEO_TYPE) {
+		err = _media_thumb_video(origin_path, thumb_width, thumb_height, format, &thumb_info,uid);
+		if (err < 0) {
+			thumb_err("_media_thumb_image failed");
+			return err;
+		}
+	}
+
+	if (size) *size = thumb_info.size;
+	if (width) *width = thumb_info.width;
+	if (height) *height = thumb_info.height;
+	*data = thumb_info.gdkdata;
 
 	thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x",
 				*size, *width, *height, *data);
