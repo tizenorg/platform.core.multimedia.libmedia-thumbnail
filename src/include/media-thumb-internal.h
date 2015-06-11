@@ -66,6 +66,11 @@ typedef struct {
 	void *user_data;
 } thumbUserData;
 
+typedef struct {
+	ThumbRawFunc func;
+	void *user_data;
+} thumbRawUserData;
+
 int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
