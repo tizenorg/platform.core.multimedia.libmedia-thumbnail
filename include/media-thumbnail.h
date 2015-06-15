@@ -24,7 +24,7 @@
 #define _MEDIA_THUMBNAIL_H_
 
 #include <sys/types.h>
-
+#include <stdbool.h>
 #include "media-thumb-types.h"
 
 #ifdef __cplusplus
