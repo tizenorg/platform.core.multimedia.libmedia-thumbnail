@@ -48,7 +48,11 @@ enum {
 	THUMB_REQUEST_CANCEL_MEDIA,
 	THUMB_REQUEST_CANCEL_ALL,
 	THUMB_REQUEST_KILL_SERVER,
-	THUMB_RESPONSE
+	THUMB_RESPONSE,
+	THUMB_REQUEST_RAW_DATA,
+	THUMB_REQUEST_CANCEL_RAW_DATA,
+	THUMB_REQUEST_CANCEL_ALL_RAW_DATA,
+	THUMB_RESPONSE_RAW_DATA,
 };
 
 enum {
@@ -67,6 +71,10 @@ int _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct s
 
 int _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
 
+int _media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
+
+int _media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **buf, int *buf_size);
+
 int _media_thumb_request(int msg_type,
 					media_thumb_type thumb_type,
 					const char *origin_path,
@@ -81,6 +89,16 @@ int _media_thumb_request_async(int msg_type,
 					thumbUserData *userData,
 					uid_t uid);
 
+int _media_thumb_request_raw_data_async(int msg_type,
+					int request_id,
+					const char *origin_path,
+					int width,
+					int height,
+					thumbRawUserData *userData,
+					uid_t uid);
+
 int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
+
+int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg, uid_t uid);
 
 #endif /*_MEDIA_THUMB_IPC_H_*/

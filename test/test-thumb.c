@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <mm_util_imgp.h>
 #include <mm_util_jpeg.h>
+#include <stdbool.h>
 
 #include "media-thumbnail.h"
 #include "media-thumb-debug.h"
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 7) {
 		printf("Test thumbnail_request_cancel_all\n");
 
-		err = thumbnail_request_cancel_all();
+		err = thumbnail_request_cancel_all(true, tzplatform_getuid(TZ_USER_NAME));
 		if (err < 0) {
 			printf("thumbnail_request_cancel_all failed : %d\n", err);
 			return -1;

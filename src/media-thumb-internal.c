@@ -887,11 +887,39 @@ int _media_thumb_jpeg(const char *origin_path,
 	return err;
 }
 
+int _media_thumb_jpeg_for_raw(const char *origin_path,
+					int thumb_width,
+					int thumb_height,
+					media_thumb_format format,
+					media_thumb_info *thumb_info,
+					uid_t uid)
+{
+	int err = MS_MEDIA_ERR_NONE;
+	int orientation = NORMAL;
+
+	err = _media_thumb_decode_with_gdk(origin_path, thumb_width, thumb_height, thumb_info, 0, orientation);
+
+	if (err != MS_MEDIA_ERR_NONE) {
+		thumb_err("decode_with_gdk failed : %d", err);
+		return err;
+	}
+
+	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
+	if (err != MS_MEDIA_ERR_NONE) {
+		thumb_err("_media_thumb_convert_format falied: %d", err);
+		SAFE_FREE(thumb_info->data);
+		return err;
+	}
+	return err;
+}
+
 int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info, uid_t uid)
+					media_thumb_info *thumb_info, 
+					bool is_raw,
+					uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	int image_type = 0;
@@ -915,7 +943,11 @@ int _media_thumb_image(const char *origin_path,
 	if (image_type == IMG_CODEC_AGIF) {
 		err = _media_thumb_agif(origin_path, &image_info, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_JPEG) {
-		err = _media_thumb_jpeg(origin_path, thumb_width, thumb_height, format, thumb_info, uid);
+		if(is_raw) {
+			err = _media_thumb_jpeg_for_raw(origin_path, thumb_width, thumb_height, format, thumb_info, uid);
+		} else {
+			err = _media_thumb_jpeg(origin_path, thumb_width, thumb_height, format, thumb_info, uid);
+		}
 	} else if (image_type == IMG_CODEC_PNG) {
 		err = _media_thumb_png(origin_path, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_GIF) {

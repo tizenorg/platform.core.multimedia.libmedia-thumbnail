@@ -166,6 +166,26 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	return err;
 }
 
+static int __thumb_daemon_process_job_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg, uid_t uid)
+{
+	int err = MS_MEDIA_ERR_NONE;
+
+	err = _media_thumb_process_raw(req_msg, res_msg, res_raw_msg, uid);
+	if (err != MS_MEDIA_ERR_NONE) {
+		if (err != MS_MEDIA_ERR_FILE_NOT_EXIST) {
+			thumb_warn("_media_thumb_process is failed: %d, So use default thumb", err);
+			res_msg->status = THUMB_SUCCESS;
+		} else {
+			thumb_warn("_media_thumb_process is failed: %d, (file not exist) ", err);
+			res_msg->status = THUMB_FAIL;
+		}
+	} else {
+		res_msg->status = THUMB_SUCCESS;
+	}
+
+	return err;
+}
+
 int _thumb_daemon_all_extract(uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
@@ -302,12 +322,14 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	int client_sock;
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
+	thumbRawAddMsg res_raw_msg;
 
 	int sock = -1;
 	int header_size = 0;
 
 	memset((void *)&recv_msg, 0, sizeof(recv_msg));
 	memset((void *)&res_msg, 0, sizeof(res_msg));
+	memset((void *)&res_raw_msg, 0, sizeof(res_raw_msg));
 
 	sock = g_io_channel_unix_get_fd(src);
 	if (sock < 0) {
@@ -315,11 +337,11 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		return TRUE;
 	}
 
-	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE*2;
+	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE * 2 - sizeof(unsigned char *);
 
 	if (_media_thumb_recv_udp_msg(sock, header_size, &recv_msg, &client_addr, &client_addr_len) < 0) {
 		thumb_err("_media_thumb_recv_udp_msg failed");
-		return FALSE;
+		return TRUE;
 	}
 
 	thumb_warn("Received [%d] %s(%d) from PID(%d) \n", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
@@ -328,6 +350,8 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		thumb_dbg("All thumbnails are being extracted now");
 		_thumb_daemon_all_extract(recv_msg.uid);
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
+	} else if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
+		__thumb_daemon_process_job_raw(&recv_msg, &res_msg, &res_raw_msg, recv_msg.uid);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
@@ -339,22 +363,54 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		thumb_dbg("Time : %f (%s)", ((double)(end - start) / (double)CLOCKS_PER_SEC), recv_msg.org_path);
 	}
 
-	res_msg.msg_type = recv_msg.msg_type;
+	if(res_msg.msg_type == 0)
+		res_msg.msg_type = recv_msg.msg_type;
+	res_msg.request_id = recv_msg.request_id;
 	strncpy(res_msg.org_path, recv_msg.org_path, recv_msg.origin_path_size);
 	res_msg.origin_path_size = recv_msg.origin_path_size;
-	res_msg.dest_path_size = strlen(res_msg.dst_path) + 1;
+	res_msg.thumb_data = (unsigned char *)"\0";
+	if(res_msg.msg_type != THUMB_RESPONSE_RAW_DATA) {
+		res_msg.dest_path_size = strlen(res_msg.dst_path) + 1;
+		res_msg.thumb_size = 1;
+	} else {
+		res_msg.dest_path_size = 1;
+		res_msg.dst_path[0] = '\0';
+	}
 
 	int buf_size = 0;
+	int block_size = 0;
+	int sent_size = 0;
 	unsigned char *buf = NULL;
-	_media_thumb_set_buffer(&res_msg, &buf, &buf_size);
+	_media_thumb_set_buffer_for_response(&res_msg, &buf, &buf_size);
 
 	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
 		thumb_stderror("sendto failed");
 		SAFE_FREE(buf);
-		return FALSE;
+		return TRUE;
 	}
 
 	thumb_warn("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
+
+	SAFE_FREE(buf);
+
+	//Add sendto_raw_data
+	if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
+		_media_thumb_set_add_raw_data_buffer(&res_raw_msg, &buf, &buf_size);
+		block_size = 512;
+		while(buf_size > 0) {
+			if (buf_size < 512) {
+				block_size = buf_size;
+			}
+			if (sendto(sock, buf + sent_size, block_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != block_size) {
+				thumb_err("sendto failed: %s", strerror(errno));
+				SAFE_FREE(buf);
+				return TRUE;
+			}
+			sent_size += block_size;
+			buf_size -= block_size;
+		}
+		thumb_warn_slog("Sent [%s] additional data[%d]", res_msg.org_path, sent_size);
+	}
 
 	SAFE_FREE(buf);
 
