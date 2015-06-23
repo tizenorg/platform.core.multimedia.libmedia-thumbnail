@@ -389,8 +389,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		return TRUE;
 	}
 
-	thumb_warn("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
-
+	thumb_warn_slog("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
 	SAFE_FREE(buf);
 
 	//Add sendto_raw_data
@@ -425,38 +424,34 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 gboolean _thumb_server_send_msg_to_agent(int msg_type)
 {
 	int sock;
-	const char *serv_ip = "127.0.0.1";
+	ms_sock_info_s sock_info;
 	struct sockaddr_un serv_addr;
 	ms_thumb_server_msg send_msg;
+	sock_info.port = MS_THUMB_COMM_PORT;
 
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_COMM_PORT) < 0) {
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock_info) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
 
+	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcomm.socket");
 
 	send_msg.msg_type = msg_type;
 
-
-    if (connect(sock, &serv_addr, sizeof(serv_addr)) < 0) {
-        thumb_err("connect failed [%s]",strerror(errno));
-        close(sock);
-        return FALSE;
-    }
-
-	if (send(sock, &send_msg, sizeof(ms_thumb_server_msg), 0) != sizeof(ms_thumb_server_msg)) {
-		thumb_err("sendto failed: %s\n", strerror(errno));
-		close(sock);
+	if (sendto(sock, &send_msg, sizeof(ms_thumb_server_msg), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(ms_thumb_server_msg)) {
+		thumb_stderror("sendto failed");
+		ms_ipc_delete_client_socket(&sock_info);
 		return FALSE;
 	}
 
 	thumb_dbg("Sending msg to thumbnail agent[%d] is successful", send_msg.msg_type);
 
-	close(sock);
+	ms_ipc_delete_client_socket(&sock_info);
+
  	return TRUE;
 }
 

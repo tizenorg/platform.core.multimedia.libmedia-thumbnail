@@ -441,24 +441,29 @@ _media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **bu
 int
 _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info, uid_t uid)
 {
-	int sock;
+	int sock = -1;
 	struct sockaddr_un serv_addr;
+	ms_sock_info_s sock_info;
 	int recv_str_len = 0;
 	int err = MS_MEDIA_ERR_NONE;
 	int pid;
+	sock_info.port = MS_THUMB_CREATOR_PORT;
 
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_PORT) < 0) {
+	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("ms_ipc_create_client_socket failed");
-		return MS_MEDIA_ERR_SOCKET_CONN;
+		return err;
 	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
 
 	/* Connecting to the thumbnail server */
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
 		thumb_stderror("connect");
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
@@ -492,7 +497,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
-		close(sock);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
@@ -506,7 +511,7 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	if (send(sock, buf, buf_size, 0) != buf_size) {
 		thumb_err("sendto failed: %d", errno);
 		SAFE_FREE(buf);
-		close(sock);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_SOCKET_SEND;
 	}
 
@@ -517,14 +522,14 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 	if(msg_type != THUMB_REQUEST_CANCEL_ALL_RAW_DATA && msg_type != THUMB_REQUEST_CANCEL_ALL) {		//No response..
 		if ((err = _media_thumb_recv_msg(sock, header_size, &recv_msg)) < 0) {
 			thumb_err("_media_thumb_recv_msg failed ");
-			close(sock);
+			ms_ipc_delete_client_socket(&sock_info);
 			return err;
 		}
 
 		recv_str_len = strlen(recv_msg.org_path);
 		thumb_dbg_slog("recv %s(%d) from thumb daemon is successful", recv_msg.org_path, recv_str_len);
 
-		close(sock);
+		ms_ipc_delete_client_socket(&sock_info);
 
 		if (recv_str_len > max_length) {
 			thumb_err("user buffer is too small. Output's length is %d", recv_str_len);
@@ -906,17 +911,22 @@ gboolean _media_thumb_raw_data_write_socket(GIOChannel *src, GIOCondition condit
 
 int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData, uid_t uid)
 {
-	int sock;
+	int err = MS_MEDIA_ERR_NONE;
+	int sock = -1;
 	struct sockaddr_un serv_addr;
+	ms_sock_info_s sock_info;
 	int pid;
+	sock_info.port = MS_THUMB_CREATOR_PORT;
 
 	if ((msg_type == THUMB_REQUEST_DB_INSERT) && (__media_thumb_check_req_queue(origin_path) < 0)) {
 		return MS_MEDIA_ERR_THUMB_DUPLICATED_REQUEST;
 	}
 
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_PORT) < 0) {
+	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
+	if(err != MS_MEDIA_ERR_NONE)
+	{
 		thumb_err("ms_ipc_create_client_socket failed");
-		return MS_MEDIA_ERR_SOCKET_CONN;
+		return err;
 	}
 	GIOChannel *channel = NULL;
 	channel = g_io_channel_unix_new(sock);
@@ -924,13 +934,14 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
 
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
 
 	/* Connecting to the thumbnail server */
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-		thumb_err("connect error : %s", strerror(errno));
+		thumb_stderror("connect");
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		g_io_channel_unref(channel);
 		return MS_MEDIA_ERR_SOCKET_CONN;
@@ -970,6 +981,7 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
@@ -983,6 +995,7 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 		g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), source_id));
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_SOCKET_SEND;
 	}
 
@@ -1019,13 +1032,18 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 
 int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char *origin_path, int width, int height, thumbRawUserData *userData, uid_t uid)
 {
+	int err = MS_MEDIA_ERR_NONE;
 	int sock;
 	struct sockaddr_un serv_addr;
+	ms_sock_info_s sock_info;
 	int pid;
+	sock_info.port = MS_THUMB_CREATOR_PORT;
 
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock, MS_THUMB_CREATOR_PORT) < 0) {
+	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
+	if(err != MS_MEDIA_ERR_NONE)
+	{
 		thumb_err("ms_ipc_create_client_socket failed");
-		return MS_MEDIA_ERR_SOCKET_CONN;
+		return err;
 	}
 	GIOChannel *channel = NULL;
 	channel = g_io_channel_unix_new(sock);
@@ -1033,6 +1051,7 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
+	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
 
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");

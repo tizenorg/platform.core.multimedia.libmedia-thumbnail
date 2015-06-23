@@ -29,14 +29,6 @@
 
 #define MEDIA_DATABASE_NAME MEDIA_DB_NAME /* defined in media-util.h */
 
-#ifndef _USE_NEW_MEDIA_DB_
-#define SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA "SELECT path from visual_media where thumbnail_path='' and valid=1;"
-#define SELECT_MEDIA_BY_PATH "SELECT thumbnail_path FROM visual_media WHERE path='%q';"
-#define SELECT_TYPE_BY_PATH "SELECT content_type FROM visual_media WHERE path='%q';"
-#define UPDATE_THUMB_BY_PATH "UPDATE visual_media SET thumbnail_path = '%q' WHERE path='%q';"
-#define UPDATE_WH_BY_PATH "UPDATE image_meta SET width=%d,height=%d WHERE visual_uuid=(SELECT visual_uuid FROM visual_media WHERE path='%q');"
-
-#else
 #define SELECT_PATH_FROM_UNEXTRACTED_THUMB_MEDIA "SELECT path from media where thumbnail_path is null and validity=1 and (media_type=0 or media_type=1);"
 #define SELECT_PATH_FROM_UNEXTRACTED_THUMB_INTERNAL_MEDIA "SELECT path from media where thumbnail_path is null and validity=1 and (media_type=0 or media_type=1) and storage_type=0;"
 #define SELECT_MEDIA_BY_PATH "SELECT thumbnail_path FROM media WHERE path='%q';"
@@ -45,7 +37,6 @@
 #define UPDATE_THUMB_BY_PATH "UPDATE media SET thumbnail_path = '%q' WHERE path='%q';"
 #define UPDATE_WH_BY_PATH "UPDATE media SET width=%d,height=%d WHERE path='%q';"
 #define UPDATE_THUMB_WH_BY_PATH "UPDATE media SET thumbnail_path = '%q', width=%d,height=%d WHERE path='%q';"
-#endif
 
 sqlite3 *_media_thumb_db_get_handle();
 
