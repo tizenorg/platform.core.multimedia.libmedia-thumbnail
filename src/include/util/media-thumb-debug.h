@@ -34,10 +34,6 @@
 #undef LOG_TAG
 #endif
 
-
-#define _PERFORMANCE_CHECK_
-
-
 #define LOG_TAG "MEDIA_THUMBNAIL"
 
 static pid_t gettid(void)

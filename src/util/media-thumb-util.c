@@ -413,7 +413,7 @@ int _thumbnail_get_raw_data(const char *origin_path,
 	int thumb_width = -1;
 	int thumb_height = -1;
 
-	if (origin_path == NULL || * width >= 0 || *height >= 0) {
+	if (origin_path == NULL || * width <= 0 || *height <= 0) {
 		thumb_err("Invalid parameter");
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}

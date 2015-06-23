@@ -91,6 +91,8 @@ char *_media_thumb_generate_hash_name(const char *file)
 	*t = '\0';
 #undef _check_uri_char
 
+	memset(&ctx, 0x00, sizeof(MD5_CTX));
+
 	MD5Init(&ctx);
 	MD5Update(&ctx, (unsigned char const *)uri, (unsigned)strlen(uri));
 	MD5Final(hash, &ctx);
