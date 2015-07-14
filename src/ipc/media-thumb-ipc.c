@@ -581,6 +581,8 @@ static char* _media_thumb_get_default_path(uid_t uid)
 		grpinfo = getgrnam("users");
 		if(grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
+			if(result_psswd)
+				free(result_psswd);
 			return NULL;
 		}
 	}
@@ -657,8 +659,13 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 			if (strlen(thumb_path) == 0) {
 				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 				if (err != MS_MEDIA_ERR_NONE) {
-					thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-					strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+					char *default_path = _media_thumb_get_default_path(uid);
+					if(default_path) {
+						thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
+						strncpy(thumb_path, default_path, max_length);
+						if(default_path)
+							free(default_path);
+					}
 					_media_thumb_db_disconnect();
 					return err;
 				}
@@ -673,8 +680,13 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	} else if (msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length,uid);
 		if (err < 0) {
-			thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
-			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+			char *default_path = _media_thumb_get_default_path(uid);
+			if(default_path) {
+				thumb_err("_media_thumb_get_hash_name failed - %d\n", err);
+				strncpy(thumb_path, default_path, max_length);
+				if(default_path)
+					free(default_path);
+			}
 			_media_thumb_db_disconnect();
 			return err;
 		}
@@ -682,19 +694,23 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		thumb_path[strlen(thumb_path)] = '\0';
 	}
 
-	if (g_file_test(thumb_path, 
-					G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+	if (g_file_test(thumb_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 		thumb_warn("thumb path already exists in file system.. remove the existed file");
 		_media_thumb_remove_file(thumb_path);
 	}
 
 	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &gdkdata, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
+		char *default_path = _media_thumb_get_default_path(uid);
 		thumb_err("_thumbnail_get_data failed - %d\n", err);
 		if ( gdkdata != NULL ){
 			g_object_unref(gdkdata);
 		}
-		strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
+		if(default_path) {
+			strncpy(thumb_path, default_path, max_length);
+			if(default_path)
+				free(default_path);
+		}
 		_media_thumb_db_disconnect();
 		return err;
 	}
@@ -725,14 +741,19 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 	err = _media_thumb_save_to_file_with_gdk(gdkdata, thumb_w, thumb_h, alpha, thumb_path);
 	if (err < 0) {
+		char *default_path = _media_thumb_get_default_path(uid);
 		thumb_err("save_to_file_with_gdk failed - %d\n", err);
 		if ( gdkdata != NULL ){
 			g_object_unref(gdkdata);
 		}
 
-		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA)
-			strncpy(thumb_path, _media_thumb_get_default_path(uid), max_length);
-
+		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA) {
+			if(default_path) {
+				strncpy(thumb_path, default_path, max_length);
+				if(default_path)
+					free(default_path);
+			}
+		}
 		_media_thumb_db_disconnect();
 		return err;
 	} else {
