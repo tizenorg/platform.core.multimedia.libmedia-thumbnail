@@ -581,6 +581,8 @@ static char* _media_thumb_get_default_path(uid_t uid)
 		grpinfo = getgrnam("users");
 		if(grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
+			if(result_psswd)
+				free(result_psswd);
 			return NULL;
 		}
 	}
@@ -682,8 +684,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		thumb_path[strlen(thumb_path)] = '\0';
 	}
 
-	if (g_file_test(thumb_path, 
-					G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+	if (g_file_test(thumb_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 		thumb_warn("thumb path already exists in file system.. remove the existed file");
 		_media_thumb_remove_file(thumb_path);
 	}

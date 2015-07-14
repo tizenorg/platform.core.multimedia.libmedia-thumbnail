@@ -185,6 +185,8 @@ static char* _media_thumb_mmc_get_path(uid_t uid)
 		grpinfo = getgrnam("users");
 		if(grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
+			if(result_psswd)
+				free(result_psswd);
 			return NULL;
 		}
 	}
@@ -223,6 +225,8 @@ static char* _media_thumb_phone_get_path(uid_t uid)
 		grpinfo = getgrnam("users");
 		if(grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
+			if(result_psswd)
+				free(result_psswd);
 			return NULL;
 		}
 	}
@@ -283,6 +287,8 @@ int _media_thumb_get_hash_name(const char *file_full_path,
 	ret_len =
 	    snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg",
 		     thumb_dir, file_ext, hash_name);
+	if(thumb_dir)
+		free(thumb_dir);
 	if (ret_len < 0) {
 		thumb_err("Error when snprintf");
 		return -1;
