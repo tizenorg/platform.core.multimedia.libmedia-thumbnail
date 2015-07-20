@@ -22,6 +22,7 @@
 #include "media-thumb-debug.h"
 #include "media-thumb-util.h"
 #include "media-thumb-internal.h"
+#include "media-thumb-ipc.h"
 
 #include "AGifFrameInfo.h"
 #include "IfegDecodeAGIF.h"
@@ -903,6 +904,8 @@ int _media_thumb_jpeg_for_raw(const char *origin_path,
 		thumb_err("decode_with_gdk failed : %d", err);
 		return err;
 	}
+	/* Temporary process */
+	thumb_info->data = gdk_pixbuf_get_pixels(thumb_info->gdkdata);
 
 	err = _media_thumb_convert_format(thumb_info, MEDIA_THUMB_RGB888, format);
 	if (err != MS_MEDIA_ERR_NONE) {
@@ -1009,7 +1012,6 @@ int _media_thumb_video(const char *origin_path,
 	int size = 0;
 	int width = 0;
 	int height = 0;
-	int ret = 0;
 	GdkPixbuf *pixbuf;
 	bool drm_type = FALSE;
 

@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <media-util-err.h>
 #include "media-thumbnail.h"
+#include "media-thumb-util.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -75,7 +76,7 @@ int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info, 
+					media_thumb_info *thumb_info,
 					bool is_raw,
 					uid_t uid);
 

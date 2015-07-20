@@ -36,11 +36,6 @@
 
 #define LOG_TAG "MEDIA_THUMBNAIL"
 
-static pid_t gettid(void)
-{
-	return syscall(__NR_gettid);
-}
-
 #define FONT_COLOR_RESET    "\033[0m"
 #define FONT_COLOR_RED      "\033[31m"
 #define FONT_COLOR_GREEN    "\033[32m"
@@ -51,31 +46,31 @@ static pid_t gettid(void)
 #define FONT_COLOR_GRAY     "\033[37m"
 
 #define thumb_dbg(fmt, arg...)	do{ \
-		LOGD(FONT_COLOR_RESET"[%d] " fmt "\n", gettid(), ##arg); \
+		LOGD(FONT_COLOR_RESET fmt "\n", ##arg); \
 		} while(0)
 
 #define thumb_warn(fmt, arg...)	do{ \
-		LOGW(FONT_COLOR_GREEN"[%d] " fmt "\n", gettid(), ##arg); \
+		LOGW(FONT_COLOR_GREEN fmt "\n", ##arg); \
 		} while(0)
 
 #define thumb_err(fmt, arg...)	do{ \
-		 LOGE(FONT_COLOR_RED"[%d] " fmt "\n", gettid(), ##arg); \
+		 LOGE(FONT_COLOR_RED fmt "\n", ##arg); \
 		} while(0)
 
 #define thumb_dbg_slog(fmt, arg...)	do{ \
-		SECURE_LOGD(FONT_COLOR_RESET"[%d] " fmt "\n", gettid(), ##arg); \
+		SECURE_LOGD(FONT_COLOR_RESET fmt "\n", ##arg); \
 		} while(0)
 
 #define thumb_warn_slog(fmt, arg...)	do{ \
-		SECURE_LOGW(FONT_COLOR_GREEN"[%d] " fmt "\n", gettid(), ##arg); \
+		SECURE_LOGW(FONT_COLOR_GREEN fmt "\n", ##arg); \
 		} while(0)
 
 
 #define ERR_BUF_LENGHT 256
 #define thumb_stderror(fmt) do { \
-			char buf[ERR_BUF_LENGHT] = {0,}; \
-			strerror_r(errno, buf, ERR_BUF_LENGHT); \
-			LOGE(FONT_COLOR_RED fmt" : standard error [%s]", buf); \
+			char thumb_stderror_buffer[ERR_BUF_LENGHT] = {0,}; \
+			strerror_r(errno, thumb_stderror_buffer, ERR_BUF_LENGHT); \
+			LOGE(FONT_COLOR_RED fmt" : standard error [%s]", thumb_stderror_buffer); \
 		} while (0)
 
 #ifdef _USE_LOG_FILE_

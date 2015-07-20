@@ -28,6 +28,7 @@
 #include <stdbool.h>
 
 #include "media-thumbnail.h"
+#include "thumb-server-internal.h"
 #include "media-thumb-debug.h"
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
 
 	if (origin_path && (mode == 1)) {
 		printf("Test _thumbnail_get_data\n");
-
+#if 0
 		GdkPixbuf *data = NULL;
 		int thumb_size = 0;
 		int thumb_w = 0;
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
 
 		long end = thumb_get_debug_time();
 		printf("Time : %f\n", ((double)(end - start) / (double)CLOCKS_PER_SEC));
-
+#endif
 	} else if (mode == 2) {
 		printf("Test thumbnail_request_from_db\n");
 		//const char *origin_path = "/opt/media/test/movie1.mp4";

@@ -21,6 +21,7 @@
 
 
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,11 +61,6 @@ enum {
 	THUMB_FAIL
 };
 
-
-int _media_thumb_create_socket(int sock_type, int *sock);
-
-int _media_thumb_create_udp_socket(int *sock);
-
 int _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg);
 
 int _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct sockaddr_un *from_addr, unsigned int *from_size);
@@ -96,9 +92,5 @@ int _media_thumb_request_raw_data_async(int msg_type,
 					int height,
 					thumbRawUserData *userData,
 					uid_t uid);
-
-int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
-
-int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg, uid_t uid);
 
 #endif /*_MEDIA_THUMB_IPC_H_*/

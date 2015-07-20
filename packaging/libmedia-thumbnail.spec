@@ -40,13 +40,6 @@ Requires:       %{name} = %{version}-%{release}
 %description -n media-thumbnail-server
 Description: Media Thumbnail Server.
 
-%package test
-Summary:        Thumbnail generator Tests
-Requires:       %{name} = %{version}-%{release}
-
-%description test
-Media Thumbnail Tests.
-
 %prep
 %setup -q
 cp %{SOURCE1001} %{SOURCE1002} %{SOURCE1003} .
@@ -83,6 +76,4 @@ make %{?_smp_mflags}
 %manifest media-thumbnail-server.manifest
 %defattr(-,root,root,-)
 %{_bindir}/media-thumbnail-server
-
-%files test
-%{_bindir}/test-thumb
+#%{_bindir}/test-thumb
