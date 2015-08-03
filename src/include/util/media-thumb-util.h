@@ -23,7 +23,6 @@
 #include "media-thumb-debug.h"
 #include "media-util.h"
 #include <tzplatform_config.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #ifndef _MEDIA_THUMB_UTIL_H_
 #define _MEDIA_THUMB_UTIL_H_
@@ -61,12 +60,6 @@ int _media_thumb_remove_file(const char *path);
 char* _media_thumb_generate_hash_name(const char *file);
 
 int _media_thumb_get_hash_name(const char *file_full_path, char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
-
-int _media_thumb_save_to_file_with_gdk(GdkPixbuf *data,
-											int w,
-											int h,
-											gboolean alpha,
-											char *thumb_path);
 
 int _media_thumb_get_width(media_thumb_type thumb_type);
 

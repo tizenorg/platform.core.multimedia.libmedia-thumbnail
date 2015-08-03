@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+#include <Ecore_Evas.h>
 #include <vconf.h>
 #include <grp.h>
 #include <pwd.h>
@@ -52,6 +53,8 @@ void _thumb_daemon_stop_job();
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
 	thumb_dbg("");
+	/* Initialize ecore-evas to use evas library */
+	ecore_evas_init();
 
 	_thumb_server_send_msg_to_agent(MS_MSG_THUMB_SERVER_READY);
 
@@ -67,6 +70,8 @@ void _thumb_daemon_finish_jobs(void)
 		thumb_dbg("sqlite3 handle is alive. So disconnect to sqlite3");
 	}
 
+	/* Shutdown ecore-evas */
+	ecore_evas_shutdown();
 	g_main_loop_quit(g_thumb_server_mainloop);
 
 	return;
@@ -237,7 +242,7 @@ int _thumb_daemon_all_extract(uid_t uid)
 		strncpy(path, (const char *)sqlite3_column_text(sqlite_stmt, 0), sizeof(path));
 		path[sizeof(path) - 1] = '\0';
 
-		thumb_dbg("Path : %s", path);
+		thumb_dbg_slog("Path : %s", path);
 
 		if (g_idx == 0) {
 			arr_path = (char**)malloc(sizeof(char*));
@@ -367,10 +372,9 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	res_msg.request_id = recv_msg.request_id;
 	strncpy(res_msg.org_path, recv_msg.org_path, recv_msg.origin_path_size);
 	res_msg.origin_path_size = recv_msg.origin_path_size;
-	res_msg.thumb_data = (unsigned char *)"\0";
 	if(res_msg.msg_type != THUMB_RESPONSE_RAW_DATA) {
-		res_msg.dest_path_size = strlen(res_msg.dst_path) + 1;
-		res_msg.thumb_size = 1;
+		res_msg.dest_path_size = strlen(res_msg.dst_path)+1;
+		res_msg.thumb_size = 0;
 	} else {
 		res_msg.dest_path_size = 1;
 		res_msg.dst_path[0] = '\0';
@@ -604,7 +608,7 @@ int _thumbnail_get_data(const char *origin_path,
 	if (size) *size = thumb_info.size;
 	if (width) *width = thumb_info.width;
 	if (height) *height = thumb_info.height;
-	*data = thumb_info.gdkdata;
+	*data = thumb_info.data;
 	if (origin_width) *origin_width = thumb_info.origin_width;
 	if (origin_height) *origin_height = thumb_info.origin_height;
 	if (alpha) *alpha = thumb_info.alpha;
@@ -678,7 +682,7 @@ int _thumbnail_get_raw_data(const char *origin_path,
 int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
-	GdkPixbuf *gdkdata = NULL;
+	unsigned char *data = NULL;
 	int thumb_size = 0;
 	int thumb_w = 0;
 	int thumb_h = 0;
@@ -698,9 +702,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	media_thumb_type thumb_type = req_msg->thumb_type;
 	const char *origin_path = req_msg->org_path;
 
-	// Currently, The color space that is supported by the gdk-pixbuf is only RGB.
-	media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
-
+	media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
 	thumb_path = res_msg->dst_path;
 	thumb_path[0] = '\0';
 	max_length = sizeof(res_msg->dst_path);
@@ -762,13 +764,11 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		_media_thumb_remove_file(thumb_path);
 	}
 
-	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &gdkdata, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
+	err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		char *default_path = _media_thumb_get_default_path(uid);
-		thumb_err("_thumbnail_get_data failed - %d\n", err);
-		if ( gdkdata != NULL ){
-			g_object_unref(gdkdata);
-		}
+		thumb_err("_thumbnail_get_data failed - %d", err);
+		SAFE_FREE(data);
 		if(default_path) {
 			strncpy(thumb_path, default_path, max_length);
 			free(default_path);
@@ -801,13 +801,11 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		thumb_dbg("Thumb path is changed : %s", thumb_path);
 	}
 
-	err = _media_thumb_save_to_file_with_gdk(gdkdata, thumb_w, thumb_h, alpha, thumb_path);
+	err = _media_thumb_save_to_file_with_evas(data, thumb_w, thumb_h, alpha, thumb_path);
 	if (err != MS_MEDIA_ERR_NONE) {
 		char *default_path = _media_thumb_get_default_path(uid);
-		thumb_err("save_to_file_with_gdk failed - %d", err);
-		if ( gdkdata != NULL ){
-			g_object_unref(gdkdata);
-		}
+		thumb_err("save_to_file_with_evas failed - %d", err);
+		SAFE_FREE(data);
 
 		if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA) {
 			if(default_path) {
@@ -836,7 +834,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	}
 	/* End of fsync */
 
-	g_object_unref(gdkdata);
+	SAFE_FREE(data);
 
 	/* DB update if needed */
 	if (need_update_db == 1) {
@@ -894,6 +892,7 @@ _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *r
 	res_msg->thumb_size = thumb_size + sizeof(thumbRawAddMsg) - sizeof(unsigned char*);
 
 	//thumb_dbg("Size : %d, W:%d, H:%d", thumb_size, thumb_w, thumb_h);
+	SAFE_FREE(data);
 
 	return MS_MEDIA_ERR_NONE;
 }

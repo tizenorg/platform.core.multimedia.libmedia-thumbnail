@@ -211,7 +211,7 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 
 	SAFE_FREE(buf);
 
-	remain_size = msg->origin_path_size + msg->dest_path_size + msg->thumb_size + 2;
+	remain_size = msg->origin_path_size + msg->dest_path_size + msg->thumb_size;
 	buf = malloc(remain_size * sizeof(unsigned char));
 	memset(buf, 0, remain_size * sizeof(unsigned char));
 
@@ -231,11 +231,12 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	}
 
 	strncpy(msg->org_path, (char *)buf, msg->origin_path_size);
-	strncpy(msg->dst_path, (char *)buf + msg->origin_path_size + 1, msg->dest_path_size);
+	strncpy(msg->dst_path, (char *)buf + msg->origin_path_size, msg->dest_path_size);
+
 	SAFE_FREE(msg->thumb_data);
 	msg->thumb_data = malloc(msg->thumb_size);
 	memset(msg->thumb_data, 0, msg->thumb_size);
-	memcpy(msg->thumb_data, buf + msg->origin_path_size + msg->dest_path_size + 2, msg->thumb_size);
+	memcpy(msg->thumb_data, buf + msg->origin_path_size + msg->dest_path_size, msg->thumb_size);
 
 	SAFE_FREE(buf);
 	SAFE_FREE(block_buf);
@@ -296,8 +297,8 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 	int header_size = 0;
 
 	header_size = sizeof(thumbMsg) -(MAX_FILEPATH_LEN * 2) - sizeof(unsigned char *);
-	org_path_len = req_msg->origin_path_size + 1;
-	dst_path_len = req_msg->dest_path_size + 1;
+	org_path_len = req_msg->origin_path_size;
+	dst_path_len = req_msg->dest_path_size;
 	thumb_data_len = req_msg->thumb_size;
 
 	//thumb_dbg("Basic Size : %d, org_path : %s[%d], dst_path : %s[%d], thumb_data_len : %d", header_size, req_msg->org_path, org_path_len, req_msg->dst_path, dst_path_len, thumb_data_len);
@@ -312,7 +313,8 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 	memcpy(*buf, req_msg, header_size);
 	memcpy((*buf)+header_size, req_msg->org_path, org_path_len);
 	memcpy((*buf)+header_size + org_path_len, req_msg->dst_path, dst_path_len);
-	memcpy((*buf)+header_size + org_path_len + dst_path_len, req_msg->thumb_data, thumb_data_len);
+	if(thumb_data_len > 0)
+		memcpy((*buf)+header_size + org_path_len + dst_path_len, req_msg->thumb_data, thumb_data_len);
 
 	*buf_size = size;
 
@@ -328,20 +330,17 @@ _media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf, int
 
 	int org_path_len = 0;
 	int dst_path_len = 0;
-	int thumb_data_len = 0;
 	int size = 0;
 	int header_size = 0;
 
 	header_size = sizeof(thumbMsg) -(MAX_FILEPATH_LEN * 2) - sizeof(unsigned char *);
-	org_path_len = req_msg->origin_path_size + 1;
-	dst_path_len = req_msg->dest_path_size + 1;
-	thumb_data_len = 1;
+	org_path_len = req_msg->origin_path_size;
+	dst_path_len = req_msg->dest_path_size;
 
-	thumb_dbg("Basic Size : %d, org_path : %s[%d], dst_path : %s[%d], thumb_data_len : %d", header_size, req_msg->org_path, org_path_len, req_msg->dst_path, dst_path_len, thumb_data_len);
+	thumb_dbg("Basic Size : %d, org_path : %s[%d], dst_path : %s[%d]", header_size, req_msg->org_path, org_path_len, req_msg->dst_path, dst_path_len);
 
-	size = header_size + org_path_len + dst_path_len + thumb_data_len;
+	size = header_size + org_path_len + dst_path_len;
 	*buf = malloc(size);
-
 	if (*buf == NULL) {
 		*buf_size = 0;
 		return 0;
@@ -349,7 +348,6 @@ _media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf, int
 	memcpy(*buf, req_msg, header_size);
 	memcpy((*buf)+header_size, req_msg->org_path, org_path_len);
 	memcpy((*buf)+header_size + org_path_len, req_msg->dst_path, dst_path_len);
-	memcpy((*buf)+header_size + org_path_len + dst_path_len, req_msg->thumb_data, thumb_data_len);
 
 	*buf_size = size;
 
@@ -431,11 +429,9 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 		req_msg.dst_path[strlen(req_msg.dst_path)] = '\0';
 	}
 
-	req_msg.thumb_data = (unsigned char *) "\0";
-
 	req_msg.origin_path_size = strlen(req_msg.org_path) + 1;
 	req_msg.dest_path_size = strlen(req_msg.dst_path) + 1;
-	req_msg.thumb_size = 1;
+	req_msg.thumb_size = 0;
 
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
@@ -650,11 +646,9 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
 	req_msg.dst_path[0] = '\0';
-	req_msg.thumb_data = (unsigned char *)"\0";
-
-	req_msg.origin_path_size = strlen(req_msg.org_path);
+	req_msg.origin_path_size = strlen(req_msg.org_path) + 1;
 	req_msg.dest_path_size = 1;
-	req_msg.thumb_size = 1;
+	req_msg.thumb_size = 0;
 
 	if (req_msg.origin_path_size > MAX_PATH_SIZE || req_msg.dest_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);
@@ -768,11 +762,10 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
 	req_msg.dst_path[0] = '\0';
-	req_msg.thumb_data = (unsigned char *)"\0";
 
-	req_msg.origin_path_size = strlen(req_msg.org_path);
+	req_msg.origin_path_size = strlen(req_msg.org_path) + 1;
 	req_msg.dest_path_size = 1;
-	req_msg.thumb_size = 1;
+	req_msg.thumb_size = 0;
 
 	if (req_msg.origin_path_size > MAX_PATH_SIZE) {
 		thumb_err("path's length exceeds %d", MAX_PATH_SIZE);

@@ -25,7 +25,6 @@
 #include "media-thumb-util.h"
 #include "media-thumb-types.h"
 #include "media-thumb-debug.h"
-#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #ifndef _MEDIA_THUMB_INTERNAL_H_
 #define _MEDIA_THUMB_INTERNAL_H_
@@ -47,7 +46,6 @@ typedef struct {
 	int origin_height;
 	gboolean alpha;
 	unsigned char *data;
-	GdkPixbuf *gdkdata;
 } media_thumb_info;
 
 enum Exif_Orientation {
@@ -86,5 +84,13 @@ int _media_thumb_video(const char *origin_path,
 					media_thumb_format format,
 					media_thumb_info *thumb_info,
 					uid_t uid);
+
+int _media_thumb_get_hash_name(const char *file_full_path, char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
+
+int _media_thumb_save_to_file_with_evas(unsigned char *data,
+											int w,
+											int h,
+											int alpha,
+											char *thumb_path);
 
 #endif /*_MEDIA_THUMB_INTERNAL_H_*/

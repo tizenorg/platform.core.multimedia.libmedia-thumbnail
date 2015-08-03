@@ -26,12 +26,6 @@
 #include <glib.h>
 #include <aul.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <grp.h>
-#include <pwd.h>
-#include <sys/smack.h>
-
-#define GLOBAL_USER	0 //#define 	tzplatform_getenv(TZ_GLOBAL) //TODO
 
 int _media_thumb_get_width(media_thumb_type thumb_type)
 {
@@ -90,7 +84,7 @@ _media_thumb_get_file_type(const char *file_full_path)
 			("aul_get_mime_from_file fail.. Now trying to get type by extension");
 
 		char ext[255] = { 0 };
-		int ret = _media_thumb_get_file_ext(file_full_path, ext, sizeof(ext));
+		ret = _media_thumb_get_file_ext(file_full_path, ext, sizeof(ext));
 		if (ret < 0) {
 			thumb_err("_media_thumb_get_file_ext failed");
 			return THUMB_NONE_TYPE;
@@ -155,174 +149,4 @@ int _media_thumb_remove_file(const char *path)
 		thumb_stderror("fail to remove file[%s] result");
 		return FALSE;
 	}
-}
-
-static int _mkdir(const char *dir, mode_t mode) {
-        char tmp[256];
-        char *p = NULL;
-        size_t len;
-
-        snprintf(tmp, sizeof(tmp),"%s",dir);
-        len = strlen(tmp);
-        if(tmp[len - 1] == '/')
-                tmp[len - 1] = 0;
-        for(p = tmp + 1; *p; p++)
-                if(*p == '/') {
-                        *p = 0;
-                        mkdir(tmp, mode);
-                        *p = '/';
-                }
-        return mkdir(tmp, mode);
-}
-
-static char* _media_thumb_mmc_get_path(uid_t uid)
-{
-	char *result_psswd = NULL;
-	struct group *grpinfo = NULL;
-	if(uid == getuid())
-	{
-		result_psswd = strdup(THUMB_MMC_PATH);
-		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			if(result_psswd)
-				free(result_psswd);
-			return NULL;
-		}
-	}
-	else
-	{
-		struct passwd *userinfo = getpwuid(uid);
-		if(userinfo == NULL) {
-			thumb_err("getpwuid(%d) returns NULL !", uid);
-			return NULL;
-		}
-		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			return NULL;
-		}
-		// Compare git_t type and not group name
-		if (grpinfo->gr_gid != userinfo->pw_gid) {
-			thumb_err("UID [%d] does not belong to 'users' group!", uid);
-			return NULL;
-		}
-		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/mmc", userinfo->pw_dir);
-	}
-	
-	_mkdir(result_psswd,S_IRWXU | S_IRWXG | S_IRWXO);
-
-	return result_psswd;
-}
-
-static char* _media_thumb_phone_get_path(uid_t uid)
-{
-	char *result_psswd = NULL;
-	struct group *grpinfo = NULL;
-	if(uid == getuid())
-	{
-		result_psswd = strdup(THUMB_PHONE_PATH);
-		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			if(result_psswd)
-				free(result_psswd);
-			return NULL;
-		}
-	}
-	else
-	{
-		struct passwd *userinfo = getpwuid(uid);
-		if(userinfo == NULL) {
-			thumb_err("getpwuid(%d) returns NULL !", uid);
-			return NULL;
-		}
-		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			return NULL;
-		}
-		// Compare git_t type and not group name
-		if (grpinfo->gr_gid != userinfo->pw_gid) {
-			thumb_err("UID [%d] does not belong to 'users' group!", uid);
-			return NULL;
-		}
-		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/phone", userinfo->pw_dir);
-	}
-
-	_mkdir(result_psswd,S_IRWXU | S_IRWXG | S_IRWXO);
-
-	return result_psswd;
-}
-
-int _media_thumb_get_hash_name(const char *file_full_path,
-				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid)
-{
-	char *hash_name;
-	char *thumb_dir = NULL;
-	char file_ext[255] = { 0 };
-	media_thumb_store_type store_type = -1;
-
-	if (file_full_path == NULL || thumb_hash_path == NULL
-	    || max_thumb_path <= 0) {
-		thumb_err
-		    ("file_full_path==NULL || thumb_hash_path == NULL || max_thumb_path <= 0");
-		return -1;
-	}
-
-	_media_thumb_get_file_ext(file_full_path, file_ext, sizeof(file_ext));
-
-	store_type = _media_thumb_get_store_type_by_path(file_full_path);
-	if (store_type == THUMB_PHONE) {
-		thumb_dir = _media_thumb_phone_get_path(uid);
-	} else if (store_type == THUMB_MMC) {
-		thumb_dir = _media_thumb_mmc_get_path(uid);
-	} else {
-		thumb_dir = _media_thumb_phone_get_path(uid);
-	}
-
-	hash_name = _media_thumb_generate_hash_name(file_full_path);
-
-	int ret_len;
-	ret_len =
-	    snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg",
-		     thumb_dir, file_ext, hash_name);
-	if(thumb_dir)
-		free(thumb_dir);
-	if (ret_len < 0) {
-		thumb_err("Error when snprintf");
-		return -1;
-	} else if (ret_len > max_thumb_path) {
-		thumb_err("Error for the length of thumb pathname");
-		return -1;
-	}
-
-	//thumb_dbg("thumb hash : %s", thumb_hash_path);
-
-	return 0;
-}
-
-int _media_thumb_save_to_file_with_gdk(GdkPixbuf *data, 
-											int w,
-											int h,
-											gboolean alpha,
-											char *thumb_path)
-{	
-	GError *error = NULL;
-	
-	gdk_pixbuf_save(data,thumb_path,"jpeg", &error, NULL);
-	if (error) {
-		thumb_dbg ("Error saving image file %s", thumb_path);
-		g_error_free (error);
-		return -1;
-	}
-
-	if(smack_setlabel(thumb_path, "User", SMACK_LABEL_ACCESS)){
-		thumb_dbg("failed chsmack -a \"User\" %s", thumb_path);
-		return -1;
-	} else {
-		thumb_dbg("chsmack -a \"User\" %s", thumb_path);
-	}
-
-	return 0;
 }

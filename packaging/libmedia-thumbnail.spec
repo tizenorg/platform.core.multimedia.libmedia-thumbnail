@@ -1,5 +1,5 @@
 Name:           libmedia-thumbnail
-Version:        0.1.80
+Version:        0.1.81
 Release:        0
 License:        Apache-2.0
 Summary:        Media thumbnail service Library
@@ -17,11 +17,12 @@ BuildRequires: pkgconfig(mmutil-imgp)
 BuildRequires: pkgconfig(mmutil-jpeg)
 BuildRequires: pkgconfig(heynoti)
 BuildRequires: pkgconfig(libexif)
+BuildRequires: pkgconfig(evas)
+BuildRequires: pkgconfig(ecore)
 BuildRequires: pkgconfig(aul)
 BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libmedia-utils)
 BuildRequires: pkgconfig(libtzplatform-config)
-BuildRequires: pkgconfig(gdk-pixbuf-2.0)
 
 %description
 Description: Media thumbnail service library for multimedia applications.
