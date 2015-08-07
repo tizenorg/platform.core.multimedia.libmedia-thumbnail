@@ -27,52 +27,12 @@
 #include <aul.h>
 #include <string.h>
 
-int _media_thumb_get_width(media_thumb_type thumb_type)
-{
-	if (thumb_type == MEDIA_THUMB_LARGE) {
-		return THUMB_LARGE_WIDTH;
-	} else if (thumb_type == MEDIA_THUMB_SMALL) {
-		return  THUMB_SMALL_WIDTH;
-	} else {
-		return -1;
-	}
-}
-
-int _media_thumb_get_height(media_thumb_type thumb_type)
-{
-	if (thumb_type == MEDIA_THUMB_LARGE) {
-		return THUMB_LARGE_HEIGHT;
-	} else if (thumb_type == MEDIA_THUMB_SMALL) {
-		return  THUMB_SMALL_HEIGHT;
-	} else {
-		return -1;
-	}
-}
-
-int _media_thumb_get_file_ext(const char *file_path, char *file_ext, int max_len)
-{
-	int i = 0;
-
-	for (i = strlen(file_path); i >= 0; i--) {
-		if ((file_path[i] == '.') && (i < strlen(file_path))) {
-			strncpy(file_ext, &file_path[i + 1], max_len);
-			return 0;
-		}
-
-		/* meet the dir. no ext */
-		if (file_path[i] == '/') {
-			return -1;
-		}
-	}
-
-	return -1;
-}
-
 int
 _media_thumb_get_file_type(const char *file_full_path)
 {
 	int ret = 0;
 	char mimetype[255] = {0,};
+	const char *unsupported_type = "image/tiff";
 
 	if (file_full_path == NULL)
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
@@ -116,6 +76,10 @@ _media_thumb_get_file_type(const char *file_full_path)
 
 	/* categorize from mimetype */
 	if (strstr(mimetype, "image") != NULL) {
+		if (!strcmp(mimetype, unsupported_type)) {
+			thumb_warn("This is unsupport file type");
+			return THUMB_NONE_TYPE;
+		}
 		return THUMB_IMAGE_TYPE;
 	} else if (strstr(mimetype, "video") != NULL) {
 		return THUMB_VIDEO_TYPE;
@@ -149,4 +113,23 @@ int _media_thumb_remove_file(const char *path)
 		thumb_stderror("fail to remove file[%s] result");
 		return FALSE;
 	}
+}
+
+int _media_thumb_get_file_ext(const char *file_path, char *file_ext, int max_len)
+{
+	int i = 0;
+
+	for (i = (int)strlen(file_path); i >= 0; i--) {
+		if ((file_path[i] == '.') && (i < (int)strlen(file_path))) {
+			strncpy(file_ext, &file_path[i + 1], max_len);
+			return 0;
+		}
+
+		/* meet the dir. no ext */
+		if (file_path[i] == '/') {
+			return -1;
+		}
+	}
+
+	return -1;
 }

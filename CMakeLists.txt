@@ -7,31 +7,28 @@ SET(MEDIATHUMB-LIB "media-thumbnail")
 SET(MEDIAHASH-LIB "media-hash")
 SET(SRCS
 	src/media-thumbnail.c
-	src/media-thumb-internal.c
 	src/util/media-thumb-debug.c
 	src/util/media-thumb-util.c
-	src/util/media-thumb-db.c
+	src/ipc/media-thumb-ipc.c
 	src/codec/IfegDecodeAGIF.c
 	src/codec/img-codec.c
 	src/codec/img-codec-osal.c
 	src/codec/img-codec-parser.c
-	src/ipc/media-thumb-ipc.c
 	)
 SET(HASH_SRCS
 	md5/md5.c
 	md5/media-thumb-hash.c
 	)
 
-SET(THUMB-SERVER server/thumb-server.c server/thumb-server-internal.c)
-SET(TEST-THUMB test/test-thumb.c)
-
 SET(VENDOR "samsung")
 SET(PACKAGE ${PROJECT_NAME})
 SET(PKGNAME "com.${VENDOR}.${PACKAGE}")
 SET(PREFIX ${CMAKE_INSTALL_PREFIX})
 SET(BINDIR "${PREFIX}/bin")
+SET(LOCALBINDIR "${PREFIX}/local/bin")
 SET(DATADIR "${PREFIX}/share")
 SET(EXEC_PREFIX "\${prefix}")
+SET(LIBDIR "\${prefix}/lib")
 SET(INCLUDEDIR "\${prefix}/include")
 
 IF("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -42,7 +39,7 @@ MESSAGE("Build type: ${CMAKE_BUILD_TYPE}")
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/include ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/codec ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/ipc ${CMAKE_SOURCE_DIR}/server/include ${CMAKE_SOURCE_DIR}/md5)
 
 INCLUDE(FindPkgConfig)
-pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog mm-fileinfo aul libexif ecore-evas evas mmutil-imgp mmutil-jpeg heynoti libmedia-utils vconf libtzplatform-config)
+	pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog sqlite3 mm-fileinfo aul libexif ecore-evas evas mmutil-imgp mmutil-jpeg libmedia-utils vconf libtzplatform-config)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
@@ -82,15 +79,10 @@ SET_TARGET_PROPERTIES(${MEDIATHUMB-LIB} PROPERTIES VERSION ${VERSION})
 INSTALL(TARGETS ${MEDIATHUMB-LIB} LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 INSTALL(TARGETS ${MEDIAHASH-LIB} LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 
-ADD_EXECUTABLE(media-thumbnail-server ${THUMB-SERVER})
-TARGET_LINK_LIBRARIES(media-thumbnail-server ${pkgs_LDFLAGS} ${MEDIATHUMB-LIB} )
-INSTALL(TARGETS media-thumbnail-server DESTINATION ${BINDIR})
-
-#ADD_EXECUTABLE(test-thumb ${TEST-THUMB})
-#TARGET_LINK_LIBRARIES(test-thumb ${pkgs_LDFLAGS} ${MEDIATHUMB-LIB} )
-#INSTALL(TARGETS test-thumb DESTINATION ${BINDIR})
+ADD_SUBDIRECTORY(server)
+ADD_SUBDIRECTORY(test)
 
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumbnail.h DESTINATION include/${MEDIATHUMB-LIB})
-INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/media-thumb-types.h DESTINATION include/${MEDIATHUMB-LIB})
+INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/include/codec/img-codec-parser.h DESTINATION include/${MEDIATHUMB-LIB})
 #INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/thumbsvr DESTINATION /etc/init.d)
 

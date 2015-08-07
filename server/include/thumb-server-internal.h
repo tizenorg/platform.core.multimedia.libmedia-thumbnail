@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <vconf.h>
 #include "media-thumb-ipc.h"
 #include "media-thumb-db.h"
 
@@ -47,8 +48,8 @@ gboolean _thumb_server_prepare_socket(int *sock_fd);
 gboolean _thumb_server_read_socket(GIOChannel *src, GIOCondition condition, gpointer data);
 
 int _thumbnail_get_data(const char *origin_path,
-						media_thumb_type thumb_type,
 						media_thumb_format format,
+						char *thumb_path,
 						unsigned char **data,
 						int *size,
 						int *width,
@@ -56,18 +57,17 @@ int _thumbnail_get_data(const char *origin_path,
 						int *origin_width,
 						int *origin_height,
 						int *alpha,
-						uid_t uid);
+						bool *is_saved);
 
 int _thumbnail_get_raw_data(const char *origin_path,
 						media_thumb_format format,
-						unsigned char **data,
-						int *size,
 						int *width,
 						int *height,
-						uid_t uid);
+						unsigned char **data,
+						int *size);
 
 int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
 
-int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg, uid_t uid);
+int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg);
 
 #endif /*_THUMB_DAEMON_INTERNAL_H_*/

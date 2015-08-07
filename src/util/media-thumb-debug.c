@@ -27,7 +27,7 @@
 
 #ifdef _PERFORMANCE_CHECK_
 static long g_time_usec = 0L;
-#endif
+
 
 #ifdef _USE_LOG_FILE_
 static FILE *g_log_fp = NULL;
@@ -109,3 +109,4 @@ thumb_print_debug_time_ex(long start, long end, const char *func_name,
 		      totaltime);
 #endif
 }
+#endif

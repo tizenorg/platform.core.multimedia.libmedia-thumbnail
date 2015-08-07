@@ -23,9 +23,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <Evas.h>
+#include <Ecore_Evas.h>
 #include <mm_util_imgp.h>
 #include <mm_util_jpeg.h>
-#include <stdbool.h>
 
 #include "media-thumbnail.h"
 #include "thumb-server-internal.h"
@@ -33,16 +34,75 @@
 #include "media-thumb-ipc.h"
 #include "media-thumb-util.h"
 
-int save_to_file_with_gdk(unsigned char *data, int w, int h, int is_bgra)
+int save_to_file_with_evas(unsigned char *data, int w, int h, int is_bgra)
 {
-	GError *error = NULL;
+	ecore_evas_init();
 	
-	gdk_pixbuf_save(data,"/mnt/nfs/test.jpg","jpeg", &error, NULL);
-	if (error) {
-		thumb_dbg ("Error saving image file /mnt/nfs/test.jpg ");
-		g_error_free (error);
+	Ecore_Evas *ee =
+		ecore_evas_buffer_new(w, h);
+	Evas *evas = ecore_evas_get(ee);
+
+	Evas_Object *img = NULL;
+	img = evas_object_image_add(evas);
+
+	if (img == NULL) {
+		printf("image object is NULL\n");
+		ecore_evas_free(ee);
+		ecore_evas_shutdown();
 		return -1;
 	}
+
+	evas_object_image_colorspace_set(img, EVAS_COLORSPACE_ARGB8888);
+	evas_object_image_size_set(img, w, h);
+	evas_object_image_fill_set(img, 0, 0, w, h);
+
+	if (!is_bgra) {
+	unsigned char *m = NULL;
+	m = evas_object_image_data_get(img, 1);
+#if 1				/* Use self-logic to convert from RGB888 to RGBA */
+	int i = 0, j;
+	for (j = 0; j < w * 3 * h;
+		j += 3) {
+		m[i++] = (data[j + 2]);
+		m[i++] = (data[j + 1]);
+		m[i++] = (data[j]);
+		m[i++] = 0x0;
+	}
+
+#else				/* Use mmf api to convert from RGB888 to RGBA */
+	int mm_ret = 0;
+	if ((mm_ret =
+		mm_util_convert_colorspace(data,
+					w,
+					h,
+					MM_UTIL_IMG_FMT_RGB888,
+					m,
+					MM_UTIL_IMG_FMT_BGRA8888))
+		< 0) {
+		printf
+			("Failed to change from rgb888 to argb8888 %d\n",
+			mm_ret);
+		return -1;
+	}
+#endif				/* End of use mmf api to convert from RGB888 to RGBA */
+
+	evas_object_image_data_set(img, m);
+	evas_object_image_data_update_add(img, 0, 0, w, h);
+	} else {
+	evas_object_image_data_set(img, data);
+	evas_object_image_data_update_add(img, 0, 0, w, h);
+	}
+
+	if (evas_object_image_save
+		(img, "/mnt/nfs/test.jpg", NULL,
+		"quality=50 compress=2")) {
+		printf("evas_object_image_save success\n");
+	} else {
+		printf("evas_object_image_save failed\n");
+	}
+
+	ecore_evas_shutdown();
+
 	return 0;
 }
 
@@ -63,24 +123,24 @@ int main(int argc, char *argv[])
 	if (origin_path && (mode == 1)) {
 		printf("Test _thumbnail_get_data\n");
 #if 0
-		GdkPixbuf *data = NULL;
+		unsigned char *data = NULL;
 		int thumb_size = 0;
 		int thumb_w = 0;
 		int thumb_h = 0;
 		int origin_w = 0;
 		int origin_h = 0;
 		int alpha = FALSE;
+		bool is_saved = FALSE;
+        char *thumb_path = "thumbnail_path.jpg";
 
-		media_thumb_type thumb_type = MEDIA_THUMB_LARGE;
-		//media_thumb_type thumb_type = MEDIA_THUMB_SMALL;
-		//media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
-		media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
+		media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
+		//media_thumb_format thumb_format = MEDIA_THUMB_RGB888;
 		int is_bgra = 1;
 		//int is_bgra = 0;
 
-		long start = thumb_get_debug_time();
+		//long start = thumb_get_debug_time();
 
-		err = _thumbnail_get_data(origin_path, thumb_type, thumb_format, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, tzplatform_getuid(TZ_USER_NAME));
+		err = _thumbnail_get_data(origin_path, thumb_format, thumb_path, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, &is_saved);
 		if (err < 0) {
 			printf("_thumbnail_get_data failed - %d\n", err);
 			return -1;
@@ -89,53 +149,22 @@ int main(int argc, char *argv[])
 		printf("Size : %d, W:%d, H:%d\n", thumb_size, thumb_w, thumb_h);	
 		printf("Origin W:%d, Origin H:%d\n", origin_w, origin_h);
 
-		err = save_to_file_with_gdk(data, thumb_w, thumb_h, is_bgra);
-		if (err < 0) {
-			printf("_thumbnail_get_data failed - %d\n", err);
-			return -1;
-		} else {
-			printf("file save success\n");
+		if (is_saved == FALSE) {
+			err = save_to_file_with_evas(data, thumb_w, thumb_h, is_bgra);
+			if (err < 0) {
+				printf("save_to_file_with_evas failed - %d\n", err);
+				return -1;
+			} else {
+				printf("file save success\n");
+			}
 		}
 
 		SAFE_FREE(data);
 
-		long end = thumb_get_debug_time();
-		printf("Time : %f\n", ((double)(end - start) / (double)CLOCKS_PER_SEC));
+		//long end = thumb_get_debug_time();
+		//printf("Time : %f\n", ((double)(end - start) / (double)CLOCKS_PER_SEC));
 #endif
-	} else if (mode == 2) {
-		printf("Test thumbnail_request_from_db\n");
-		//const char *origin_path = "/opt/media/test/movie1.mp4";
-		//const char *origin_path = "/opt/media/test/high.jpg";
-		//const char *origin_path = "/opt/media/test/movie2.avi";
-		char thumb_path[MAX_PATH_SIZE + 1];
-
-		err = thumbnail_request_from_db(origin_path, thumb_path, sizeof(thumb_path), tzplatform_getuid(TZ_USER_NAME));
-		if (err < 0) {
-			printf("thumbnail_request_from_db failed : %d\n", err);
-			return -1;
-		}
-
-		printf("Success!! (%s)\n", thumb_path);
-	} else if (mode == 3) {
-		printf("Test thumbnail_request_save_to_file\n");
-		const char *thumb_path = NULL;
-
-		if (argv[3]) {
-		thumb_path = argv[3];
-		} else {
-			printf("3 mode requires target path of thumbnail\n");
-			return -1;
-		}
-
-		err = thumbnail_request_save_to_file(origin_path, MEDIA_THUMB_LARGE, thumb_path, tzplatform_getuid(TZ_USER_NAME));
-		if (err < 0) {
-			printf("thumbnail_request_save_to_file failed : %d\n", err);
-			return -1;
-		}
-
-		printf("Success!!\n");
 	} else if (origin_path && mode == 4) {
-		printf("Test thumbnail_generate_hash_code\n");
 		printf("Success!!\n");
 	} else if (mode == 5) {
 		printf("Test thumbnail_request_extract_all_thumbs\n");
