@@ -30,15 +30,32 @@ extern "C" {
 
 #define		PNG_HEADER_LENGTH	8
 #define		JPG_HEADER_LENGTH	2
-#define		GIF_HEADER_LENGTH	3 
+#define		GIF_HEADER_LENGTH	3
 #define		TIFF_HEADER_LENGTH	2
 #define		BMP_HEADER_LENGTH	2
+#define		WBMP_HEADER_LENGTH	2
 #define		TIFF_IMAGE_WIDTH	0x100
 #define		TIFF_IMAGE_HEIGHT	0x101
 
-ImgCodecType ImgGetInfo(unsigned char* pEncodedData, unsigned long fileSize, ImgImageInfo* imgInfo);
-ImgCodecType ImgGetInfoFile(const char*filePath, ImgImageInfo *imgInfo);
-ImgCodecType ImgGetInfoHFile(HFile hFile, unsigned long fileSize, ImgImageInfo* imgInfo);
+typedef enum
+{
+	IMG_CODEC_UNKNOWN_TYPE = -2,
+	IMG_CODEC_BIG_PROGRESSIVE_JPEG = -1,
+	IMG_CODEC_NONE	= 0,
+	IMG_CODEC_GIF	= ( 1 << 0),
+	IMG_CODEC_PNG	= ( 1 << 1),
+	IMG_CODEC_WBMP	= ( 1 << 2),
+	IMG_CODEC_JPEG	= ( 1 << 3),
+	IMG_CODEC_BMP	= ( 1 << 4),
+	IMG_CODEC_TIF	= ( 1 << 5),
+	IMG_CODEC_AGIF	= ( 1 << 6),
+	IMG_CODEC_PROGRESSIVE_JPEG = ( 1 << 7),
+	IMG_CODEC_DRM	 = ( 1 << 8),
+} ImgCodecType;
+
+//ImgCodecType ImgGetInfoFile(const char*filePath, ImgImageInfo *imgInfo);
+int ImgGetImageInfo(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
+int ImgGetImageInfoForThumb(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
 
 #ifdef __cplusplus
 }

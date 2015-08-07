@@ -37,19 +37,20 @@ extern "C" {
 #define	IMG_MAX_IMAGE_FILE_SIZE			(10 * 1024 * 1024)
 
 //////////////////////////////////////////////////////////////
+#if 0
 #define ImgDebug(type, fmt, arg...)	\
 	do { \
 		fprintf(stderr, "[Media-SVC]"fmt, ##arg);	\
 	}while(0)
-	
-#if 1
+
+
 #define SysRequireEx(expr, retValue)	\
 	if (!(expr)) {																			\
 		fprintf(stderr, "[Media-SVC][%s] INVALID_PARAM (%d lines in %s)\n",__FUNCTION__,  __LINE__, __FILE__);  \
 		return (retValue);																	\
 	}
-#define SysDebug(X)		ImgDebug X	
-	
+#define SysDebug(X)		ImgDebug X
+
 #define SysAssert(expr)
 #else
 #define SysRequireEx(expr, retValue)
@@ -72,24 +73,6 @@ typedef enum
 	IMG_INFO_FILE_ERR				= -5,
 	IMG_INFO_MEM_ALLOC_FAIL		= -6
 }ImgFastCodecInfo;
-
-
-
-typedef enum
-{
-	IMG_CODEC_UNKNOWN_TYPE = -2,
-	IMG_CODEC_BIG_PROGRESSIVE_JPEG = -1,
-	IMG_CODEC_NONE	= 0,
-	IMG_CODEC_GIF	= ( 1 << 0),
-	IMG_CODEC_PNG	= ( 1 << 1),
-	IMG_CODEC_WBMP	= ( 1 << 2),
-	IMG_CODEC_JPEG	= ( 1 << 3),
-	IMG_CODEC_BMP	= ( 1 << 4),
-	IMG_CODEC_TIF	= ( 1 << 5),
-	IMG_CODEC_AGIF	= ( 1 << 6),
-	IMG_CODEC_PROGRESSIVE_JPEG = ( 1 << 7),
-	IMG_CODEC_DRM	 = ( 1 << 8),	
-} ImgCodecType;
 
 typedef	enum inputFlag
 {

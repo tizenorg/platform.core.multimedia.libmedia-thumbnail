@@ -257,6 +257,10 @@ int _media_thumb_update_thumb_path_to_db(sqlite3 *handle,
 		thumb_dbg("Query success");
 	}
 
+	sqlite3_free(path_string);
+	sqlite3_free(thumbpath_string);
+	sqlite3_free(query_string);
+
 	return err;
 }
 
@@ -284,6 +288,9 @@ int _media_thumb_update_wh_to_db(sqlite3 *handle,
 	} else {
 		thumb_dbg("Query success");
 	}
+
+	sqlite3_free(path_string);
+	sqlite3_free(query_string);
 
 	return err;
 }
@@ -313,6 +320,9 @@ int _media_thumb_update_thumb_path_wh_to_db(sqlite3 *handle,
 	} else {
 		thumb_dbg("Query success");
 	}
+
+	sqlite3_free(path_string);
+	sqlite3_free(query_string);
 
 	return err;
 }
