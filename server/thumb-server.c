@@ -25,7 +25,6 @@
 #include "media-thumb-util.h"
 #include "thumb-server-internal.h"
 #include <pthread.h>
-#include <heynoti.h>
 #include <vconf.h>
 
 #ifdef LOG_TAG
@@ -33,10 +32,10 @@
 #endif
 
 #define LOG_TAG "MEDIA_THUMBNAIL_SERVER"
-#define POWEROFF_NOTI_NAME "power_off_start" /*poeroff noti from system-server*/
 
 extern GMainLoop *g_thumb_server_mainloop;
 
+#if 0
 static void _media_thumb_signal_handler(void *user_data)
 {
 	thumb_dbg("Singal Hander for HEYNOTI \"power_off_start\"");
@@ -48,31 +47,16 @@ static void _media_thumb_signal_handler(void *user_data)
 
 	return;
 }
+#endif
 
 int main(void)
 {
 	int sockfd = -1;
+	int err = 0;
 
 	GSource *source = NULL;
 	GIOChannel *channel = NULL;
 	GMainContext *context = NULL;
-
-	/*heynoti for power off*/
-	int err = 0;
-	int heynoti_id = heynoti_init();
-
-	if (heynoti_id < 0) {
-		thumb_err("heynoti_init failed");
-	} else {
-		err = heynoti_subscribe(heynoti_id, POWEROFF_NOTI_NAME, _media_thumb_signal_handler, NULL);
-		if (err < 0) {
-			thumb_err("heynoti_attach_handler failed: %d", err);
-		} else {
-			err = heynoti_attach_handler(heynoti_id);
-			if (err < 0)
-				thumb_err("heynoti_attach_handler failed: %d", err);
-		}
-	}
 
 	/* Set VCONFKEY_SYSMAN_MMC_FORMAT callback to get noti for SD card format */
 	err = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_FORMAT, (vconf_callback_fn) _thumb_daemon_vconf_cb, NULL);
@@ -91,6 +75,7 @@ int main(void)
 	}
 
 	g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
+	context = g_main_loop_get_context(g_thumb_server_mainloop);
 
 	/* Create new channel to watch udp socket */
 	channel = g_io_channel_unix_new(sockfd);
@@ -100,10 +85,10 @@ int main(void)
 	g_source_set_callback(source, (GSourceFunc)_thumb_server_read_socket, NULL, NULL);
 	g_source_attach(source, context);
 
-	GSource *source_init = NULL;
-	source_init = g_idle_source_new ();
-	g_source_set_callback (source_init, _thumb_daemon_start_jobs, NULL, NULL);
-	g_source_attach (source_init, context);
+	GSource *source_evas_init = NULL;
+	source_evas_init = g_idle_source_new ();
+	g_source_set_callback (source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
+	g_source_attach (source_evas_init, context);
 
 /*	Would be used when glib 2.32 is installed
 	GSource *sig_handler_src = NULL;
@@ -121,6 +106,7 @@ int main(void)
 	g_io_channel_shutdown(channel,  FALSE, NULL);
 	g_io_channel_unref(channel);
 	_thumb_daemon_finish_jobs();
+	g_main_loop_unref(g_thumb_server_mainloop);
 
 	return 0;
 }

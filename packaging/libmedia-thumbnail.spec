@@ -1,13 +1,13 @@
-Name:           libmedia-thumbnail
-Version:        0.1.81
-Release:        0
-License:        Apache-2.0
-Summary:        Media thumbnail service Library
-Group:          Multimedia/Libraries
-Source0:        %{name}-%{version}.tar.gz
-Source1001:     %{name}.manifest
-Source1002:     %{name}-devel.manifest
-Source1003:     media-thumbnail-server.manifest
+Name:       libmedia-thumbnail
+Summary:    Media thumbnail service library for multimedia applications.
+Version: 0.1.82
+Release:    0
+Group:      Multimedia/Libraries
+License:    Apache-2.0
+Source0:    %{name}-%{version}.tar.gz
+Source1001: %{name}.manifest
+Source1002: %{name}-devel.manifest
+Source1003: media-thumbnail-server.manifest
 
 Requires: media-server
 BuildRequires: cmake
@@ -15,7 +15,6 @@ BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(mm-fileinfo)
 BuildRequires: pkgconfig(mmutil-imgp)
 BuildRequires: pkgconfig(mmutil-jpeg)
-BuildRequires: pkgconfig(heynoti)
 BuildRequires: pkgconfig(libexif)
 BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(ecore)
@@ -23,23 +22,28 @@ BuildRequires: pkgconfig(aul)
 BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libmedia-utils)
 BuildRequires: pkgconfig(libtzplatform-config)
+BuildRequires: pkgconfig(sqlite3)
 
 %description
 Description: Media thumbnail service library for multimedia applications.
 
+
 %package devel
-Summary:        Media Thumbnail Service Library (development)
-Requires:       %{name} = %{version}-%{release}
+Summary:        Media thumbnail service library for multimedia applications. (development)
+Requires:       %{name}  = %{version}-%{release}
+Group:          Development/Libraries
 
 %description devel
-Media thumbnail service library for multimedia applications. (development)
+Description: Media thumbnail service library for multimedia applications. (development)
 
 %package -n media-thumbnail-server
-Summary:        Thumbnail generator
-Requires:       %{name} = %{version}-%{release}
+Summary:        Thumbnail generator.
+Requires:       %{name}  = %{version}-%{release}
+Group:          Development/Libraries
 
 %description -n media-thumbnail-server
 Description: Media Thumbnail Server.
+
 
 %prep
 %setup -q

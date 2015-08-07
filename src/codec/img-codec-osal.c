@@ -69,8 +69,8 @@ HFile DrmOpenFile(const char *szPathName)
 		FILE *fp = fopen(szPathName, "rb");
 
 		if (fp == NULL) {
-			thumb_err("file open error: %s", szPathName);
 			return (HFile) INVALID_HOBJ;
+			thumb_err("file open error: %s", szPathName);
 		}
 
 		return fp;

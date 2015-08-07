@@ -23,8 +23,6 @@
 #include <media-util-err.h>
 #include "media-thumbnail.h"
 #include "media-thumb-util.h"
-#include "media-thumb-types.h"
-#include "media-thumb-debug.h"
 
 #ifndef _MEDIA_THUMB_INTERNAL_H_
 #define _MEDIA_THUMB_INTERNAL_H_
@@ -44,8 +42,9 @@ typedef struct {
 	int height;
 	int origin_width;
 	int origin_height;
-	gboolean alpha;
+	int alpha;
 	unsigned char *data;
+	bool is_saved;
 } media_thumb_info;
 
 enum Exif_Orientation {
@@ -71,21 +70,21 @@ typedef struct {
 } thumbRawUserData;
 
 int _media_thumb_image(const char *origin_path,
+					const char *thumb_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
 					media_thumb_info *thumb_info,
-					bool is_raw,
-					uid_t uid);
+					bool is_req_raw);
 
 int _media_thumb_video(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info,
-					uid_t uid);
+					media_thumb_info *thumb_info);
 
-int _media_thumb_get_hash_name(const char *file_full_path, char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
+int _media_thumb_get_hash_name(const char *file_full_path,
+				 char *thumb_hash_path, size_t max_thumb_path, uid_t uid);
 
 int _media_thumb_save_to_file_with_evas(unsigned char *data,
 											int w,

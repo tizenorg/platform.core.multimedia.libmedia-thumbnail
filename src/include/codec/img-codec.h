@@ -30,7 +30,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-unsigned int* ImgGetFirstFrameAGIFAtSize(const char *szFileName, ImgImageInfo *image_info);
+unsigned int* ImgGetFirstFrameAGIFAtSize(const char *szFileName, unsigned int width, unsigned int height);
 
 int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width, int height);
 

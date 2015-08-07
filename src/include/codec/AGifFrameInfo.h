@@ -55,8 +55,8 @@ typedef struct tagFrameInfo
 	unsigned short delay;
 
 #ifdef INTERNAL_IMGCODEC
-	unsigned int nRepeatCount;
-	unsigned int nLoopCount;
+	int nRepeatCount;
+	int nLoopCount;
 
 	unsigned char bOneFrame;
 #endif

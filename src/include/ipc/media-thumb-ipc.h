@@ -30,8 +30,6 @@
 #include <signal.h>
 #include <sys/types.h>
 
-#include "media-thumb-debug.h"
-#include "media-thumb-types.h"
 #include "media-thumb-internal.h"
 #include "media-util-ipc.h"
 #include "media-server-ipc.h"
@@ -72,7 +70,6 @@ int _media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf,
 int _media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **buf, int *buf_size);
 
 int _media_thumb_request(int msg_type,
-					media_thumb_type thumb_type,
 					const char *origin_path,
 					char *thumb_path,
 					int max_length,
@@ -80,7 +77,6 @@ int _media_thumb_request(int msg_type,
 					uid_t uid);
 
 int _media_thumb_request_async(int msg_type,
-					media_thumb_type thumb_type,
 					const char *origin_path,
 					thumbUserData *userData,
 					uid_t uid);

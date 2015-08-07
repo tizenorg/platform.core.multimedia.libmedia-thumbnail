@@ -379,7 +379,7 @@ _media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **bu
 }
 
 int
-_media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info, uid_t uid)
+_media_thumb_request(int msg_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info, uid_t uid)
 {
 	int sock = -1;
 	struct sockaddr_un serv_addr;
@@ -419,7 +419,6 @@ _media_thumb_request(int msg_type, media_thumb_type thumb_type, const char *orig
 
 	/* Set requset message */
 	req_msg.msg_type = msg_type;
-	req_msg.thumb_type = thumb_type;
 	req_msg.uid = uid;
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
 	req_msg.org_path[strlen(req_msg.org_path)] = '\0';
@@ -585,7 +584,7 @@ gboolean _media_thumb_raw_data_write_socket(GIOChannel *src, GIOCondition condit
 	return FALSE;
 }
 
-int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const char *origin_path, thumbUserData *userData, uid_t uid)
+int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserData *userData, uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	int sock = -1;
@@ -623,8 +622,6 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 	}
 
 	if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
-		//source_id = g_io_add_watch(channel, G_IO_IN, _media_thumb_write_socket, userData );
-
 		/* Create new channel to watch udp socket */
 		GSource *source = NULL;
 		source = g_io_create_watch(channel, G_IO_IN);
@@ -640,7 +637,6 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 	pid = getpid();
 	req_msg.pid = pid;
 	req_msg.msg_type = msg_type;
-	req_msg.thumb_type = thumb_type;
 	req_msg.uid = uid;
 
 	strncpy(req_msg.org_path, origin_path, sizeof(req_msg.org_path));
@@ -677,8 +673,6 @@ int _media_thumb_request_async(int msg_type, media_thumb_type thumb_type, const 
 
 	if (msg_type == THUMB_REQUEST_CANCEL_MEDIA) {
 		g_io_channel_shutdown(channel, TRUE, NULL);
-
-		//thumb_dbg("Cancel : %s[%d]", origin_path, sock);
 		__media_thumb_pop_req_queue(origin_path, TRUE);
 	} else if (msg_type == THUMB_REQUEST_DB_INSERT) {
 		if (g_request_queue == NULL) {
@@ -753,7 +747,6 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 	pid = getpid();
 	req_msg.pid = pid;
 	req_msg.msg_type = msg_type;
-	req_msg.thumb_type = MEDIA_THUMB_LARGE;
 	req_msg.request_id = request_id;
 	req_msg.thumb_width = width;
 	req_msg.thumb_height = height;
