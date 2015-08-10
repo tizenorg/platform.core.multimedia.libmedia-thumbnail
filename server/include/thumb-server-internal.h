@@ -68,6 +68,6 @@ int _thumbnail_get_raw_data(const char *origin_path,
 
 int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
 
-int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg);
+int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg);
 
 #endif /*_THUMB_DAEMON_INTERNAL_H_*/
