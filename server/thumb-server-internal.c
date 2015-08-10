@@ -19,7 +19,6 @@
  *
  */
 
- #define _GNU_SOURCE
 #include "thumb-server-internal.h"
 #include "media-thumb-util.h"
 #include "media-thumb-debug.h"
@@ -52,6 +51,7 @@ GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 
 gboolean _thumb_server_send_msg_to_agent(int msg_type);
 void _thumb_daemon_stop_job();
+static gboolean _thumb_server_send_deny_message(int sockfd, struct sockaddr *client_addr, int client_addr_len);
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
@@ -336,6 +336,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
 	thumbRawAddMsg res_raw_msg;
+	ms_peer_credentials credentials;
 
 	int sock = -1;
 	int header_size = 0;
@@ -352,10 +353,27 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE * 2 - sizeof(unsigned char *);
 
-	if (_media_thumb_recv_udp_msg(sock, header_size, &recv_msg, &client_addr, &client_addr_len) < 0) {
+	if (ms_cynara_receive_untrusted_message_udp(sock, &recv_msg, header_size, &client_addr, &client_addr_len, &credentials) != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_recv_udp_msg failed");
-		return TRUE;
+		return FALSE;
 	}
+
+	if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER && credentials.uid != 0) {
+		thumb_dbg("Only root can send THUMB_REQUEST_KILL_SERVER request");
+		_thumb_server_send_deny_message(sock, (struct sockaddr *)&client_addr, client_addr_len);
+		return TRUE;
+  	}
+
+	if(recv_msg.msg_type != THUMB_REQUEST_KILL_SERVER) {
+		if (ms_cynara_check(&credentials, MEDIA_STORAGE_PRIVILEGE) != MS_MEDIA_ERR_NONE) {
+			thumb_dbg("Cynara denied access to process request");
+			_thumb_server_send_deny_message(sock, (struct sockaddr *)&client_addr, client_addr_len);
+			return TRUE;
+		}
+	}
+
+	SAFE_FREE(credentials.smack);
+	SAFE_FREE(credentials.uid);
 
 	thumb_warn_slog("Received [%d] %s(%d) from PID(%d)", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
@@ -462,6 +480,22 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
  	return TRUE;
 }
 
+static gboolean _thumb_server_send_deny_message(int sockfd, struct sockaddr *client_addr, int client_addr_len)
+{
+    thumbMsg msg = {0};
+    int bytes_to_send = sizeof(thumbMsg) - MAX_PATH_SIZE * 2 - sizeof(unsigned char *);
+
+    msg.msg_type = THUMB_RESPONSE;
+    msg.status = THUMB_FAIL;
+
+    if (TEMP_FAILURE_RETRY(sendto(sockfd, &msg, bytes_to_send, 0, client_addr, client_addr_len)) != bytes_to_send) {
+        thumb_err("sendto failed: %s\n", strerror(errno));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 gboolean _thumb_server_prepare_socket(int *sock_fd)
 {
 	int sock;
@@ -477,6 +511,11 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 	if (ms_ipc_create_server_socket(MS_PROTOCOL_UDP, serv_port, &sock) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
+	}
+
+	if (ms_cynara_enable_credentials_passing(sock) != MS_MEDIA_ERR_NONE) {
+	    thumb_err("ms_cynara_enable_credentials_passing failed");
+	    return FALSE;
 	}
 
 	*sock_fd = sock;
