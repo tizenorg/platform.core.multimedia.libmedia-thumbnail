@@ -1,5 +1,5 @@
 Name:       libmedia-thumbnail
-Summary:    Media thumbnail service library for multimedia applications.
+Summary:    Media thumbnail service library for multimedia applications
 Version: 0.1.82
 Release:    0
 Group:      Multimedia/Libraries
@@ -25,24 +25,24 @@ BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(sqlite3)
 
 %description
-Description: Media thumbnail service library for multimedia applications.
+Description: Media thumbnail service library for multimedia applications
 
 
 %package devel
-Summary:        Media thumbnail service library for multimedia applications. (development)
+Summary:        Media thumbnail service library for multimedia applications (development)
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
 
 %description devel
-Description: Media thumbnail service library for multimedia applications. (development)
+Description: Media thumbnail service library for multimedia applications (development)
 
 %package -n media-thumbnail-server
-Summary:        Thumbnail generator.
+Summary:        Thumbnail generator
 Requires:       %{name}  = %{version}-%{release}
 Group:          Development/Libraries
 
 %description -n media-thumbnail-server
-Description: Media Thumbnail Server.
+Description: Media Thumbnail Server
 
 
 %prep

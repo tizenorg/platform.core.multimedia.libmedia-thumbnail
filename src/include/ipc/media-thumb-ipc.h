@@ -65,10 +65,6 @@ int _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct s
 
 int _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
 
-int _media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf, int *buf_size);
-
-int _media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **buf, int *buf_size);
-
 int _media_thumb_request(int msg_type,
 					const char *origin_path,
 					char *thumb_path,
