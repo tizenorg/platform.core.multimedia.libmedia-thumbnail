@@ -322,63 +322,6 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 }
 
 int
-_media_thumb_set_buffer_for_response(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
-{
-	if (req_msg == NULL || buf == NULL) {
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
-	}
-
-	int org_path_len = 0;
-	int dst_path_len = 0;
-	int size = 0;
-	int header_size = 0;
-
-	header_size = sizeof(thumbMsg) -(MAX_FILEPATH_LEN * 2) - sizeof(unsigned char *);
-	org_path_len = req_msg->origin_path_size;
-	dst_path_len = req_msg->dest_path_size;
-
-	thumb_dbg("Basic Size : %d, org_path : %s[%d], dst_path : %s[%d]", header_size, req_msg->org_path, org_path_len, req_msg->dst_path, dst_path_len);
-
-	size = header_size + org_path_len + dst_path_len;
-	*buf = malloc(size);
-	if (*buf == NULL) {
-		*buf_size = 0;
-		return 0;
-	}
-	memcpy(*buf, req_msg, header_size);
-	memcpy((*buf)+header_size, req_msg->org_path, org_path_len);
-	memcpy((*buf)+header_size + org_path_len, req_msg->dst_path, dst_path_len);
-
-	*buf_size = size;
-
-	return MS_MEDIA_ERR_NONE;
-}
-
-
-int
-_media_thumb_set_add_raw_data_buffer(thumbRawAddMsg *req_msg, unsigned char **buf, int *buf_size)
-{
-	if (req_msg == NULL || buf == NULL) {
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
-	}
-	int thumb_len = 0;
-	int size = 0;
-	int header_size = 0;
-
-	header_size = sizeof(thumbRawAddMsg);
-	thumb_len = req_msg->thumb_size;
-
-	size = header_size + thumb_len;
-	*buf = malloc(size);
-	memcpy(*buf, req_msg, header_size);
-	memcpy((*buf)+header_size, req_msg->thumb_data, thumb_len);
-
-	*buf_size = size;
-
-	return MS_MEDIA_ERR_NONE;
-}
-
-int
 _media_thumb_request(int msg_type, const char *origin_path, char *thumb_path, int max_length, media_thumb_info *thumb_info, uid_t uid)
 {
 	int sock = -1;
@@ -389,7 +332,7 @@ _media_thumb_request(int msg_type, const char *origin_path, char *thumb_path, in
 	int pid;
 	sock_info.port = MS_THUMB_CREATOR_PORT;
 
-	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
+   	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("ms_ipc_create_client_socket failed");
 		return err;

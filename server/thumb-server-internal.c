@@ -19,7 +19,6 @@
  *
  */
 
- #define _GNU_SOURCE
 #include "thumb-server-internal.h"
 #include "media-thumb-util.h"
 #include "media-thumb-debug.h"
@@ -42,6 +41,7 @@
 #define THUMB_DEFAULT_WIDTH 320
 #define THUMB_DEFAULT_HEIGHT 240
 #define THUMB_BLOCK_SIZE 512
+#define THUMB_ROOT_UID 0
 
 static __thread char **arr_path;
 static __thread uid_t *arr_uid;
@@ -52,6 +52,7 @@ GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 
 gboolean _thumb_server_send_msg_to_agent(int msg_type);
 void _thumb_daemon_stop_job();
+static gboolean _thumb_server_send_deny_message(int sockfd);
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
 {
@@ -180,11 +181,11 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	return err;
 }
 
-static int __thumb_daemon_process_job_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg)
+static int __thumb_daemon_process_job_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	err = _media_thumb_process_raw(req_msg, res_msg, res_raw_msg);
+	err = _media_thumb_process_raw(req_msg, res_msg);
 	if (err != MS_MEDIA_ERR_NONE) {
 		if (err != MS_MEDIA_ERR_FILE_NOT_EXIST) {
 			thumb_warn("_media_thumb_process is failed: %d, So use default thumb", err);
@@ -333,16 +334,17 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 {
 	struct sockaddr_un client_addr;
 	unsigned int client_addr_len;
+
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
-	thumbRawAddMsg res_raw_msg;
+	ms_peer_credentials credentials;
 
 	int sock = -1;
-	int header_size = 0;
+	int client_sock = -1;
 
 	memset((void *)&recv_msg, 0, sizeof(recv_msg));
 	memset((void *)&res_msg, 0, sizeof(res_msg));
-	memset((void *)&res_raw_msg, 0, sizeof(res_raw_msg));
+	memset((void *)&credentials, 0, sizeof(credentials));
 
 	sock = g_io_channel_unix_get_fd(src);
 	if (sock < 0) {
@@ -350,12 +352,34 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		return TRUE;
 	}
 
-	header_size = sizeof(thumbMsg) - MAX_PATH_SIZE * 2 - sizeof(unsigned char *);
+	client_addr_len = sizeof(client_addr);
 
-	if (_media_thumb_recv_udp_msg(sock, header_size, &recv_msg, &client_addr, &client_addr_len) < 0) {
-		thumb_err("_media_thumb_recv_udp_msg failed");
+	if ((client_sock = accept(sock, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
+		thumb_stderror("accept failed : %s");
 		return TRUE;
 	}
+
+	if (ms_cynara_receive_untrusted_message_thumb(client_sock, &recv_msg, &credentials) != MS_MEDIA_ERR_NONE) {
+		thumb_err("_media_thumb_recv_udp_msg failed");
+		return FALSE;
+	}
+
+	if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER && strncmp(credentials.uid, THUMB_ROOT_UID, strlen(THUMB_ROOT_UID)) != 0) {
+		thumb_dbg("Only root can send THUMB_REQUEST_KILL_SERVER request");
+		_thumb_server_send_deny_message(client_sock);
+		return TRUE;
+  	}
+
+	if(recv_msg.msg_type != THUMB_REQUEST_KILL_SERVER) {
+		if (ms_cynara_check(&credentials, MEDIA_STORAGE_PRIVILEGE) != MS_MEDIA_ERR_NONE) {
+			thumb_dbg("Cynara denied access to process request");
+			_thumb_server_send_deny_message(client_sock);
+			return TRUE;
+		}
+	}
+
+	SAFE_FREE(credentials.smack);
+	SAFE_FREE(credentials.uid);
 
 	thumb_warn_slog("Received [%d] %s(%d) from PID(%d)", recv_msg.msg_type, recv_msg.org_path, strlen(recv_msg.org_path), recv_msg.pid);
 
@@ -364,7 +388,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		_thumb_daemon_all_extract(recv_msg.uid);
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
-		__thumb_daemon_process_job_raw(&recv_msg, &res_msg, &res_raw_msg);
+		__thumb_daemon_process_job_raw(&recv_msg, &res_msg);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
@@ -385,39 +409,27 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	}
 
 	int buf_size = 0;
-	int block_size = 0;
-	int sent_size = 0;
+	int sending_block = 0;
+	int block_size = sizeof(res_msg) - MAX_FILEPATH_LEN*2 - sizeof(unsigned char *);
 	unsigned char *buf = NULL;
-	_media_thumb_set_buffer_for_response(&res_msg, &buf, &buf_size);
+	_media_thumb_set_buffer(&res_msg, &buf, &buf_size);
 
-	if (sendto(sock, buf, buf_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != buf_size) {
-		thumb_stderror("sendto failed");
-		SAFE_FREE(buf);
-		return TRUE;
-	}
-
-	thumb_warn_slog("Sent %s(%d)", res_msg.dst_path, strlen(res_msg.dst_path));
-	SAFE_FREE(buf);
-
-	//Add sendto_raw_data
-	if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
-		_media_thumb_set_add_raw_data_buffer(&res_raw_msg, &buf, &buf_size);
-		block_size = THUMB_BLOCK_SIZE;
-		while(buf_size > 0) {
-			if (buf_size < THUMB_BLOCK_SIZE) {
-				block_size = buf_size;
-			}
-			if (sendto(sock, buf + sent_size, block_size, 0, (struct sockaddr *)&client_addr, sizeof(client_addr)) != block_size) {
-				thumb_err("sendto failed: %s", strerror(errno));
-				SAFE_FREE(buf);
-				return TRUE;
-			}
-			sent_size += block_size;
-			buf_size -= block_size;
+	while(buf_size > 0) {
+		if(buf_size < MS_SOCK_BLOCK_SIZE) {
+			block_size = buf_size;
 		}
-		thumb_warn_slog("Sent [%s] additional data[%d]", res_msg.org_path, sent_size);
+		if (send(client_sock, buf+sending_block, block_size, 0) != block_size) {
+			thumb_stderror("sendto failed : %s");
+		}
+		sending_block += block_size;
+		buf_size -= block_size;
+		if(block_size < MS_SOCK_BLOCK_SIZE) {
+			block_size = MS_SOCK_BLOCK_SIZE;
+		}
 	}
-
+	if(buf_size == 0) {
+		thumb_dbg_slog("Sent data(%d) from %s", res_msg.thumb_size, res_msg.org_path);
+	}
 	SAFE_FREE(buf);
 
 	if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
@@ -436,7 +448,7 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	ms_thumb_server_msg send_msg;
 	sock_info.port = MS_THUMB_COMM_PORT;
 
-	if (ms_ipc_create_client_socket(MS_PROTOCOL_UDP, MS_TIMEOUT_SEC_10, &sock_info) < 0) {
+	if (ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
 		return FALSE;
 	}
@@ -447,9 +459,17 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	serv_addr.sun_family = AF_UNIX;
 	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcomm.socket");
 
+
+	/* Connecting to the thumbnail server */
+	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+		thumb_stderror("connect");
+		ms_ipc_delete_client_socket(&sock_info);
+		return MS_MEDIA_ERR_SOCKET_CONN;
+	}
+
 	send_msg.msg_type = msg_type;
 
-	if (sendto(sock, &send_msg, sizeof(ms_thumb_server_msg), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(ms_thumb_server_msg)) {
+	if (send(sock, &send_msg, sizeof(ms_thumb_server_msg), 0) != sizeof(ms_thumb_server_msg)) {
 		thumb_stderror("sendto failed");
 		ms_ipc_delete_client_socket(&sock_info);
 		return FALSE;
@@ -460,6 +480,22 @@ gboolean _thumb_server_send_msg_to_agent(int msg_type)
 	ms_ipc_delete_client_socket(&sock_info);
 
  	return TRUE;
+}
+
+static gboolean _thumb_server_send_deny_message(int sockfd)
+{
+	thumbMsg msg = {0};
+	int bytes_to_send = sizeof(msg) - sizeof(msg.org_path) - sizeof(msg.dst_path);
+
+	msg.msg_type = THUMB_RESPONSE;
+	msg.status = THUMB_FAIL;
+
+	if (send(sockfd, &msg, bytes_to_send, 0) != bytes_to_send) {
+		thumb_stderror("send failed");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 gboolean _thumb_server_prepare_socket(int *sock_fd)
@@ -474,8 +510,13 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 	memset((void *)&res_msg, 0, sizeof(res_msg));
 	serv_port = MS_THUMB_DAEMON_PORT;
 
-	if (ms_ipc_create_server_socket(MS_PROTOCOL_UDP, serv_port, &sock) < 0) {
+	if (ms_ipc_create_server_socket(MS_PROTOCOL_TCP, serv_port, &sock) < 0) {
 		thumb_err("ms_ipc_create_server_socket failed");
+		return FALSE;
+	}
+
+	if (ms_cynara_enable_credentials_passing(sock) != MS_MEDIA_ERR_NONE) {
+		thumb_err("ms_cynara_enable_credentials_passing failed");
 		return FALSE;
 	}
 
@@ -550,7 +591,7 @@ int _thumbnail_get_data(const char *origin_path,
 	}
 
 	if (!g_file_test
-	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+		(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path (%s) does not exist", origin_path);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
@@ -622,7 +663,7 @@ int _thumbnail_get_raw_data(const char *origin_path,
 	}
 
 	if (!g_file_test
-	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+		(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path (%s) does not exist", origin_path);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
@@ -846,7 +887,7 @@ DB_UPDATE:
 }
 
 int
-_media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *res_raw_msg)
+_media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	unsigned char *data = NULL;
@@ -882,10 +923,9 @@ _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg, thumbRawAddMsg *r
 	res_msg->msg_type = THUMB_RESPONSE_RAW_DATA;
 	res_msg->thumb_width = thumb_w;
 	res_msg->thumb_height = thumb_h;
-	res_raw_msg->thumb_size = thumb_size;
-	res_raw_msg->thumb_data = malloc(thumb_size * sizeof(unsigned char));
+	res_msg->thumb_size = thumb_size;
+	res_msg->thumb_data = malloc(thumb_size * sizeof(unsigned char));
 	memcpy(res_raw_msg->thumb_data, data, thumb_size);
-	res_msg->thumb_size = thumb_size + sizeof(thumbRawAddMsg) - sizeof(unsigned char*);
 
 	//thumb_dbg("Size : %d, W:%d, H:%d", thumb_size, thumb_w, thumb_h);
 	SAFE_FREE(data);
