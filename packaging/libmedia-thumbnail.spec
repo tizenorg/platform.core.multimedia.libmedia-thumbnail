@@ -23,6 +23,7 @@ BuildRequires: pkgconfig(vconf)
 BuildRequires: pkgconfig(libmedia-utils)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(sqlite3)
+BuildRequires: pkgconfig(db-util)
 
 %description
 Description: Media thumbnail service library for multimedia applications.

@@ -39,7 +39,7 @@ MESSAGE("Build type: ${CMAKE_BUILD_TYPE}")
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/include ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/codec ${CMAKE_SOURCE_DIR}/src/include/util ${CMAKE_SOURCE_DIR}/src/include/ipc ${CMAKE_SOURCE_DIR}/server/include ${CMAKE_SOURCE_DIR}/md5)
 
 INCLUDE(FindPkgConfig)
-	pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog sqlite3 mm-fileinfo aul libexif ecore-evas evas mmutil-imgp mmutil-jpeg libmedia-utils vconf libtzplatform-config)
+	pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog sqlite3 mm-fileinfo aul libexif ecore-evas evas mmutil-imgp mmutil-jpeg libmedia-utils vconf libtzplatform-config db-util)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")

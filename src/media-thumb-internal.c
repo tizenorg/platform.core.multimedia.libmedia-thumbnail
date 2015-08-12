@@ -47,7 +47,6 @@
 #include <sys/stat.h>
 #include <grp.h>
 #include <pwd.h>
-#include <sys/smack.h>
 
 #define GLOBAL_USER	0 //#define 	tzplatform_getenv(TZ_GLOBAL) //TODO
 #define MEDIA_THUMB_ROUND_UP_8(num) (((num)+7)&~7)
