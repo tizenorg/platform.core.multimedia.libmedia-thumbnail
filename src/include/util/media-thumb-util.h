@@ -41,10 +41,10 @@ typedef enum {
 #define THUMB_PATH_PHONE 	MEDIA_ROOT_PATH_INTERNAL 	/**< File path prefix of files stored in phone */
 #define THUMB_PATH_MMC 		MEDIA_ROOT_PATH_SDCARD		/**< File path prefix of files stored in mmc card */
 
-#define THUMB_PHONE_PATH	tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/phone")
-#define THUMB_MMC_PATH		tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/mmc")
+#define THUMB_PHONE_PATH	tzplatform_mkpath(TZ_USER_SHARE, "media/.thumb/phone")
+#define THUMB_MMC_PATH		tzplatform_mkpath(TZ_USER_SHARE, "media/.thumb/mmc")
 
-#define THUMB_DEFAULT_PATH	tzplatform_mkpath(TZ_USER_DATA, "file-manager-service/.thumb/thumb_default.png")
+#define THUMB_DEFAULT_PATH	tzplatform_mkpath(TZ_USER_SHARE, "media/.thumb/thumb_default.png")
 
 typedef enum
 {
