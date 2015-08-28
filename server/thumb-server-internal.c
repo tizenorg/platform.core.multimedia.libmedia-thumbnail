@@ -562,7 +562,7 @@ static char* _media_thumb_get_default_path(uid_t uid)
 			thumb_err("UID [%d] does not belong to 'users' group!", uid);
 			return NULL;
 		}
-		asprintf(&result_psswd, "%s/data/file-manager-service/.thumb/phone", userinfo->pw_dir);
+		asprintf(&result_psswd, "%s/share/media/.thumb/phone", userinfo->pw_dir);
 	}
 
 	return result_psswd;
