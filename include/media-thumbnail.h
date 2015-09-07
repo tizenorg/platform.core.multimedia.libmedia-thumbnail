@@ -45,11 +45,11 @@ int thumbnail_request_extract_all_thumbs(uid_t uid);
 
 int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height, uid_t uid);
 
-int thumbnail_request_cancel_media(const char *origin_path, uid_t uid);
+int thumbnail_request_cancel_media(const char *origin_path);
 
-int thumbnail_request_cancel_raw_data(int request_id, uid_t uid);
+int thumbnail_request_cancel_raw_data(int request_id);
 
-int thumbnail_request_cancel_all(bool is_raw_data, uid_t uid);
+int thumbnail_request_cancel_all(bool is_raw_data);
 
 #ifdef __cplusplus
 }

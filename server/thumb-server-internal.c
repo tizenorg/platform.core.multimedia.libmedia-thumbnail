@@ -50,8 +50,10 @@ static __thread int g_cur_idx = 0;
 
 GMainLoop *g_thumb_server_mainloop; // defined in thumb-server.c as extern
 
-gboolean _thumb_server_send_msg_to_agent(int msg_type);
-void _thumb_daemon_stop_job();
+static gboolean __thumb_server_send_msg_to_agent(int msg_type);
+static void __thumb_daemon_stop_job(void);
+static int __thumb_daemon_all_extract(uid_t uid);
+int _thumb_daemon_process_queue_jobs(gpointer data);
 static gboolean _thumb_server_send_deny_message(int sockfd);
 
 gboolean _thumb_daemon_start_jobs(gpointer data)
@@ -60,7 +62,7 @@ gboolean _thumb_daemon_start_jobs(gpointer data)
 	/* Initialize ecore-evas to use evas library */
 	ecore_evas_init();
 
-	_thumb_server_send_msg_to_agent(MS_MSG_THUMB_SERVER_READY);
+	__thumb_server_send_msg_to_agent(MS_MSG_THUMB_SERVER_READY);
 
 	return FALSE;
 }
@@ -110,7 +112,7 @@ void _thumb_daemon_mmc_eject_vconf_cb(void *data)
 		if (status == VCONFKEY_SYSMAN_MMC_REMOVED || status == VCONFKEY_SYSMAN_MMC_INSERTED_NOT_MOUNTED) {
 			thumb_warn("SD card is ejected or not mounted. So media-thumbnail-server stops jobs to extract all thumbnails");
 
-			_thumb_daemon_stop_job();
+			__thumb_daemon_stop_job();
 		}
 	} else if (err == -1) {
 		thumb_err("vconf_get_int failed : %d", err);
@@ -133,7 +135,7 @@ void _thumb_daemon_vconf_cb(void *data)
 		if (status == VCONFKEY_SYSMAN_MMC_FORMAT_COMPLETED) {
 			thumb_warn("SD card format is completed. So media-thumbnail-server stops jobs to extract all thumbnails");
 
-			_thumb_daemon_stop_job();
+			__thumb_daemon_stop_job();
 		} else {
 			thumb_dbg("not completed");
 		}
@@ -146,7 +148,7 @@ void _thumb_daemon_vconf_cb(void *data)
 	return;
 }
 
-void _thumb_daemon_stop_job()
+static void __thumb_daemon_stop_job()
 {
 	int i = 0;
 	char *path = NULL;
@@ -201,7 +203,7 @@ static int __thumb_daemon_process_job_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 	return err;
 }
 
-int _thumb_daemon_all_extract(uid_t uid)
+static int __thumb_daemon_all_extract(uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	char query_string[MAX_PATH_SIZE + 1] = { 0, };
@@ -320,7 +322,7 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 		SAFE_FREE(arr_uid);
 		//_media_thumb_db_disconnect();
 
-		_thumb_server_send_msg_to_agent(MS_MSG_THUMB_EXTRACT_ALL_DONE); // MS_MSG_THUMB_EXTRACT_ALL_DONE
+		__thumb_server_send_msg_to_agent(MS_MSG_THUMB_EXTRACT_ALL_DONE); // MS_MSG_THUMB_EXTRACT_ALL_DONE
 
 		return FALSE;
 	}
@@ -334,7 +336,6 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 {
 	struct sockaddr_un client_addr;
 	unsigned int client_addr_len;
-
 	thumbMsg recv_msg;
 	thumbMsg res_msg;
 	ms_peer_credentials credentials;
@@ -388,7 +389,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	if (recv_msg.msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		thumb_dbg("All thumbnails are being extracted now");
-		_thumb_daemon_all_extract(recv_msg.uid);
+		__thumb_daemon_all_extract(recv_msg.uid);
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
 		__thumb_daemon_process_job_raw(&recv_msg, &res_msg);
@@ -445,7 +446,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	return TRUE;
 }
 
-gboolean _thumb_server_send_msg_to_agent(int msg_type)
+static gboolean __thumb_server_send_msg_to_agent(int msg_type)
 {
 	int sock;
 	ms_sock_info_s sock_info;

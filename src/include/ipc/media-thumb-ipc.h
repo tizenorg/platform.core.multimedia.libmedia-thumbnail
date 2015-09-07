@@ -85,4 +85,6 @@ int _media_thumb_request_raw_data_async(int msg_type,
 					thumbRawUserData *userData,
 					uid_t uid);
 
+int _media_thumb_request_cancel_all(bool isRaw);
+
 #endif /*_MEDIA_THUMB_IPC_H_*/

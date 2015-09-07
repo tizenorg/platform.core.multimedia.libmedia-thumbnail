@@ -165,15 +165,7 @@ int thumbnail_request_extract_raw_data_async(int request_id, const char *origin_
 	return MS_MEDIA_ERR_NONE;
 }
 
-int _media_thumbnail_cancel_cb(int error_code, char* path, void* data)
-{
-	thumb_dbg("Error code : %d", error_code);
-	if (path) thumb_dbg_slog("Cancel : %s", path);
-
-	return MS_MEDIA_ERR_NONE;
-}
-
-int thumbnail_request_cancel_media(const char *origin_path, uid_t uid)
+int thumbnail_request_cancel_media(const char *origin_path)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
@@ -182,7 +174,7 @@ int thumbnail_request_cancel_media(const char *origin_path, uid_t uid)
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA,  origin_path, NULL, uid);
+	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA,  origin_path, NULL, 0);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -191,17 +183,16 @@ int thumbnail_request_cancel_media(const char *origin_path, uid_t uid)
 	return MS_MEDIA_ERR_NONE;
 }
 
-int thumbnail_request_cancel_raw_data(int request_id, uid_t uid)
+int thumbnail_request_cancel_raw_data(int request_id)
 {
 	int err = MS_MEDIA_ERR_NONE;
-	const char *dummy_str = "dummy";
 
 	if (request_id == 0) {
 		thumb_err("Invalid parameter");
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	err = _media_thumb_request_raw_data_async(THUMB_REQUEST_CANCEL_RAW_DATA, request_id, dummy_str, 0, 0, NULL, uid);
+	err = _media_thumb_request_raw_data_async(THUMB_REQUEST_CANCEL_RAW_DATA, request_id, NULL, 0, 0, NULL, 0);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -210,24 +201,15 @@ int thumbnail_request_cancel_raw_data(int request_id, uid_t uid)
 	return MS_MEDIA_ERR_NONE;
 }
 
-int thumbnail_request_cancel_all(bool is_raw_data, uid_t uid)
+int thumbnail_request_cancel_all(bool is_raw_data)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	media_thumb_info thumb_info;
-	char tmp_origin_path[MAX_PATH_SIZE] = {0,};
-	char tmp_thumb_path[MAX_PATH_SIZE] = {0,};
-
-	/* Request for thumb file to the daemon "Thumbnail generator" */
 	if(is_raw_data) {
-		err = _media_thumb_request(THUMB_REQUEST_CANCEL_ALL_RAW_DATA, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
+		err = _media_thumb_request_cancel_all(true);
 	} else {
-		err = _media_thumb_request(THUMB_REQUEST_CANCEL_ALL, tmp_origin_path, tmp_thumb_path, sizeof(tmp_thumb_path), &thumb_info, uid);
-	}
-	if (err != MS_MEDIA_ERR_NONE) {
-		thumb_err("_media_thumb_request failed : %d", err);
-		return err;
+		err = _media_thumb_request_cancel_all(false);
 	}
 
-	return MS_MEDIA_ERR_NONE;
+	return err;
 }

@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 6) {
 		printf("Test thumbnail_request_cancel_media\n");
 
-		err = thumbnail_request_cancel_media(origin_path,tzplatform_getuid(TZ_USER_NAME));
+		err = thumbnail_request_cancel_media(origin_path);
 		if (err < 0) {
 			printf("thumbnail_request_cancel_media failed : %d\n", err);
 			return -1;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 7) {
 		printf("Test thumbnail_request_cancel_all\n");
 
-		err = thumbnail_request_cancel_all(true, tzplatform_getuid(TZ_USER_NAME));
+		err = thumbnail_request_cancel_all(true);
 		if (err < 0) {
 			printf("thumbnail_request_cancel_all failed : %d\n", err);
 			return -1;

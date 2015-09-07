@@ -48,7 +48,6 @@
 #include <grp.h>
 #include <pwd.h>
 
-#define GLOBAL_USER	0 //#define 	tzplatform_getenv(TZ_GLOBAL) //TODO
 #define MEDIA_THUMB_ROUND_UP_8(num) (((num)+7)&~7)
 
 int _media_thumb_resize_data(unsigned char *src_data,
@@ -423,6 +422,11 @@ int _media_thumb_resize_data(unsigned char *src_data,
 
 	unsigned char *dst = (unsigned char *)malloc(buf_size);
 
+	if (dst == NULL) {
+		thumb_err("malloc fails");
+		return MS_MEDIA_ERR_OUT_OF_MEMORY;
+	}
+
 	if (mm_util_resize_image((unsigned char *)src_data, src_width,
 			src_height, src_format,
 			dst, (unsigned int *)&thumb_width,
@@ -442,6 +446,7 @@ int _media_thumb_resize_data(unsigned char *src_data,
 		memcpy(thumb_info->data, dst, buf_size);
 	} else {
 		thumb_err("malloc fails");
+		SAFE_FREE(dst);
 		return MS_MEDIA_ERR_OUT_OF_MEMORY;
 	}
 	SAFE_FREE(dst);
