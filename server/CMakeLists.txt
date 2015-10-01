@@ -1,8 +1,17 @@
+IF("${ENABLE_DCM}" STREQUAL "true")
+SET(THUMB-SERVER
+        ../src/util/media-thumb-db.c
+	    ../src/media-thumb-internal.c
+	    thumb-server.c
+	    thumb-server-internal.c
+	    thumb-server-dcm.c)
+ELSE("${ENABLE_DCM}" STREQUAL "true")
 SET(THUMB-SERVER
         ../src/util/media-thumb-db.c
 	    ../src/media-thumb-internal.c
 	    thumb-server.c
 	    thumb-server-internal.c)
+ENDIF("${ENABLE_DCM}" STREQUAL "true")
 
 INCLUDE(FindPkgConfig)
 	pkg_check_modules(pkgs REQUIRED glib-2.0 gthread-2.0 dlog mm-fileinfo aul libexif ecore-evas evas mmutil-imgp mmutil-jpeg libmedia-utils vconf libtzplatform-config)
