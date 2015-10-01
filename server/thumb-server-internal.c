@@ -37,6 +37,10 @@
 #undef LOG_TAG
 #endif
 
+#ifdef _SUPPORT_DCM
+#include "thumb-server-dcm.h"
+#endif /* _SUPPORT_DCM */
+
 #define LOG_TAG "MEDIA_THUMBNAIL_SERVER"
 #define THUMB_DEFAULT_WIDTH 320
 #define THUMB_DEFAULT_HEIGHT 240
@@ -391,12 +395,22 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		thumb_dbg("All thumbnails are being extracted now");
 		__thumb_daemon_all_extract(recv_msg.uid);
 		g_idle_add(_thumb_daemon_process_queue_jobs, NULL);
+		
+#ifdef _SUPPORT_DCM
+		/* Send msg to dcm thread to scan all images */
+		_thumb_server_dcm_send_msg(THUMB_SERVER_DCM_MSG_SCAN_ALL, recv_msg.uid, NULL, THUMB_SERVER_DCM_PORT_DCM_RECV);
+#endif /* _SUPPORT_DCM */
 	} else if(recv_msg.msg_type == THUMB_REQUEST_RAW_DATA) {
 		__thumb_daemon_process_job_raw(&recv_msg, &res_msg);
 	} else if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
 		_thumb_daemon_process_job(&recv_msg, &res_msg,recv_msg.uid);
+
+#ifdef _SUPPORT_DCM
+		/* Send msg to dcm thread to scan a single image */
+		_thumb_server_dcm_send_msg(THUMB_SERVER_DCM_MSG_SCAN_SINGLE, recv_msg.uid, (const char *)(recv_msg.org_path), THUMB_SERVER_DCM_PORT_DCM_RECV);
+#endif /* _SUPPORT_DCM */
 	}
 
 	if(res_msg.msg_type == 0)
@@ -438,6 +452,10 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 
 	if(recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("Shutting down...");
+#ifdef _SUPPORT_DCM
+		/* Quit dcm thread main loop */
+		_thumb_server_dcm_quit_main_loop();
+#endif
 		g_main_loop_quit(g_thumb_server_mainloop);
 	}
 
