@@ -38,7 +38,6 @@
 #include <unistd.h>
 
 #include <mm_file.h>
-#include <mm_error.h>
 #include <mm_util_imgp.h>
 #include <mm_util_jpeg.h>
 #include <Evas.h>
@@ -1101,9 +1100,9 @@ int _media_thumb_video(const char *origin_path,
 	err = mm_file_create_tag_attrs(&tag, origin_path);
 	mm_util_img_rotate_type rot_type = MM_UTIL_ROTATE_0;
 
-	if (err == MM_ERROR_NONE) {
+	if (err == FILEINFO_ERROR_NONE) {
 		err = mm_file_get_attrs(tag, &err_msg, MM_FILE_TAG_ROTATE, &p, &size, NULL);
-		if (err == MM_ERROR_NONE && size >= 0) {
+		if (err == FILEINFO_ERROR_NONE && size >= 0) {
 			if (p == NULL) {
 				rot_type = MM_UTIL_ROTATE_0;
 			} else {
@@ -1125,7 +1124,7 @@ int _media_thumb_video(const char *origin_path,
 		}
 
 		err = mm_file_get_attrs(tag, &err_msg, MM_FILE_TAG_CDIS, &cdis_value, NULL);
-		if (err != MM_ERROR_NONE) {
+		if (err != FILEINFO_ERROR_NONE) {
 			cdis_value = 0;
 			SAFE_FREE(err_msg);
 		}
@@ -1136,7 +1135,7 @@ int _media_thumb_video(const char *origin_path,
 	}
 
 	err = mm_file_destroy_tag_attrs(tag);
-	if (err != MM_ERROR_NONE) {
+	if (err != FILEINFO_ERROR_NONE) {
 		thumb_err("fail to free tag attr - err(%x)", err);
 	}
 
@@ -1147,13 +1146,13 @@ int _media_thumb_video(const char *origin_path,
 		err = mm_file_create_content_attrs(&content, origin_path);
 	}
 
-	if (err != MM_ERROR_NONE) {
+	if (err != FILEINFO_ERROR_NONE) {
 		thumb_err("mm_file_create_content_attrs fails : %d", err);
 		return MS_MEDIA_ERR_INTERNAL;
 	}
 
 	err = mm_file_get_attrs(content, &err_msg, MM_FILE_CONTENT_VIDEO_TRACK_COUNT, &video_track_num, NULL);
-	if (err != MM_ERROR_NONE) {
+	if (err != FILEINFO_ERROR_NONE) {
 		thumb_err("mm_file_get_attrs fails : %s", err_msg);
 		SAFE_FREE(err_msg);
 		mm_file_destroy_content_attrs(content);
@@ -1171,7 +1170,7 @@ int _media_thumb_video(const char *origin_path,
 					MM_FILE_CONTENT_VIDEO_THUMBNAIL, &frame, /* raw image is RGB888 format */
 					&size, NULL);
 
-		if (err != MM_ERROR_NONE) {
+		if (err != FILEINFO_ERROR_NONE) {
 			thumb_err("mm_file_get_attrs fails : %s", err_msg);
 			SAFE_FREE(err_msg);
 			mm_file_destroy_content_attrs(content);
@@ -1236,7 +1235,7 @@ int _media_thumb_video(const char *origin_path,
 			}
 
 			err = mm_util_get_image_size(MM_UTIL_IMG_FMT_RGB888, r_w, r_h, &r_size);
-			if (err != MM_ERROR_NONE) {
+			if (err != FILEINFO_ERROR_NONE) {
 				thumb_err("mm_util_get_image_size failed : %d", err);
 				SAFE_FREE(thumb_info->data);
 				return err;
@@ -1249,7 +1248,7 @@ int _media_thumb_video(const char *origin_path,
 										rotated, &r_w, &r_h,
 										rot_type);
 
-			if (err != MM_ERROR_NONE) {
+			if (err != FILEINFO_ERROR_NONE) {
 				thumb_err("mm_util_rotate_image failed : %d", err);
 				SAFE_FREE(thumb_info->data);
 				SAFE_FREE(rotated);
