@@ -32,6 +32,7 @@
 #include <pwd.h>
 
 #define THUMB_SOCK_BLOCK_SIZE 512
+#define THUMB_IPC_PATH "/var/run/media-server/media_ipc_thumbcreator.socket"
 
 static GQueue *g_request_queue = NULL;
 static GQueue *g_manage_queue = NULL;
@@ -513,7 +514,7 @@ _media_thumb_request(int msg_type, const char *origin_path, char *thumb_path, in
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
+	strncpy(serv_addr.sun_path, THUMB_IPC_PATH, strlen(THUMB_IPC_PATH));
 
 	/* Connecting to the thumbnail server */
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
@@ -752,7 +753,7 @@ int _media_thumb_send_request() {
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
+	strncpy(serv_addr.sun_path, THUMB_IPC_PATH, strlen(THUMB_IPC_PATH));
 
 	GIOChannel *channel = NULL;
 	channel = g_io_channel_unix_new(sock);
@@ -855,7 +856,7 @@ int _media_thumb_raw_data_send_request() {
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcreator.socket");
+	strncpy(serv_addr.sun_path, THUMB_IPC_PATH, strlen(THUMB_IPC_PATH));
 
 	GIOChannel *channel = NULL;
 	channel = g_io_channel_unix_new(sock);
