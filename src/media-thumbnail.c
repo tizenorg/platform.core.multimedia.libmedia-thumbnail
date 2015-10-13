@@ -121,6 +121,10 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 	thumb_dbg_slog("Path : %s", origin_path);
 
 	thumbUserData *userData = (thumbUserData*)malloc(sizeof(thumbUserData));
+	if (userData == NULL) {
+		thumb_err("memory allocation failed");
+		return MS_MEDIA_ERR_OUT_OF_MEMORY;
+	}
 	userData->func = (ThumbFunc)func;
 	userData->user_data = user_data;
 
@@ -152,6 +156,10 @@ int thumbnail_request_extract_raw_data_async(int request_id, const char *origin_
 	thumb_dbg_slog("Path : %s", origin_path);
 
 	thumbRawUserData *userData = (thumbRawUserData*)malloc(sizeof(thumbRawUserData));
+	if(userData == NULL) {
+		thumb_err("userData malloc failed : %d", err);
+		return MS_MEDIA_ERR_OUT_OF_MEMORY;
+	}
 	userData->func = func;
 	userData->user_data = user_data;
 

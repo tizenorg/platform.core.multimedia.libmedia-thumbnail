@@ -26,86 +26,29 @@
 #include <glib.h>
 #include <string.h>
 #include <unistd.h>
-#include <util-func.h>
 
 static __thread  MediaDBHandle *db_handle;
-
-static int _media_thumb_busy_handler(void *pData, int count)
-{
-	usleep(50000);
-	thumb_dbg("_media_thumb_busy_handler called : %d\n", count);
-
-	return 100 - count;
-}
 
 sqlite3 *_media_thumb_db_get_handle()
 {
 	return db_handle;
 }
 
-int _media_thumb_sqlite_connect(sqlite3 **handle)
-{
-	int err = MS_MEDIA_ERR_NONE;
-
-	err = db_util_open(MEDIA_DATABASE_NAME, handle,
-			 DB_UTIL_REGISTER_HOOK_METHOD);
-
-	if (SQLITE_OK != err) {
-		*handle = NULL;
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
-	}
-
-	/*Register busy handler*/
-	if (*handle) {
-		err = sqlite3_busy_handler(*handle, _media_thumb_busy_handler, NULL);
-		if (SQLITE_OK != err) {
-			if (*handle) {
-				thumb_err("[sqlite] %s\n", sqlite3_errmsg(*handle));
-				db_util_close(*handle);
-			}
-			*handle = NULL;
-
-			return MS_MEDIA_ERR_INVALID_PARAMETER;
-		}
-	} else {
-		*handle = NULL;
-		return MS_MEDIA_ERR_INVALID_PARAMETER;
-	}
-
-	return MS_MEDIA_ERR_NONE;
-}
-
-int _media_thumb_sqlite_disconnect(sqlite3 *handle)
-{
-	int err = MS_MEDIA_ERR_NONE;
-	if (handle != NULL) {
-		err = db_util_close(handle);
-
-		if (SQLITE_OK != err) {
-			handle = NULL;
-			return MS_MEDIA_ERR_INVALID_PARAMETER;
-		}
-	}
-
-	return MS_MEDIA_ERR_NONE;
-}
-
-int
-_media_thumb_get_type_from_db(sqlite3 *handle,
+int _media_thumb_get_type_from_db(sqlite3 *handle,
 									const char *origin_path,
 									int *type)
 {
+	int err = MS_MEDIA_ERR_NONE;
+	char *path_string = NULL;
+	char *query_string = NULL;
+	sqlite3_stmt *stmt = NULL;
+
 	thumb_dbg_slog("Origin path : %s", origin_path);
 
 	if (handle == NULL) {
 		thumb_err("DB handle is NULL");
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
-
-	int err = -1;
-	char *path_string = NULL;
-	char *query_string = NULL;
-	sqlite3_stmt *stmt = NULL;
 
 	path_string = sqlite3_mprintf("%s", origin_path);
 	query_string = sqlite3_mprintf(SELECT_TYPE_BY_PATH, path_string);

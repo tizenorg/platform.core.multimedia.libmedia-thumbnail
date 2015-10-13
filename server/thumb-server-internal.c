@@ -177,8 +177,13 @@ int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 			thumb_err("_media_thumb_process is failed: %d", err);
 			res_msg->status = THUMB_FAIL;
 		} else {
-			thumb_warn("_media_thumb_process is failed: %d, So use default thumb", err);
-			res_msg->status = THUMB_SUCCESS;
+			if (err != MS_MEDIA_ERR_FILE_NOT_EXIST) {
+				thumb_warn("_media_thumb_process is failed: %d, So use default thumb", err);
+				res_msg->status = THUMB_SUCCESS;
+			} else {
+				thumb_warn("_media_thumb_process is failed: %d, (file not exist) ", err);
+				res_msg->status = THUMB_FAIL;
+			}
 		}
 	} else {
 		res_msg->status = THUMB_SUCCESS;
@@ -784,6 +789,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 						thumb_err("_media_thumb_get_hash_name failed - %d", err);
 						strncpy(thumb_path, default_path, max_length);
 						free(default_path);
+						default_path = NULL;
 					}
 					_media_thumb_db_disconnect();
 					return err;
@@ -804,6 +810,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 				thumb_err("_media_thumb_get_hash_name failed - %d", err);
 				strncpy(thumb_path, default_path, max_length);
 				free(default_path);
+				default_path = NULL;
 			}
 			_media_thumb_db_disconnect();
 			return err;
@@ -828,6 +835,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		if(default_path) {
 			strncpy(thumb_path, default_path, max_length);
 			free(default_path);
+			default_path = NULL;
 		}
 		goto DB_UPDATE;
 //		_media_thumb_db_disconnect();
@@ -869,6 +877,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 				if(default_path) {
 					strncpy(thumb_path, default_path, max_length);
 					free(default_path);
+					default_path = NULL;
 				}
 			}
 			_media_thumb_db_disconnect();
