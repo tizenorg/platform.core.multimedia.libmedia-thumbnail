@@ -25,9 +25,9 @@
 #ifndef _MEDIA_THUMB_UTIL_H_
 #define _MEDIA_THUMB_UTIL_H_
 
-#define SAFE_FREE(src)      { if(src) {free(src); src = NULL;}}
+#define SAFE_FREE(src)      { if (src) {free(src); src = NULL;}}
 #define THUMB_MALLOC(src, size)	{ if (size <= 0) {src = NULL;} \
-							else { src = malloc(size); if(src) memset(src, 0x0, size);} }
+							else { src = malloc(size); if (src) memset(src, 0x0, size);} }
 
 typedef enum {
 	MEDIA_THUMB_BGRA,			/* BGRA, especially provided for evas users */

@@ -40,14 +40,14 @@
 
 #ifdef _SUPPORT_DCM
 #define dcm_retvm_if(expr, val, fmt, arg...) do { \
-	if(expr) { \
+	if (expr) { \
 		thumb_err(fmt, ##arg); \
 		thumb_err("(%s) -> %s() return", #expr, __FUNCTION__); \
 		return (val); \
 	} \
 } while (0)
 
-#define DCM_CHECK_VAL(expr, val) 		dcm_retvm_if(!(expr), val, "Invalid parameter, return ERROR code!")
+#define DCM_CHECK_VAL(expr, val)		dcm_retvm_if(!(expr), val, "Invalid parameter, return ERROR code!")
 
 #define DCM_SVC_NAME "dcm-svc"
 #define DCM_SVC_EXEC_NAME "/usr/bin/dcm-svc"
@@ -57,10 +57,10 @@ static bool b_dcm_svc_launched;
 static int g_dcm_timer_id = 0;
 static int g_dcm_server_pid = 0;
 
-static char DCM_IPC_PATH[3][100] =
-			{"/var/run/media-server/media_ipc_thumbdcm_dcmrecv",
-			 "/var/run/media-server/media_ipc_thumbdcm_thumbrecv",
-			 "/var/run/media-server/dcm_ipc_thumbserver_comm_recv"};
+static char DCM_IPC_PATH[3][100] = {
+			"/var/run/media-server/media_ipc_thumbdcm_dcmrecv",
+			"/var/run/media-server/media_ipc_thumbdcm_thumbrecv",
+			"/var/run/media-server/dcm_ipc_thumbserver_comm_recv"};
 
 static gboolean g_folk_dcm_server = FALSE;
 static gboolean g_dcm_server_extracting = FALSE;
@@ -106,8 +106,8 @@ void __thumb_server_dcm_create_timer(int id)
 		g_source_destroy(g_main_context_find_source_by_id(g_main_context_get_thread_default(), id));
 
 	GSource *timer_src = g_timeout_source_new_seconds(MS_TIMEOUT_SEC_20);
-	g_source_set_callback (timer_src, __thumb_server_dcm_agent_timer, NULL, NULL);
-	g_dcm_timer_id = g_source_attach (timer_src, g_main_context_get_thread_default());
+	g_source_set_callback(timer_src, __thumb_server_dcm_agent_timer, NULL, NULL);
+	g_dcm_timer_id = g_source_attach(timer_src, g_main_context_get_thread_default());
 
 }
 
@@ -155,8 +155,7 @@ bool __thumb_server_dcm_check_process()
 		if (result == NULL)
 			break;
 
-		if (pinfo.d_type != 4 || pinfo.d_name[0] == '.'
-		    || pinfo.d_name[0] > 57)
+		if (pinfo.d_type != 4 || pinfo.d_name[0] == '.' || pinfo.d_name[0] > 57)
 			continue;
 
 		FILE *fp;
@@ -210,7 +209,7 @@ bool __thumb_server_dcm_check_process()
 
 	if (!(recv_msg.msg_type >= 0 && recv_msg.msg_type < THUMB_SERVER_DCM_MSG_MAX)) {
 		thumb_err("IPC message is wrong!");
-		return  MEDIA_THUMB_ERROR_NETWORK;
+		return MEDIA_THUMB_ERROR_NETWORK;
 	}
 
 	if (recv_msg.msg_type == THUMB_SERVER_DCM_MSG_SERVER_READY) {
@@ -267,7 +266,7 @@ static int __thumb_server_dcm_process_recv_msg(thumb_server_dcm_ipc_msg_s *recv_
 	}
 
 	if (g_folk_dcm_server == FALSE && g_dcm_server_extracting == FALSE) {
-		if(__thumb_server_dcm_check_process() == FALSE) {  // dcm-svc is running?
+		if (__thumb_server_dcm_check_process() == FALSE) { // dcm-svc is running?
 			thumb_warn("Dcm-svc server is not running.. so start it");
 			memcpy(&last_msg, recv_msg, sizeof(thumb_server_dcm_ipc_msg_s));
 			if (!__thumb_server_dcm_agent_execute_server()) {
@@ -340,7 +339,7 @@ static int __thumb_server_dcm_receive_tcp_msg(int client_sock, thumb_server_dcm_
 
 	if (!(recv_msg->msg_type >= 0 && recv_msg->msg_type < THUMB_SERVER_DCM_MSG_MAX)) {
 		thumb_err("IPC message is wrong!");
-		return  MS_MEDIA_ERR_SOCKET_RECEIVE;
+		return MS_MEDIA_ERR_SOCKET_RECEIVE;
 	}
 
 	return MS_MEDIA_ERR_NONE;
@@ -355,11 +354,11 @@ static int __thumb_server_dcm_accept_tcp_socket(int serv_sock, int* client_sock)
 
 	if ((sockfd = accept(serv_sock, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
 		thumb_err("accept failed : %s", strerror(errno));
-		*client_sock  = -1;
+		*client_sock = -1;
 		return MS_MEDIA_ERR_SOCKET_ACCEPT;
 	}
 
-	*client_sock  = sockfd;
+	*client_sock = sockfd;
 
 	return MS_MEDIA_ERR_NONE;
 }
@@ -429,12 +428,12 @@ static int __thumb_server_dcm_create_socket(int *socket_fd, thumb_server_dcm_por
 	strcpy(serv_addr.sun_path, DCM_IPC_PATH[port]);
 
 	/* Bind socket to local address */
-	for (i = 0; i < 20; i ++) {
+	for (i = 0; i < 20; i++) {
 		if (bind(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == 0) {
 			bind_success = true;
 			break;
 		}
-		thumb_dbg("#%d bind",i);
+		thumb_dbg("#%d bind", i);
 		usleep(250000);
 	}
 
@@ -472,7 +471,7 @@ gboolean _thumb_server_dcm_thread(void *data)
 	GMainContext *context = NULL;
 	int err = 0;
 
-	thumb_err( "_thumb_server_dcm_thread!S");
+	thumb_err("_thumb_server_dcm_thread!S");
 
 
 	/* Create TCP Socket to receive message from thumb server main thread */
@@ -504,7 +503,7 @@ gboolean _thumb_server_dcm_thread(void *data)
 	b_dcm_svc_launched = false;
 
 	thumb_dbg("********************************************");
-	thumb_dbg("*** Thumb Server DCM thread is running   ***");
+	thumb_dbg("*** Thumb Server DCM thread is running ***");
 	thumb_dbg("********************************************");
 
 	/* Start to run main event loop for dcm thread */
@@ -513,7 +512,7 @@ gboolean _thumb_server_dcm_thread(void *data)
 	thumb_dbg("*** Thumb Server DCM thread will be closed ***");
 
 	/* Destroy IO channel */
-	g_io_channel_shutdown(channel,  FALSE, NULL);
+	g_io_channel_shutdown(channel, FALSE, NULL);
 	g_io_channel_unref(channel);
 
 	/* Close the TCP socket */
@@ -532,7 +531,7 @@ int _thumb_server_dcm_send_msg(thumb_server_dcm_ipc_msg_type_e msg_type, uid_t u
 		return MS_MEDIA_ERR_SOCKET_SEND;
 	}
 
-	thumb_err( "_thumb_server_dcm_send_msg to %d ", port);
+	thumb_err("_thumb_server_dcm_send_msg to %d", port);
 
 	int socket_fd = -1;
 	struct sockaddr_un serv_addr;

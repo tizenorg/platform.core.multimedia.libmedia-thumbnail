@@ -89,8 +89,7 @@ int _media_thumb_get_proper_thumb_size(int orig_w, int orig_h,
 	return MS_MEDIA_ERR_NONE;
 }
 
-int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value,
-		     int ifdtype, long tagtype)
+int _media_thumb_get_exif_info(ExifData *ed, char *buf, int max_size, int *value, int ifdtype, long tagtype)
 {
 	ExifEntry *entry;
 	ExifIfd ifd;
@@ -190,7 +189,7 @@ static int _media_thumb_get_data_from_exif(ExifData *ed,
 	if (entry) {
 		/* Get the contents of the tag in human-readable form */
 		char width[10] = {0,};
-		exif_entry_get_value(entry,width,10);
+		exif_entry_get_value(entry, width, 10);
 
 		*thumb_width = atoi(width);
 	} else {
@@ -202,8 +201,8 @@ static int _media_thumb_get_data_from_exif(ExifData *ed,
 	entry = exif_content_get_entry(ed->ifd[ifd], tag);
 	if (entry) {
 		/* Get the contents of the tag in human-readable form */
-		char height[10] = {0,};
-		exif_entry_get_value(entry,height,10);
+		char height[10] = {0, };
+		exif_entry_get_value(entry, height, 10);
 
 		*thumb_height = atoi(height);
 	} else {
@@ -220,7 +219,7 @@ static int _media_thumb_get_data_from_exif(ExifData *ed,
 
 	if (entry) {
 		char width[10] = {0,};
-		exif_entry_get_value(entry,width,10);
+		exif_entry_get_value(entry, width, 10);
 
 		*origin_width = atoi(width);
 	} else {
@@ -232,8 +231,8 @@ static int _media_thumb_get_data_from_exif(ExifData *ed,
 	entry = exif_content_get_entry(ed->ifd[ifd], tag);
 
 	if (entry) {
-		char height[10] = {0,};
-		exif_entry_get_value(entry,height,10);
+		char height[10] = {0, };
+		exif_entry_get_value(entry, height, 10);
 
 		*origin_height = atoi(height);
 	} else {
@@ -266,7 +265,7 @@ int _media_thumb_get_thumb_from_exif(ExifData *ed,
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	err =  _media_thumb_get_data_from_exif(ed,
+	err = _media_thumb_get_data_from_exif(ed,
 										&thumb,
 										&size,
 										&thumb_width,
@@ -364,7 +363,7 @@ int _media_thumb_get_thumb_from_exif(ExifData *ed,
 			SAFE_FREE(decoded.data);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 		}
-	}else {
+	} else {
 		/*in this case, just write raw data in file */
 		thumb_dbg_slog("Thumb is :%s", thumb_path);
 
@@ -442,7 +441,7 @@ int _media_thumb_resize_data(unsigned char *src_data,
 	thumb_info->width = thumb_width;
 	thumb_info->height = thumb_height;
 	thumb_info->data = malloc(buf_size);
-	if(thumb_info->data != NULL) {
+	if (thumb_info->data != NULL) {
 		memcpy(thumb_info->data, dst, buf_size);
 	} else {
 		thumb_err("malloc fails");
@@ -457,7 +456,7 @@ int _media_thumb_resize_data(unsigned char *src_data,
 int _media_thumb_get_wh_with_evas(const char *origin_path, int *width, int *height)
 {
 	/* using evas to get w/h */
-	Ecore_Evas *ee = 	ecore_evas_buffer_new(0, 0);
+	Ecore_Evas *ee = ecore_evas_buffer_new(0, 0);
 	if (!ee) {
 		thumb_err("ecore_evas_buffer_new fails");
 		return MS_MEDIA_ERR_INTERNAL;
@@ -606,7 +605,7 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 	thumb_info->height = thumb_height;
 	thumb_info->data = malloc(buf_size);
 	if (thumb_info->data == NULL) {
-		thumb_err("Failed to allocate memory" );
+		thumb_err("Failed to allocate memory");
 		ecore_evas_free(resize_img_ee);
 		ecore_evas_free(target_ee);
 
@@ -628,7 +627,7 @@ int _media_thumb_decode_with_evas(const char *origin_path,
 
 mm_util_img_format _media_thumb_get_format(media_thumb_format src_format)
 {
-	switch(src_format) {
+	switch (src_format) {
 		case MEDIA_THUMB_BGRA:
 			return MM_UTIL_IMG_FMT_BGRA8888;
 		case MEDIA_THUMB_RGB888:
@@ -1008,7 +1007,7 @@ int _media_thumb_image(const char *origin_path,
 
 	err = ImgGetImageInfoForThumb(origin_path, &image_type, &origin_w, &origin_h);
 
-	if (err != MS_MEDIA_ERR_NONE){
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_warn("Getting image info is failed err: %d", err);
 	}
 
@@ -1026,7 +1025,7 @@ int _media_thumb_image(const char *origin_path,
 	if (image_type == IMG_CODEC_AGIF) {
 		err = _media_thumb_agif(origin_path, origin_w, origin_h, thumb_width, thumb_height, format, thumb_info);
 	} else if (image_type == IMG_CODEC_JPEG) {
-		if(is_req_raw == TRUE) {
+		if (is_req_raw == TRUE) {
 			err = _media_thumb_jpeg_for_raw(origin_path, thumb_path, thumb_width, thumb_height, format, thumb_info);
 		} else {
 			err = _media_thumb_jpeg(origin_path, thumb_path, thumb_width, thumb_height, format, thumb_info);
@@ -1095,7 +1094,7 @@ int _media_thumb_video(const char *origin_path,
 
 	is_drm = drm_type;
 
-	/* Get Content Tag attribute for orientatin  */
+	/* Get Content Tag attribute for orientatin */
 	MMHandleType tag = (MMHandleType) NULL;
 	char *p = NULL;
 	int cdis_value = 0;
@@ -1110,9 +1109,9 @@ int _media_thumb_video(const char *origin_path,
 			} else {
 				if (strncmp(p, "90", size) == 0) {
 					rot_type = MM_UTIL_ROTATE_90;
-				} else if(strncmp(p, "180", size) == 0) {
+				} else if (strncmp(p, "180", size) == 0) {
 					rot_type = MM_UTIL_ROTATE_180;
-				} else if(strncmp(p, "270", size) == 0) {
+				} else if (strncmp(p, "270", size) == 0) {
 					rot_type = MM_UTIL_ROTATE_270;
 				} else {
 					rot_type = MM_UTIL_ROTATE_0;
@@ -1216,7 +1215,7 @@ int _media_thumb_video(const char *origin_path,
 			thumb_info->height = height;
 			thumb_info->data = malloc(size);
 			if (thumb_info->data == NULL) {
-				thumb_err("memory allcation failed" );
+				thumb_err("memory allcation failed");
 				mm_file_destroy_content_attrs(content);
 				return MS_MEDIA_ERR_OUT_OF_MEMORY;
 			}
@@ -1287,26 +1286,23 @@ static char* _media_thumb_mmc_get_path(uid_t uid)
 {
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
-	if(uid == getuid())
-	{
+	if (uid == getuid()) {
 		result_psswd = strdup(THUMB_MMC_PATH);
 		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
+		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
-			if(result_psswd)
+			if (result_psswd)
 				free(result_psswd);
 			return NULL;
 		}
-	}
-	else
-	{
+	} else {
 		struct passwd *userinfo = getpwuid(uid);
-		if(userinfo == NULL) {
+		if (userinfo == NULL) {
 			thumb_err("getpwuid(%d) returns NULL !", uid);
 			return NULL;
 		}
 		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
+		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
 			return NULL;
 		}
@@ -1325,26 +1321,23 @@ static char* _media_thumb_phone_get_path(uid_t uid)
 {
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
-	if(uid == getuid())
-	{
+	if (uid == getuid()) {
 		result_psswd = strdup(THUMB_PHONE_PATH);
 		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
+		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
-			if(result_psswd)
+			if (result_psswd)
 				free(result_psswd);
 			return NULL;
 		}
-	}
-	else
-	{
+	} else {
 		struct passwd *userinfo = getpwuid(uid);
-		if(userinfo == NULL) {
+		if (userinfo == NULL) {
 			thumb_err("getpwuid(%d) returns NULL !", uid);
 			return NULL;
 		}
 		grpinfo = getgrnam("users");
-		if(grpinfo == NULL) {
+		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
 			return NULL;
 		}
@@ -1368,10 +1361,8 @@ int _media_thumb_get_hash_name(const char *file_full_path,
 	int ret_len = 0;
 	media_thumb_store_type store_type = -1;
 
-	if (file_full_path == NULL || thumb_hash_path == NULL
-	    || max_thumb_path <= 0) {
-		thumb_err
-		    ("file_full_path==NULL || thumb_hash_path == NULL || max_thumb_path <= 0");
+	if (file_full_path == NULL || thumb_hash_path == NULL || max_thumb_path <= 0) {
+		thumb_err("file_full_path==NULL || thumb_hash_path == NULL || max_thumb_path <= 0");
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
@@ -1387,8 +1378,7 @@ int _media_thumb_get_hash_name(const char *file_full_path,
 	}*/
 
 	hash_name = _media_thumb_generate_hash_name(file_full_path);
-	if(hash_name == NULL)
-	{
+	if (hash_name == NULL) {
 		thumb_err("_media_thumb_generate_hash_name fail");
 		return MS_MEDIA_ERR_INTERNAL;
 	}
@@ -1417,7 +1407,7 @@ int _media_thumb_save_to_file_with_evas(unsigned char *data,
 											int alpha,
 											char *thumb_path)
 {
-	Ecore_Evas *ee = 	ecore_evas_buffer_new(w, h);
+	Ecore_Evas *ee = ecore_evas_buffer_new(w, h);
 	if (ee == NULL) {
 		thumb_err("ecore_evas_buffer_new failed");
 		return MS_MEDIA_ERR_INTERNAL;
