@@ -168,7 +168,7 @@ int __media_thumb_pop_manage_queue(const char *path)
 				break;
 			}
 		}
-		if(!flag) {
+		if (!flag) {
 			return __media_thumb_check_req_queue_for_cancel(path);
 		}
 	}
@@ -266,7 +266,7 @@ int __media_thumb_pop_raw_data_manage_queue(int request_id)
 				break;
 			}
 		}
-		if(!flag) {
+		if (!flag) {
 			return __media_thumb_check_raw_data_req_queue_for_cancel(request_id);
 		}
 	}
@@ -312,7 +312,7 @@ bool __media_thumb_check_cancel(void)
 	if (req == NULL) {
 		return false;
 	} else {
-		if(req->isCanceled)
+		if (req->isCanceled)
 			return false;
 		else
 			return true;
@@ -327,7 +327,7 @@ bool __media_thumb_check_cancel_for_raw(void)
 	if (req == NULL) {
 		return false;
 	} else {
-		if(req->isCanceled)
+		if (req->isCanceled)
 			return false;
 		else
 			return true;
@@ -364,7 +364,7 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	//thumb_dbg("origin_path_size : %d, dest_path_size : %d, thumb_size : %d", msg->origin_path_size, msg->dest_path_size, msg->thumb_size);
 
 	SAFE_FREE(buf);
-	if(msg->origin_path_size < 0  ||msg->dest_path_size < 0 || msg->thumb_size < 0) {
+	if (msg->origin_path_size < 0 || msg->dest_path_size < 0 || msg->thumb_size < 0) {
 		thumb_err("recv data is wrong");
 		SAFE_FREE(block_buf);
 		return MS_MEDIA_ERR_SOCKET_RECEIVE;
@@ -372,13 +372,13 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 
 	remain_size = msg->origin_path_size + msg->dest_path_size + msg->thumb_size;
 	THUMB_MALLOC(buf, remain_size);
-	if(buf == NULL) {
+	if (buf == NULL) {
 		SAFE_FREE(block_buf);
 		return MS_MEDIA_ERR_OUT_OF_MEMORY;
 	}
 
-	while(remain_size > 0) {
-		if(remain_size < THUMB_SOCK_BLOCK_SIZE) {
+	while (remain_size > 0) {
+		if (remain_size < THUMB_SOCK_BLOCK_SIZE) {
 			block_size = remain_size;
 		}
 		if ((recv_msg_len = recv(sock, block_buf, block_size, 0)) < 0) {
@@ -396,9 +396,9 @@ _media_thumb_recv_msg(int sock, int header_size, thumbMsg *msg)
 	strncpy(msg->dst_path, (char *)buf + msg->origin_path_size, msg->dest_path_size);
 
 	SAFE_FREE(msg->thumb_data);
-	if(msg->thumb_size > 0) {
+	if (msg->thumb_size > 0) {
 		THUMB_MALLOC(msg->thumb_data, msg->thumb_size);
-		if(msg->thumb_data != NULL) {
+		if (msg->thumb_data != NULL) {
 			memcpy(msg->thumb_data, buf + msg->origin_path_size + msg->dest_path_size, msg->thumb_size);
 		} else {
 			SAFE_FREE(buf);
@@ -435,17 +435,17 @@ _media_thumb_recv_udp_msg(int sock, int header_size, thumbMsg *msg, struct socka
 
 	memcpy(msg, buf, header_size);
 
-	if (msg->origin_path_size <= 0  || msg->origin_path_size > MAX_PATH_SIZE) {
+	if (msg->origin_path_size <= 0 || msg->origin_path_size > MAX_PATH_SIZE) {
 		SAFE_FREE(buf);
-		thumb_err("msg->origin_path_size is invalid %d", msg->origin_path_size );
+		thumb_err("msg->origin_path_size is invalid %d", msg->origin_path_size);
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	strncpy(msg->org_path, (char*)buf + header_size, msg->origin_path_size);
 
-	if (msg->dest_path_size <= 0  || msg->dest_path_size > MAX_PATH_SIZE) {
+	if (msg->dest_path_size <= 0 || msg->dest_path_size > MAX_PATH_SIZE) {
 		SAFE_FREE(buf);
-		thumb_err("msg->origin_path_size is invalid %d", msg->dest_path_size );
+		thumb_err("msg->origin_path_size is invalid %d", msg->dest_path_size);
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
@@ -486,7 +486,7 @@ _media_thumb_set_buffer(thumbMsg *req_msg, unsigned char **buf, int *buf_size)
 	memcpy(*buf, req_msg, header_size);
 	memcpy((*buf)+header_size, req_msg->org_path, org_path_len);
 	memcpy((*buf)+header_size + org_path_len, req_msg->dst_path, dst_path_len);
-	if(thumb_data_len > 0)
+	if (thumb_data_len > 0)
 		memcpy((*buf)+header_size + org_path_len + dst_path_len, req_msg->thumb_data, thumb_data_len);
 
 	*buf_size = size;
@@ -642,7 +642,7 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 		err = MS_MEDIA_ERR_INTERNAL;
 	}
 
-	if(__media_thumb_check_cancel()) {
+	if (__media_thumb_check_cancel()) {
 		if (data) {
 			thumbUserData* cb = (thumbUserData*)data;
 			if (cb->func != NULL)
@@ -657,10 +657,10 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 	SAFE_FREE(recv_msg.thumb_data);
 
 	/* Check manage queue */
-	if(g_manage_queue) {
+	if (g_manage_queue) {
 		len = g_queue_get_length(g_manage_queue);
 
-		if(len > 0) {
+		if (len > 0) {
 			_media_thumb_send_request();
 		} else {
 			g_queue_free(g_manage_queue);
@@ -705,7 +705,7 @@ gboolean _media_thumb_raw_data_write_socket(GIOChannel *src, GIOCondition condit
 		err = MS_MEDIA_ERR_INTERNAL;
 	}
 
-	if(__media_thumb_check_cancel_for_raw()) {
+	if (__media_thumb_check_cancel_for_raw()) {
 		if (data) {
 			thumbRawUserData* cb = (thumbRawUserData*)data;
 			if (cb->func != NULL)
@@ -720,10 +720,10 @@ gboolean _media_thumb_raw_data_write_socket(GIOChannel *src, GIOCondition condit
 	SAFE_FREE(recv_msg.thumb_data);
 
 	/* Check manage queue */
-	if(g_manage_raw_queue) {
+	if (g_manage_raw_queue) {
 		len = g_queue_get_length(g_manage_raw_queue);
 
-		if(len > 0) {
+		if (len > 0) {
 			_media_thumb_raw_data_send_request();
 		} else {
 			g_queue_free(g_manage_raw_queue);
@@ -734,7 +734,8 @@ gboolean _media_thumb_raw_data_write_socket(GIOChannel *src, GIOCondition condit
 	return FALSE;
 }
 
-int _media_thumb_send_request() {
+int _media_thumb_send_request()
+{
 	int err = MS_MEDIA_ERR_NONE;
 	int sock = -1;
 	struct sockaddr_un serv_addr;
@@ -744,8 +745,7 @@ int _media_thumb_send_request() {
 	sock_info.port = MS_THUMB_CREATOR_PORT;
 
 	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
-	if(err != MS_MEDIA_ERR_NONE)
-	{
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("ms_ipc_create_client_socket failed");
 		return err;
 	}
@@ -837,7 +837,8 @@ int _media_thumb_send_request() {
 	return err;
 }
 
-int _media_thumb_raw_data_send_request() {
+int _media_thumb_raw_data_send_request()
+{
 	int err = MS_MEDIA_ERR_NONE;
 	int sock = -1;
 	struct sockaddr_un serv_addr;
@@ -847,8 +848,7 @@ int _media_thumb_raw_data_send_request() {
 	sock_info.port = MS_THUMB_CREATOR_PORT;
 
 	err = ms_ipc_create_client_socket(MS_PROTOCOL_TCP, MS_TIMEOUT_SEC_10, &sock_info);
-	if(err != MS_MEDIA_ERR_NONE)
-	{
+	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("ms_ipc_create_client_socket failed");
 		return err;
 	}
@@ -941,8 +941,8 @@ int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserD
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	if(g_manage_queue == NULL) {
-		if(msg_type == THUMB_REQUEST_CANCEL_MEDIA)
+	if (g_manage_queue == NULL) {
+		if (msg_type == THUMB_REQUEST_CANCEL_MEDIA)
 			return MS_MEDIA_ERR_INTERNAL;
 
 		g_manage_queue = g_queue_new();
@@ -966,7 +966,7 @@ int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserD
 		err = _media_thumb_send_request();
 
 	} else {
-		if(msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
+		if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
 			/* Enqueue */
 			if ((msg_type == THUMB_REQUEST_DB_INSERT) && (__media_thumb_check_req_queue(origin_path) < 0)) {
 				thumb_err("duplicated request");
@@ -1000,8 +1000,8 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	if(g_manage_raw_queue == NULL) {
-		if(msg_type == THUMB_REQUEST_CANCEL_RAW_DATA)
+	if (g_manage_raw_queue == NULL) {
+		if (msg_type == THUMB_REQUEST_CANCEL_RAW_DATA)
 			return MS_MEDIA_ERR_INTERNAL;
 
 		g_manage_raw_queue = g_queue_new();
@@ -1017,7 +1017,7 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 		thumb_req->request_id = request_id;
 		thumb_req->path = strdup(origin_path);
 		thumb_req->width = width;
-		thumb_req->height= height;
+		thumb_req->height = height;
 		thumb_req->userData = userData;
 		thumb_req->isCanceled = false;
 		thumb_req->uid = uid;
@@ -1028,7 +1028,7 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 		err = _media_thumb_raw_data_send_request();
 
 	} else {
-		if(msg_type != THUMB_REQUEST_CANCEL_RAW_DATA) {
+		if (msg_type != THUMB_REQUEST_CANCEL_RAW_DATA) {
 			/* Enqueue */
 			thumbRawReq *thumb_req = NULL;
 			THUMB_MALLOC(thumb_req, sizeof(thumbRawReq));
@@ -1041,7 +1041,7 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 			thumb_req->request_id = request_id;
 			thumb_req->path = strdup(origin_path);
 			thumb_req->width = width;
-			thumb_req->height= height;
+			thumb_req->height = height;
 			thumb_req->userData = userData;
 			thumb_req->isCanceled = false;
 			thumb_req->uid = uid;
@@ -1057,19 +1057,20 @@ int _media_thumb_request_raw_data_async(int msg_type, int request_id, const char
 	return err;
 }
 
-int _media_thumb_request_cancel_all(bool isRaw) {
+int _media_thumb_request_cancel_all(bool isRaw)
+{
 	int i;
 	int req_len = -1;
 	int len = 0;
 
-	if(isRaw) {
+	if (isRaw) {
 		thumbRawReq *tmp_raw_req = NULL;
-		if(g_manage_raw_queue == NULL) {
+		if (g_manage_raw_queue == NULL) {
 			thumb_err("manage_queue is NULL");
-			if(g_request_raw_queue != NULL) {
+			if (g_request_raw_queue != NULL) {
 				/* Check request queue */
 				len = g_queue_get_length(g_request_raw_queue);
-				if(len > 0) {
+				if (len > 0) {
 					tmp_raw_req = g_queue_peek_head(g_request_raw_queue);
 					if (tmp_raw_req != NULL)
 						tmp_raw_req->isCanceled = true;
@@ -1080,21 +1081,21 @@ int _media_thumb_request_cancel_all(bool isRaw) {
 			return MS_MEDIA_ERR_INTERNAL;
 		}
 		req_len = g_queue_get_length(g_manage_raw_queue);
-		for(i=0;i<req_len;i++) {
+		for (i = 0; i < req_len; i++) {
 			tmp_raw_req = g_queue_pop_tail(g_manage_raw_queue);
-			if(tmp_raw_req) {
+			if (tmp_raw_req) {
 				SAFE_FREE(tmp_raw_req->path);
 				SAFE_FREE(tmp_raw_req->userData);
 				SAFE_FREE(tmp_raw_req);
 				tmp_raw_req = NULL;
 			}
 		}
-		g_queue_free (g_manage_raw_queue);
+		g_queue_free(g_manage_raw_queue);
 		g_manage_raw_queue = NULL;
-		if(g_request_raw_queue != NULL) {
+		if (g_request_raw_queue != NULL) {
 			/* Check request queue */
 			len = g_queue_get_length(g_request_raw_queue);
-			if(len > 0) {
+			if (len > 0) {
 				tmp_raw_req = g_queue_peek_head(g_request_raw_queue);
 				if (tmp_raw_req != NULL)
 					tmp_raw_req->isCanceled = true;
@@ -1102,12 +1103,12 @@ int _media_thumb_request_cancel_all(bool isRaw) {
 		}
 	} else {
 		thumbReq *tmp_req = NULL;
-		if(g_manage_queue == NULL) {
+		if (g_manage_queue == NULL) {
 			thumb_err("manage_queue is NULL");
-			if(g_request_queue != NULL) {
+			if (g_request_queue != NULL) {
 				/* Check request queue */
 				len = g_queue_get_length(g_request_queue);
-				if(len > 0) {
+				if (len > 0) {
 					tmp_req = g_queue_peek_head(g_request_queue);
 					if (tmp_req != NULL)
 						tmp_req->isCanceled = true;
@@ -1118,21 +1119,21 @@ int _media_thumb_request_cancel_all(bool isRaw) {
 			return MS_MEDIA_ERR_INTERNAL;
 		}
 		req_len = g_queue_get_length(g_manage_queue);
-		for(i=0;i<req_len;i++) {
+		for (i = 0; i < req_len; i++) {
 			tmp_req = g_queue_pop_tail(g_manage_queue);
-			if(tmp_req) {
+			if (tmp_req) {
 				SAFE_FREE(tmp_req->path);
 				SAFE_FREE(tmp_req->userData);
 				SAFE_FREE(tmp_req);
 				tmp_req = NULL;
 			}
 		}
-		g_queue_free (g_manage_queue);
+		g_queue_free(g_manage_queue);
 		g_manage_queue = NULL;
-		if(g_request_queue != NULL) {
+		if (g_request_queue != NULL) {
 			/* Check request queue */
 			len = g_queue_get_length(g_request_queue);
-			if(len > 0) {
+			if (len > 0) {
 				tmp_req = g_queue_peek_head(g_request_queue);
 				if (tmp_req != NULL)
 					tmp_req->isCanceled = true;

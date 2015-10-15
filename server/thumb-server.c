@@ -87,7 +87,7 @@ static void _thumb_server_add_signal_handler(void)
 		thumb_err("sigaction failed [%s]", strerror(errno));
 	}
 
-	signal(SIGPIPE,SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 }
 #endif
 
@@ -137,12 +137,12 @@ int main(void)
 	g_source_attach(source, context);
 
 	GSource *source_evas_init = NULL;
-	source_evas_init = g_idle_source_new ();
-	g_source_set_callback (source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
-	g_source_attach (source_evas_init, context);
+	source_evas_init = g_idle_source_new();
+	g_source_set_callback(source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
+	g_source_attach(source_evas_init, context);
 
 #ifdef _SUPPORT_DCM
-	thumb_dbg( "[GD] _thumb_server_dcm_thread created");
+	thumb_dbg("[GD] _thumb_server_dcm_thread created");
 	/* Create dcm thread */
 	GThread *dcm_thread = NULL;
 	dcm_thread = g_thread_new("dcm_thread", (GThreadFunc)_thumb_server_dcm_thread, NULL);

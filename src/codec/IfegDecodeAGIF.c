@@ -25,10 +25,10 @@
 
 
 
-#define MAX_CODES   4096
+#define MAX_CODES	4096
 
-int __FastImgGetNextFrameAGIF_NoBuffer (AGifFrameInfo *pFrameData, BOOL bCenterAlign);
-int __FastImgGetNextFrameAGIF_UseBuffer (AGifFrameInfo *pFrameData, BOOL bCenterAlign);
+int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAlign);
+int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAlign);
 
 int image_left_pos_N = 0;	/* left position of image in Logical screeen */
 int image_top_pos_N = 0;
@@ -85,14 +85,14 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 
 	pFrameData->nRepeatCount = 0;
 
-	thumb_dbg("10st data :  0x%x , global color table num : %d", pEncodedData[10], header_temp);
+	thumb_dbg("10st data : 0x%x , global color table num : %d", pEncodedData[10], header_temp);
 	thumb_dbg("13: 0x%x ,14: 0x%x, 15: 0x%x, nRepeatCount : %d, nLoopCount : %d", pEncodedData[13+header_temp], pEncodedData[14+header_temp], pEncodedData[15+header_temp], pFrameData->nRepeatCount, pFrameData->nLoopCount);
 
 	backcolor_index	= pEncodedData[11];
 
 	if (pEncodedData[14+header_temp] == 0xF9) {
 		transparent = pEncodedData[16+header_temp] & 0x01;
-		transIndex = 	pEncodedData[19+header_temp];
+		transIndex = pEncodedData[19+header_temp];
 
 		backcolor_parsing = (unsigned short)((pEncodedData[inputPos+backcolor_index*3] >> 3)<<11) | ((pEncodedData[inputPos+backcolor_index*3+1] >> 2)<<5) | (pEncodedData[inputPos+backcolor_index*3+2] >> 3);
 	} else if (pEncodedData[14+19+header_temp] == 0xF9) {
@@ -110,14 +110,14 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 	if (pEncodedData[14+header_temp] == 0xF9 || pEncodedData[14+19+header_temp] == 0xF9) {
 
 		if (transparent == 1 && backcolor_index == transIndex) {
-			image_backcolor =  ui_backcolor;
+			image_backcolor = ui_backcolor;
 		} else if (transparent == 1 && backcolor_index != transIndex) {
 			image_backcolor = backcolor_parsing;
 		} else {
-			image_backcolor =  backcolor_parsing;		
+			image_backcolor = backcolor_parsing;		
 		}
 	} else {
-		image_backcolor =  backcolor_parsing;	
+		image_backcolor = backcolor_parsing;	
 	}
 
 #if MODE == 0
@@ -145,7 +145,7 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 
 #if MODE == 2
 	if (((pFrameData->logi_wdt <= width) && (pFrameData->logi_hgt <= height))) {
-		if (0 ==  (pFrameData->pPrevImg = IfegMemAlloc(sizeof(unsigned char)*width*height*2))) {
+		if (0 == (pFrameData->pPrevImg = IfegMemAlloc(sizeof(unsigned char)*width*height*2))) {
 			if (pFrameData) {
 				IfegMemFree(pFrameData);
 				pFrameData = 0;
@@ -154,7 +154,7 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 		}
 		pFrameData->useBuffer = 0;
 	} else {
-		if (0 ==  (pFrameData->pPrevImg = IfegMemAlloc(sizeof(unsigned int)*pFrameData->logi_wdt*pFrameData->logi_hgt))) {
+		if (0 == (pFrameData->pPrevImg = IfegMemAlloc(sizeof(unsigned int)*pFrameData->logi_wdt*pFrameData->logi_hgt))) {
 			if (pFrameData) {
 				IfegMemFree(pFrameData);
 				pFrameData = 0;
@@ -566,8 +566,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 	inputPos = pFrameData->offset;
 
 	done_prefix = IfegMemAlloc(sizeof(unsigned char)*(MAX_CODES+1));
-	if (done_prefix == 0)
-	{
+	if (done_prefix == 0) {
 		thumb_err("Failed to allocate memory for check buffer.");
 		return -1;
 	}
@@ -969,7 +968,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 			out_x = 0, out_y = -dechgt;
 
 			/* Color Resolution */
-			if ((buffer[8] & 0x80) == 0) { /* Logical color table  */
+			if ((buffer[8] & 0x80) == 0) { /* Logical color table */
 				/* use global table */
 			} else { /* Logical color table */
 				IfegMemset(dacbox, 0, 1024);
@@ -1104,7 +1103,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 				}
 				/* Now that we've pushed the decoded string (in reverse order)
 				* onto the stack, lets pop it off and put it into our decode
-				* buffer...  And when the decode buffer is full, write another
+				* buffer... And when the decode buffer is full, write another
 				* line...
 				*/
 				while (sp > dstack) {
@@ -1126,7 +1125,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 							if (!flag) {
 								out_x = 0, out_y += dechgt;
 							}
-						} else {  /* interlaced image */
+						} else { /* interlaced image */
 							if (inter_step == 1) {
 								startloc += 8;
 							} else if (inter_step == 2) {
@@ -1219,7 +1218,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 													a_x += orgwdt, c_x += orgwdt;
 												}
 											}
-											if (0 <= d2  && d2 < decwdt) {
+											if (0 <= d2 && d2 < decwdt) {
 												if (val1 == transIndex) {
 													*(pImage32 + (b_x/orgwdt)) += 0x1000000;
 													*(pImage32_2 + (d_x/orgwdt)) += 0x1000000;
@@ -1285,7 +1284,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 													c_x += orgwdt;
 												}
 											}
-											if (0 <= d2  && d2 < decwdt) {
+											if (0 <= d2 && d2 < decwdt) {
 												if (val1 == transIndex) {
 													*(pImage32_2 + (d_x/orgwdt)) += 0x1000000;
 													d_x += orgwdt;
@@ -1326,7 +1325,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 												*(pImage32_2 + (c_x/orgwdt)) += pDacbox[val1];
 												a_x += orgwdt, c_x += orgwdt;
 											}
-											if (0 <= d2  && d2 < decwdt) {
+											if (0 <= d2 && d2 < decwdt) {
 												*(pImage32 + (b_x/orgwdt)) += pDacbox[val1];
 												*(pImage32_2 + (d_x/orgwdt)) += pDacbox[val1];
 												b_x += orgwdt, d_x += orgwdt;
@@ -1350,7 +1349,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 												*(pImage32 + (a_x/orgwdt)) += pDacbox[val1];
 												a_x += orgwdt;
 											}
-											if (0 <= d2  && d2 < decwdt) {
+											if (0 <= d2 && d2 < decwdt) {
 												*(pImage32 + (b_x/orgwdt)) += pDacbox[val1];
 												b_x += orgwdt;
 											}
@@ -1460,8 +1459,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 						IfegMemset(done_prefix, 0, sizeof(unsigned char)*(MAX_CODES+1));
 						while (code >= newcodes) {
 							*sp++ = suffix[code];
-							if ((code == prefix[code]) || (done_prefix[code] == 1))
-							{
+							if ((code == prefix[code]) || (done_prefix[code] == 1)) {
 								thumb_err("Circular entry in table.");
 								if (decoderline != 0) {
 									IfegMemFree(decoderline);
@@ -1815,7 +1813,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 		/* Color Resolution */
 		IfegMemset(global_dacbox, 0, 1024);
 		numcolors = (buffer[10] & 0x7) + 1;
-		if ((buffer[10] & 0x80) == 0) {  /* Global color table */
+		if ((buffer[10] & 0x80) == 0) { /* Global color table */
 			global_dacbox[0] = 0x000000;
 			global_dacbox[1] = 0x3f3f3f;
 			numcolors = 2;
@@ -2110,7 +2108,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 				out_x = 0, out_y = -dechgt;
 
 				/* Color Resolution */
-				if ((buffer[8] & 0x80) == 0) { /* Logical color table  */
+				if ((buffer[8] & 0x80) == 0) { /* Logical color table */
 					;/* use global table */
 				} else { /* Logical color table */
 					IfegMemset(dacbox, 0, 1024);
@@ -2164,14 +2162,14 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						if (logi_hgt < (image_top_pos + orghgt)) {
 							for (i = 0; i < logi_hgt - image_top_pos; i++) {
 								for (j = 0; j < orgwdt; j++) {
-									pImage32[j] = 0x1000000;  /* set ui color */
+									pImage32[j] = 0x1000000; /* set ui color */
 								}
 								pImage32 += logi_wdt;
 							}
 						} else {
 							for (i = 0; i < orghgt; i++) {
 								for (j = 0; j < orgwdt; j++) {
-									pImage32[j] = 0x1000000;  /* set ui color */
+									pImage32[j] = 0x1000000; /* set ui color */
 								}
 								pImage32 += logi_wdt;
 							}
@@ -2203,7 +2201,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 										a_x += logi_wdt, c_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 										*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 										b_x += logi_wdt, d_x += logi_wdt;
@@ -2223,7 +2221,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 										a_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 										b_x += logi_wdt;
 									}
@@ -2240,7 +2238,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 										c_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 										d_x += logi_wdt;
 									}
@@ -2362,7 +2360,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						}
 						/* Now that we've pushed the decoded string (in reverse order)
 						* onto the stack, lets pop it off and put it into our decode
-						* buffer...  And when the decode buffer is full, write another
+						* buffer... And when the decode buffer is full, write another
 						* line...
 						*/
 						while (sp > dstack) {
@@ -2478,7 +2476,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -2502,7 +2500,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															a_x += logi_wdt, c_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
@@ -2524,7 +2522,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -2547,7 +2545,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -2567,7 +2565,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															a_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															b_x += logi_wdt;
@@ -2585,7 +2583,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -2604,7 +2602,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -2624,7 +2622,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															c_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
 															d_x += logi_wdt;
@@ -2642,7 +2640,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -2682,7 +2680,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -2699,7 +2697,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += pDacbox[val1];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -2714,7 +2712,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -2737,7 +2735,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -2753,7 +2751,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += pDacbox[val1];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt;
 													}
@@ -2766,7 +2764,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -2786,7 +2784,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -2801,7 +2799,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += pDacbox[val1];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														d_x += logi_wdt;
 													}
@@ -2814,7 +2812,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3040,7 +3038,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3064,7 +3062,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															a_x += logi_wdt, c_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
@@ -3087,7 +3085,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3110,7 +3108,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3130,7 +3128,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															a_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															b_x += logi_wdt;
@@ -3149,7 +3147,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 													*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 													a_x += logi_wdt;
 												}
-												if (0 <= d2  && d2 < decwdt) {
+												if (0 <= d2 && d2 < decwdt) {
 													*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 													b_x += logi_wdt;
 												}
@@ -3169,7 +3167,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3189,7 +3187,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															c_x += logi_wdt;
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
 															d_x += logi_wdt;
@@ -3208,7 +3206,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3249,7 +3247,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3267,7 +3265,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														a_x += logi_wdt, c_x += logi_wdt;
 														backGround[i+image_left_pos] = backcolor888;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3283,7 +3281,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3306,7 +3304,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3323,7 +3321,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														a_x += logi_wdt;
 														backGround[i+image_left_pos] = backcolor888;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt;
 														backGround[i+image_left_pos] = backcolor888;
@@ -3337,7 +3335,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3357,7 +3355,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3373,7 +3371,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														c_x += logi_wdt;
 														backGround[i+image_left_pos] = backcolor888;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														d_x += logi_wdt;
 														backGround[i+image_left_pos] = backcolor888;
@@ -3387,7 +3385,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3511,7 +3509,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						}
 						/* Now that we've pushed the decoded string (in reverse order)
 						* onto the stack, lets pop it off and put it into our decode
-						* buffer...  And when the decode buffer is full, write another
+						* buffer... And when the decode buffer is full, write another
 						* line...
 						*/
 						while (sp > dstack) {
@@ -3528,7 +3526,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 									len = orgwdt;
 								}
 
-								if (interLaced == 0) { /* interlaced image  */
+								if (interLaced == 0) { /* interlaced image */
 									if (!flag) {
 										out_x = 0, out_y += dechgt;
 									}
@@ -3628,7 +3626,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3653,7 +3651,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															backGround[i+image_left_pos] = pDacbox[val1];
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
@@ -3676,7 +3674,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3699,7 +3697,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3720,7 +3718,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															backGround[i+image_left_pos] = pDacbox[val1];
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32 + (b_x/logi_wdt)) += backGround[i+image_left_pos];
 															b_x += logi_wdt;
@@ -3739,7 +3737,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 													*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 													a_x += logi_wdt;
 												}
-												if (0 <= d2  && d2 < decwdt) {
+												if (0 <= d2 && d2 < decwdt) {
 													*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 													b_x += logi_wdt;
 												}
@@ -3759,7 +3757,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3780,7 +3778,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 															backGround[i+image_left_pos] = pDacbox[val1];
 														}
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														if (val1 == transIndex) {
 															*(pImage32_2 + (d_x/logi_wdt)) += backGround[i+image_left_pos];
 															d_x += logi_wdt;
@@ -3799,7 +3797,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3840,7 +3838,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3859,7 +3857,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														a_x += logi_wdt, c_x += logi_wdt;
 														backGround[i+image_left_pos] = pDacbox[val1];
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3875,7 +3873,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt, c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt, d_x += logi_wdt;
@@ -3898,7 +3896,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3915,7 +3913,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														a_x += logi_wdt;
 														backGround[i+image_left_pos] = pDacbox[val1];
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += pDacbox[val1];
 														b_x += logi_wdt;
 														backGround[i+image_left_pos] = pDacbox[val1];
@@ -3929,7 +3927,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 														a_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 														b_x += logi_wdt;
 													}
@@ -3948,7 +3946,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -3964,7 +3962,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														c_x += logi_wdt;
 														backGround[i+image_left_pos] = pDacbox[val1];
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += pDacbox[val1];
 														d_x += logi_wdt;
 														backGround[i+image_left_pos] = pDacbox[val1];
@@ -3978,7 +3976,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 														*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 														c_x += logi_wdt;
 													}
-													if (0 <= d2  && d2 < decwdt) {
+													if (0 <= d2 && d2 < decwdt) {
 														*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 														d_x += logi_wdt;
 													}
@@ -4146,7 +4144,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 										a_x += logi_wdt, c_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 										*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 										b_x += logi_wdt, d_x += logi_wdt;
@@ -4166,7 +4164,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32 + (a_x/logi_wdt)) += backGround[i];
 										a_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32 + (b_x/logi_wdt)) += backGround[i];
 										b_x += logi_wdt;
 									}
@@ -4183,7 +4181,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 										*(pImage32_2 + (c_x/logi_wdt)) += backGround[i];
 										c_x += logi_wdt;
 									}
-									if (0 <= d2  && d2 < decwdt) {
+									if (0 <= d2 && d2 < decwdt) {
 										*(pImage32_2 + (d_x/logi_wdt)) += backGround[i];
 										d_x += logi_wdt;
 									}
@@ -4207,7 +4205,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 				}
 
 
-				/* 565 Conversion  */
+				/* 565 Conversion */
 				pImage32 = (unsigned int *)(pDecBuf);
 	
 				for (i = 0, k = margin_hgt1_2; i < dechgt; i++) {
@@ -4216,7 +4214,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						if ((*pImage32>>24) == 0) {
 							*(pImage16++) = ((*pImage32 & 0xf80000) >> 8) | ((*pImage32 & 0xfc00) >> 5) | ((*pImage32 & 0xf8) >> 3);
 						} else if ((*pImage32 >> 24) == 1) {
-							*(pImage16++) = (((*pImage32 & 0xf80000) >> 6) / 3)  | (((*pImage32 & 0xfc00) >> 3)/3) | (((*pImage32 & 0xf8) >> 1)/3);
+							*(pImage16++) = (((*pImage32 & 0xf80000) >> 6) / 3) | (((*pImage32 & 0xfc00) >> 3)/3) | (((*pImage32 & 0xf8) >> 1)/3);
 						} else if ((*pImage32 >> 24) == 2) {
 							*(pImage16++) = ((*pImage32 & 0xf80000) >> 7) | ((*pImage32 & 0xfc00) >> 4) | ((*pImage32 & 0xf8) >> 2);
 						} else {

@@ -32,32 +32,25 @@ unsigned int *ImgGetFirstFrameAGIFAtSize(const char *szFileName,
 	unsigned char *raw_data = NULL;
 
 	if (szFileName == NULL) {
-		thumb_err
-		    ("ImgGetFirstFrameAGIFAtSize: Input File Name is NULL");
+		thumb_err("ImgGetFirstFrameAGIFAtSize: Input File Name is NULL");
 		return NULL;
 	}
 
 	if (width == 0 || height == 0) {
-		thumb_err
-		    ("ImgGetFirstFrameAGIFAtSize: Input width or height is zero");
+		thumb_err("ImgGetFirstFrameAGIFAtSize: Input width or height is zero");
 		return NULL;
 	}
 
-	pFrameInfo =
-	    ImgCreateAGIFFrame(szFileName, width,
-			       height, 0, FALSE);
+	pFrameInfo = ImgCreateAGIFFrame(szFileName, width, height, 0, FALSE);
 
 	if (pFrameInfo && pFrameInfo->pOutBits) {
 		ImgGetNextAGIFFrame(pFrameInfo, TRUE);
 
-		if (ImgConvertRGB565ToRGB888
-		    (pFrameInfo->pOutBits, &pDecodedRGB888Buf,
-		     pFrameInfo->width, pFrameInfo->height)) {
+		if (ImgConvertRGB565ToRGB888(pFrameInfo->pOutBits, &pDecodedRGB888Buf, pFrameInfo->width, pFrameInfo->height)) {
 			if (pDecodedRGB888Buf) {
 				free(pFrameInfo->pOutBits);
 				pFrameInfo->pOutBits = pDecodedRGB888Buf;
-				unsigned char *src =
-				    ((unsigned char *)(pFrameInfo->pOutBits));
+				unsigned char *src = ((unsigned char *)(pFrameInfo->pOutBits));
 
 				unsigned int i = 0;
 
@@ -76,8 +69,7 @@ unsigned int *ImgGetFirstFrameAGIFAtSize(const char *szFileName,
 				unsigned char *dest = raw_data;
 				while (i--) {
 					if (dest != NULL) {
-						*dest =
-						    *((unsigned char *)(src));
+						*dest = *((unsigned char *)(src));
 						dest++;
 						src++;
 					}
@@ -95,8 +87,7 @@ unsigned int *ImgGetFirstFrameAGIFAtSize(const char *szFileName,
 	return (unsigned int *)raw_data;
 }
 
-int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width,
-			     int height)
+int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width, int height)
 {
 	unsigned short *rgb565buf = 0;
 	unsigned char *rgb888Buf = 0;
@@ -138,21 +129,7 @@ int ImgConvertRGB565ToRGB888(void *pBuf_rgb565, void **pBuf_rgb888, int width,
 	return TRUE;
 }
 
-/**
- * This function is wrapper function for "ImgFastCreateAGIFFrameData".
- *
- * @param 	szFileName[in] Specifies the read image data.
- * @param	 	width[in] Specifies a width of the image to be created.
- * @param 	height[in] Specifies a height of the image to be created.
- * @param 	bgColor[in] Specifies background color of output buffer.
- * @param 	bLoop[in] Specifies looping condition whether infinte or once play.
- * @return	This fucntion returns AGifFrameInfo Structure's pointer.
- * @see		ImgFastCreateAGIFFrameData.
- */
-
-AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width,
-				  unsigned int height, unsigned int bgColor,
-				  BOOL bLoop)
+AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width, unsigned int height, unsigned int bgColor, BOOL bLoop)
 {
 	HFile hFile;
 	FmFileAttribute fileAttrib;
@@ -189,7 +166,7 @@ AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width,
 		DrmCloseFile(hFile);
 		return NULL;
 	}
-	memset(pEncodedData,0,mem_alloc_size);
+	memset(pEncodedData, 0, mem_alloc_size);
 	/* coverity[ -tainted_data_argument : pEncodedData ] */
 	if (DrmReadFile(hFile, pEncodedData, mem_alloc_size, &size) == FALSE) {
 		thumb_err("DrmReadFile was failed");
@@ -207,23 +184,8 @@ AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width,
 
 	DrmCloseFile(hFile);
 
-	return FastImgCreateAGIFFrameData(width, height, pEncodedData,
-					  cFileSize, bgColor, bLoop);
+	return FastImgCreateAGIFFrameData(width, height, pEncodedData, cFileSize, bgColor, bLoop);
 }
-
-/**
- * This function is wrapper function for "ImgFastDestroyAGIFFrameData".
- *
- * @param 	pFrameData[in]
- * @return	void
- * @see		ImgFastDestroyAGIFFrameData.
- * @see		ImgFastDestroyAGIFFrameData.
- *
- * @note 		ImgFastDestroyAGIFFrameData function set free all memory in AGifFrameInfo structure
- *			even pEncodedData
- *
- * @author	rubric(sinjae4b.lee@samsung.com)
- */
 
 void ImgDestroyAGIFFrame(AGifFrameInfo *pFrameData)
 {
@@ -232,22 +194,7 @@ void ImgDestroyAGIFFrame(AGifFrameInfo *pFrameData)
 	FastImgDestroyAGIFFrameData(pFrameData);
 }
 
-/**
- * This function is wrapper function for "ImgFastGetNextFrameAGIF".
- *
- * @param 	pFrameData[in]
- * @param		bCenterAlign Specifies true if you want center align in output buffer, else left top align
- * @return	This fucntion returns True or False as decoding result.
- * @see		ImgFastGetNextFrameAGIF.
- *
- * @note 		This function returns one frame data it decoded.
- *			next time, returns next decoded frame data... and so on.
- *
- * @author	rubric(sinjae4b.lee@samsung.com)
- */
-
-ImgFastCodecInfo ImgGetNextAGIFFrame(AGifFrameInfo *gFrameData,
-				     BOOL bCenterAlign)
+ImgFastCodecInfo ImgGetNextAGIFFrame(AGifFrameInfo *gFrameData, BOOL bCenterAlign)
 {
 	int iResult;
 

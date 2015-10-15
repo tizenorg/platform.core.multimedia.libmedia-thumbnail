@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 		int origin_h = 0;
 		int alpha = FALSE;
 		bool is_saved = FALSE;
-        char *thumb_path = "thumbnail_path.jpg";
+		char *thumb_path = "thumbnail_path.jpg";
 
 		media_thumb_format thumb_format = MEDIA_THUMB_BGRA;
 		//media_thumb_format thumb_format = MEDIA_THUMB_RGB888;

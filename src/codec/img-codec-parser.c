@@ -44,9 +44,9 @@
 #define		TIFF_IMAGE_WIDTH	0x100
 #define		TIFF_IMAGE_HEIGHT	0x101
 
-#define 	JPG_HEADER_TYPE_LENGTH 2
-#define 	JPG_BLOCK_SIZE_LENGTH 2
-#define 	JPG_IMAGE_SIZE_LENGTH 8
+#define		JPG_HEADER_TYPE_LENGTH 2
+#define		JPG_BLOCK_SIZE_LENGTH 2
+#define		JPG_IMAGE_SIZE_LENGTH 8
 
 #define		FILE_READ_SIZE		4096
 typedef struct _stream {
@@ -75,9 +75,7 @@ static int _CheckBuffer(IFEGSTREAMCTRL *pIfegstreamctrl, unsigned int size)
 		}
 
 		if (pIfegstreamctrl->buffpos == 0) {
-			if (DrmReadFile
-			    (pIfegstreamctrl->fd, pIfegstreamctrl->buffer,
-			     FILE_READ_SIZE, &fileread) == FALSE) {
+			if (DrmReadFile(pIfegstreamctrl->fd, pIfegstreamctrl->buffer, FILE_READ_SIZE, &fileread) == FALSE) {
 				return 0;
 			}
 			if (fileread == 0) {
@@ -88,29 +86,20 @@ static int _CheckBuffer(IFEGSTREAMCTRL *pIfegstreamctrl, unsigned int size)
 			pIfegstreamctrl->buffpos = 0;
 		} else {
 
-			if (size >= 2048
-			    || pIfegstreamctrl->buffend -
-			    pIfegstreamctrl->buffpos > FILE_READ_SIZE) {
+			if (size >= 2048 || pIfegstreamctrl->buffend - pIfegstreamctrl->buffpos > FILE_READ_SIZE) {
 				return 0;
 			}
 			AcMemcpy(pIfegstreamctrl->buffer,
-				 &pIfegstreamctrl->buffer[pIfegstreamctrl->
-							  buffpos],
+				 &pIfegstreamctrl->buffer[pIfegstreamctrl->buffpos],
 				 pIfegstreamctrl->buffend -
 				 pIfegstreamctrl->buffpos);
-			if (DrmReadFile
-			    (pIfegstreamctrl->fd,
-			     &pIfegstreamctrl->buffer[pIfegstreamctrl->buffend -
-						      pIfegstreamctrl->buffpos],
-			     pIfegstreamctrl->buffpos, &fileread) == FALSE) {
+			if (DrmReadFile(pIfegstreamctrl->fd, &pIfegstreamctrl->buffer[pIfegstreamctrl->buffend - pIfegstreamctrl->buffpos], pIfegstreamctrl->buffpos, &fileread) == FALSE) {
 				return 0;
 			}
 			if (fileread == 0) {
 				return 0;
 			}
-			pIfegstreamctrl->buffend =
-			    pIfegstreamctrl->buffend -
-			    pIfegstreamctrl->buffpos + fileread;
+			pIfegstreamctrl->buffend = pIfegstreamctrl->buffend - pIfegstreamctrl->buffpos + fileread;
 			pIfegstreamctrl->buffpos = 0;
 			pIfegstreamctrl->filepos += fileread;
 		}
@@ -135,7 +124,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 	unsigned int *pHeight = NULL;
 	int ret = MS_MEDIA_ERR_NONE;
 
-	if (type == NULL || width == NULL ||height == NULL ) {
+	if (type == NULL || width == NULL || height == NULL) {
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	} else {
 		pWidth = width;
@@ -225,7 +214,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 		thumb_dbg("IMG_CODEC_JPEG");
 		*type = IMG_CODEC_JPEG;
 	}
-	/***********************  PNG  *************************/
+	/*********************** PNG *************************/
 	else if (AcMemcmp(EncodedDataBuffer, gIfegPNGHeader, PNG_HEADER_LENGTH) == 0) {
 		unsigned char tmp;
 
@@ -257,7 +246,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 		thumb_dbg("IMG_CODEC_PNG");
 		*type = IMG_CODEC_PNG;
 	}
-	/***********************  BMP  *************************/
+	/*********************** BMP *************************/
 	else if (AcMemcmp(EncodedDataBuffer, gIfegBMPHeader, BMP_HEADER_LENGTH) == 0) {
 		/* Parse BMP File and get image width and image height */
 		if (DrmReadFile(hFile, &EncodedDataBuffer[8], 18, &fileread) == FALSE) {
@@ -277,13 +266,13 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 		if (pHeight) {
 			// add the reference function abs(). may have negative height values in bmp header.
 			*pHeight = abs(EncodedDataBuffer[22] | (EncodedDataBuffer[23] << 8) | 
-						  (EncodedDataBuffer[24] << 16) | (EncodedDataBuffer[25] << 24));
+						(EncodedDataBuffer[24] << 16) | (EncodedDataBuffer[25] << 24));
 		}
 
 		thumb_dbg("IMG_CODEC_BMP");
 		*type = IMG_CODEC_BMP;
 	}
-	/***********************  GIF  *************************/
+	/*********************** GIF *************************/
 	else if (AcMemcmp(EncodedDataBuffer, gIfegGIFHeader, GIF_HEADER_LENGTH) == 0) {
 		unsigned int tablelength = 0;
 		unsigned int imagecount = 0;
@@ -438,7 +427,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 
 					img_block_w = EncodedDataBuffer[ifegstreamctrl.buffpos + 4] |(EncodedDataBuffer[ifegstreamctrl.buffpos + 5] << 8);
 					img_block_h = EncodedDataBuffer[ifegstreamctrl.buffpos + 6] |(EncodedDataBuffer[ifegstreamctrl.buffpos + 7] << 8);
-					thumb_dbg ("Image block width : %d, Height : %d, left:%d, top:%d", img_block_w, img_block_h);
+					thumb_dbg("Image block width : %d, Height : %d, left : %d, top : %d", img_block_w, img_block_h);
 
 					*pWidth = img_block_w;
 					*pHeight = img_block_h;
@@ -475,7 +464,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 						return ret;
 					}
 
-					length =EncodedDataBuffer[ifegstreamctrl.buffpos++];
+					length = EncodedDataBuffer[ifegstreamctrl.buffpos++];
 					if ((length + ifegstreamctrl.buffpos) > ifegstreamctrl.buffend) {
 						length =
 							length +
@@ -493,7 +482,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 						ifegstreamctrl.buffpos = 0;
 						ifegstreamctrl.buffend = 0;
 					} else {
-						ifegstreamctrl.buffpos +=length;
+						ifegstreamctrl.buffpos += length;
 					}
 
 					/* File End Check */
@@ -516,7 +505,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 		thumb_dbg("IMG_CODEC_GIF");
 		*type = IMG_CODEC_GIF;
 	}
-	/***********************  WBMP  *************************/
+	/*********************** WBMP *************************/
 	else if ((AcMemcmp(EncodedDataBuffer, gIfegWBMPHeader, WBMP_HEADER_LENGTH) == 0)
 		&& (strcasecmp(fileExt, "wbmp") == 0)) {
 		/* Parse BMP File and get image width and image height */
