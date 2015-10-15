@@ -43,8 +43,7 @@ int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_pat
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	if (!g_file_test
-	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
@@ -104,8 +103,7 @@ int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, voi
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	if (!g_file_test
-	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
@@ -148,15 +146,14 @@ int thumbnail_request_extract_raw_data_async(int request_id, const char *origin_
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	if (!g_file_test
-	    (origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 			thumb_err("Original path(%s) doesn't exist.", origin_path);
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 	thumb_dbg_slog("Path : %s", origin_path);
 
 	thumbRawUserData *userData = (thumbRawUserData*)malloc(sizeof(thumbRawUserData));
-	if(userData == NULL) {
+	if (userData == NULL) {
 		thumb_err("userData malloc failed : %d", err);
 		return MS_MEDIA_ERR_OUT_OF_MEMORY;
 	}
@@ -182,7 +179,7 @@ int thumbnail_request_cancel_media(const char *origin_path)
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA,  origin_path, NULL, 0);
+	err = _media_thumb_request_async(THUMB_REQUEST_CANCEL_MEDIA, origin_path, NULL, 0);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_request failed : %d", err);
 		return err;
@@ -213,7 +210,7 @@ int thumbnail_request_cancel_all(bool is_raw_data)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	if(is_raw_data) {
+	if (is_raw_data) {
 		err = _media_thumb_request_cancel_all(true);
 	} else {
 		err = _media_thumb_request_cancel_all(false);

@@ -274,7 +274,7 @@ int _media_thumb_db_connect(uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	err = media_db_connect(&db_handle,uid, FALSE);
+	err = media_db_connect(&db_handle, uid, FALSE);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("media_db_connect failed: %d", err);
 		db_handle = NULL;
@@ -411,7 +411,7 @@ int _media_thumb_update_db(const char *origin_path,
 	}
 #else
 	if (media_type == THUMB_IMAGE_TYPE && width > 0 && height > 0) {
-		err = _media_thumb_update_thumb_path_wh_to_db(db_handle, origin_path, thumb_path, width, height,uid);
+		err = _media_thumb_update_thumb_path_wh_to_db(db_handle, origin_path, thumb_path, width, height, uid);
 		if (err < 0) {
 			thumb_err("_media_thumb_update_wh_to_db (%s) failed: %d", origin_path, err);
 			return err;

@@ -47,23 +47,23 @@
 
 #define thumb_dbg(fmt, arg...)	do{ \
 		LOGD(FONT_COLOR_RESET fmt "\n", ##arg); \
-		} while(0)
+		} while (0)
 
 #define thumb_warn(fmt, arg...)	do{ \
 		LOGW(FONT_COLOR_GREEN fmt "\n", ##arg); \
-		} while(0)
+		} while (0)
 
 #define thumb_err(fmt, arg...)	do{ \
 		 LOGE(FONT_COLOR_RED fmt "\n", ##arg); \
-		} while(0)
+		} while (0)
 
 #define thumb_dbg_slog(fmt, arg...)	do{ \
 		SECURE_LOGD(FONT_COLOR_RESET fmt "\n", ##arg); \
-		} while(0)
+		} while (0)
 
 #define thumb_warn_slog(fmt, arg...)	do{ \
 		SECURE_LOGW(FONT_COLOR_GREEN fmt "\n", ##arg); \
-		} while(0)
+		} while (0)
 
 
 #define ERR_BUF_LENGHT 256
