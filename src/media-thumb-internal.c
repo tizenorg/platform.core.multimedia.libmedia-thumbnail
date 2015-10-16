@@ -1287,7 +1287,8 @@ static char* _media_thumb_mmc_get_path(uid_t uid)
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
 	if (uid == getuid()) {
-		result_psswd = strdup(THUMB_MMC_PATH);
+		if (THUMB_MMC_PATH != NULL)
+			result_psswd = strndup(THUMB_MMC_PATH, strlen(THUMB_MMC_PATH));
 		grpinfo = getgrnam("users");
 		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
@@ -1322,7 +1323,8 @@ static char* _media_thumb_phone_get_path(uid_t uid)
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
 	if (uid == getuid()) {
-		result_psswd = strdup(THUMB_PHONE_PATH);
+		if (THUMB_PHONE_PATH != NULL)
+			result_psswd = strndup(THUMB_PHONE_PATH, strlen(THUMB_PHONE_PATH));
 		grpinfo = getgrnam("users");
 		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
@@ -1358,6 +1360,7 @@ int _media_thumb_get_hash_name(const char *file_full_path,
 	char *hash_name = NULL;
 	/*char *thumb_dir = NULL;*/
 	char file_ext[255] = { 0 };
+	char *get_path = NULL;
 	int ret_len = 0;
 	media_thumb_store_type store_type = -1;
 
@@ -1384,12 +1387,20 @@ int _media_thumb_get_hash_name(const char *file_full_path,
 	}
 
 	if (store_type == THUMB_PHONE) {
-		ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", _media_thumb_phone_get_path(uid), file_ext, hash_name);
+		get_path = _media_thumb_phone_get_path(uid);
+		if (get_path != NULL)
+			ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", get_path, file_ext, hash_name);
 	} else if (store_type == THUMB_MMC) {
-		ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", _media_thumb_mmc_get_path(uid), file_ext, hash_name);
+		get_path = _media_thumb_mmc_get_path(uid);
+		if (get_path != NULL)
+			ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", get_path, file_ext, hash_name);
 	} else {
-		ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", _media_thumb_phone_get_path(uid), file_ext, hash_name);
+		get_path = _media_thumb_phone_get_path(uid);
+		if (get_path != NULL)
+			ret_len = snprintf(thumb_hash_path, max_thumb_path - 1, "%s/.%s-%s.jpg", get_path, file_ext, hash_name);
 	}
+
+	SAFE_FREE(get_path);
 
 	if ((ret_len < 0) || (ret_len > (int)max_thumb_path)) {
 		thumb_err("invalid hash path ret_len[%d]", ret_len);

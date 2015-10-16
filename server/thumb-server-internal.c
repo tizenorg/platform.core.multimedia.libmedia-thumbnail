@@ -46,6 +46,7 @@
 #define THUMB_DEFAULT_HEIGHT 240
 #define THUMB_BLOCK_SIZE 512
 #define THUMB_ROOT_UID "0"
+#define THUMB_COMM_SOCK_PATH "/var/run/media-server/media_ipc_thumbcomm.socket"
 
 static __thread char **arr_path;
 static __thread uid_t *arr_uid;
@@ -486,7 +487,7 @@ static gboolean __thumb_server_send_msg_to_agent(int msg_type)
 
 	sock = sock_info.sock_fd;
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, "/var/run/media-server/media_ipc_thumbcomm.socket");
+	strncpy(serv_addr.sun_path, THUMB_COMM_SOCK_PATH, strlen(THUMB_COMM_SOCK_PATH));
 
 
 	/* Connecting to the thumbnail server */
@@ -546,6 +547,7 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 
 	if (ms_cynara_enable_credentials_passing(sock) != MS_MEDIA_ERR_NONE) {
 		thumb_err("ms_cynara_enable_credentials_passing failed");
+		close(sock);
 		return FALSE;
 	}
 
@@ -559,7 +561,8 @@ static char* _media_thumb_get_default_path(uid_t uid)
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
 	if (uid == getuid()) {
-		result_psswd = strdup(THUMB_DEFAULT_PATH);
+		if (THUMB_DEFAULT_PATH != NULL)
+			result_psswd = strndup(THUMB_DEFAULT_PATH, strlen(THUMB_DEFAULT_PATH));
 		grpinfo = getgrnam("users");
 		if (grpinfo == NULL) {
 			thumb_err("getgrnam(users) returns NULL !");
@@ -757,7 +760,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	thumb_h = req_msg->thumb_height;
 	thumb_path = res_msg->dst_path;
 	thumb_path[0] = '\0';
-	max_length = sizeof(res_msg->dst_path);
+	max_length = sizeof(res_msg->dst_path) -1;
 
 	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
 		thumb_err("origin_path does not exist in file system.");

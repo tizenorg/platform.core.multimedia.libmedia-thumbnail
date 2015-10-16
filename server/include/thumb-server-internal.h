@@ -27,8 +27,6 @@
 #ifndef _THUMB_DAEMON_INTERNAL_H_
 #define _THUMB_DAEMON_INTERNAL_H_
 
-#define SAFE_FREE(src)      { if(src) {free(src); src = NULL;}}
-
 typedef enum {
 	MEDIA_SERVER_PID = 1,
 	OTHERS_PID = 0,
