@@ -265,8 +265,7 @@ static int _ImgGetImageInfo(HFile hFile, unsigned long fileSize, char *fileExt, 
 		}
 		if (pHeight) {
 			// add the reference function abs(). may have negative height values in bmp header.
-			*pHeight = abs(EncodedDataBuffer[22] | (EncodedDataBuffer[23] << 8) | 
-						(EncodedDataBuffer[24] << 16) | (EncodedDataBuffer[25] << 24));
+			*pHeight = abs(EncodedDataBuffer[22] | (EncodedDataBuffer[23] << 8) | (EncodedDataBuffer[24] << 16) | (EncodedDataBuffer[25] << 24));
 		}
 
 		thumb_dbg("IMG_CODEC_BMP");

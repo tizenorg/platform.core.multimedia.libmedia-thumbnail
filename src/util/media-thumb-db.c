@@ -321,8 +321,7 @@ int _media_thumb_get_thumb_from_db(const char *origin_path,
 
 	thumb_dbg_slog("Thumb path in DB is %s", thumb_path);
 
-	if (!g_file_test(thumb_path, 
-					G_FILE_TEST_EXISTS)) {
+	if (!g_file_test(thumb_path, G_FILE_TEST_EXISTS)) {
 		thumb_warn("thumb path doesn't exist in file system");
 		*need_update_db = 1;
 		return -1;
@@ -357,8 +356,7 @@ int _media_thumb_get_thumb_from_db_with_size(const char *origin_path,
 
 	thumb_dbg_slog("Thumb path in DB is %s", thumb_path);
 
-	if (!g_file_test(thumb_path, 
-					G_FILE_TEST_EXISTS)) {
+	if (!g_file_test(thumb_path, G_FILE_TEST_EXISTS)) {
 		thumb_warn("thumb path doesn't exist in file system");
 		*need_update_db = 1;
 		return -1;

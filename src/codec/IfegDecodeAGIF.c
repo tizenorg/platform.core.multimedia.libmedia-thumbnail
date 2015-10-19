@@ -114,10 +114,10 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 		} else if (transparent == 1 && backcolor_index != transIndex) {
 			image_backcolor = backcolor_parsing;
 		} else {
-			image_backcolor = backcolor_parsing;		
+			image_backcolor = backcolor_parsing;
 		}
 	} else {
-		image_backcolor = backcolor_parsing;	
+		image_backcolor = backcolor_parsing;
 	}
 
 #if MODE == 0
@@ -286,7 +286,7 @@ void FastImgDestroyAGIFFrameData(AGifFrameInfo *pFrameData)
 	if (pFrameData == NULL) {
 		return;
 	}
-	
+
 	if (pFrameData->pPrevImg) {
 		IfegMemFree(pFrameData->pPrevImg);
 		pFrameData->pPrevImg = 0;
@@ -583,8 +583,8 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 		/* Input stream index set to 0 */
 		inputPos = 0;
 		inter_step = 1;
-		interLaced = 0; 
-		transparent = 0; 
+		interLaced = 0;
+		transparent = 0;
 
 		/* read a GIF HEADER */
 		IfegMemcpy(buffer, pInputStream, 13);
@@ -1506,7 +1506,7 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 				pImage32 = (unsigned int *)(pDecBuf);
 
 				/* Only make a first image frame as a thumbnail */
-				image_left_pos = 0; 
+				image_left_pos = 0;
 				image_top_pos = 0;
 				len = decwdt;
 
@@ -1542,13 +1542,13 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 					for (i = 0, k = image_top_pos+margin_hgt1_2; i < dechgt; i++) {
 						pImage16 = (unsigned short *)((unsigned char *)pOutBits + ((image_left_pos+margin_wdt1_2 + expected_width * k) << 1));
 						for (j = 0; j < decwdt; j++) {
-							*pImage16++ = ui_backcolor;					
+							*pImage16++ = ui_backcolor;
 						}
-						k++; 
+						k++;
 					}
 					}
 				}
-				
+
 				for (i = 0, k = image_top_pos+margin_hgt1_2; i < dechgt; i++) {
 					pImage16 = (unsigned short *)((unsigned char*)pOutBits + ((image_left_pos+margin_wdt1_2 + (expected_width) * k) << 1));
 					pImage32 = (unsigned int *)(pDecBuf) + (i * len);
@@ -1599,17 +1599,17 @@ int __FastImgGetNextFrameAGIF_NoBuffer(AGifFrameInfo *pFrameData, BOOL bCenterAl
 					for (i = 0, k = image_top_pos+margin_hgt1_2; i < dechgt; i++) {
 						pImage16 = (unsigned short *)((pFrameData->pPrevImg) + ((image_left_pos+margin_wdt1_2 + expected_width * k) << 1));
 						for (j = 0; j < decwdt; j++) {
-							*pImage16++ = ui_backcolor;					
+							*pImage16++ = ui_backcolor;
 						}
-						k++; 
+						k++;
 					}
 					} else {
 					for (i = 0, k = image_top_pos+margin_hgt1_2; i < dechgt; i++) {
 						pImage16 = (unsigned short *)((pFrameData->pPrevImg) + ((image_left_pos+margin_wdt1_2 + expected_width * k) << 1));
 						for (j = 0; j < decwdt; j++) {
-							*pImage16++ = image_backcolor;					
+							*pImage16++ = image_backcolor;
 						}
-						k++; 
+						k++;
 					}
 					}
 					break;
@@ -1757,7 +1757,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 		/* Input stream index set to 0 */
 		inputPos = 0;
 		inter_step = 1;
-		interLaced = 0; 
+		interLaced = 0;
 		transparent = 0;
 
 		/* read a GIF HEADER */
@@ -1939,7 +1939,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 				inputPos += 2; /* Delay time (skip) */
 				transIndex = pInputStream[inputPos++];
 				inputPos++; /* block end */
-				
+
 				if (backgroundIndex == transIndex && transparent == 1) {
 					backcolor888 = 0x1000000;
 					backcolor565 = pFrameData->ui_backcolor;
@@ -2010,8 +2010,8 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 				inputPos += 9;
 
 				if (pFrameData->imgCount == 0) {
-					image_left_pos_N = (buffer[0] | (buffer[1] << 8)); 
-					image_top_pos_N = (buffer[2] | (buffer[3] << 8));	
+					image_left_pos_N = (buffer[0] | (buffer[1] << 8));
+					image_top_pos_N = (buffer[2] | (buffer[3] << 8));
 
 					image_left_pos = image_left_pos_N;
 					image_top_pos = image_top_pos_N;
@@ -2148,12 +2148,12 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						pImage32 = (unsigned int *)pFrameData->pPrevImg;
 						for (i = 0; i < logi_wdt * logi_hgt; i++) {
 							*pImage32++ = 0x1000000;
-						}	
+						}
 					} else {
 						pImage32 = (unsigned int *)pFrameData->pPrevImg;
 						for (i = 0; i < logi_wdt * logi_hgt; i++) {
 							*pImage32++ = backcolor888;
-						}	
+						}
 					}
 					if (transparent == 1) {
 						/* Background Color */
@@ -2254,8 +2254,8 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 
 
 				/***************************************************************************
-				decoder(WDT, pInputStream, pBitmapElem->pBits);	//this does the grunt work		
-				int decoder(int linewidth, UCHAR* pInputStream, UCHAR *pBitmapElem->pBits)			
+				decoder(WDT, pInputStream, pBitmapElem->pBits);	//this does the grunt work
+				int decoder(int linewidth, UCHAR* pInputStream, UCHAR *pBitmapElem->pBits)
 				***************************************************************************/
 
 				size = pInputStream[inputPos++];
@@ -2277,7 +2277,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 				bufcnt = orgwdt_1;
 
 				/************************
-				init_exp(size);		
+				init_exp(size);
 				int init_exp(int size)
 				************************/
 				curr_size = size + 1;
@@ -2297,7 +2297,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 						__get_next_code_first_nbits_left_not_0(pInputStream)
 					__get_next_code_first_while(pInputStream)
 				} else {
-					if (nbits_left == 0) 
+					if (nbits_left == 0)
 						__get_next_code_second_nbits_left_0(pInputStream)
 					else
 						__get_next_code_second_nbits_left_not_0(pInputStream)
@@ -2322,13 +2322,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 								__get_next_code_first_nbits_left_not_0(pInputStream)
 							__get_next_code_first_while(pInputStream)
 						} else {
-							if (nbits_left == 0) 
+							if (nbits_left == 0)
 								__get_next_code_second_nbits_left_0(pInputStream)
 							else
 								__get_next_code_second_nbits_left_not_0(pInputStream)
 
 							__get_next_code_second_while(pInputStream)
-						}		
+						}
 					} while (c == clear);
 
 					if (c == ending) {
@@ -2845,13 +2845,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 								__get_next_code_first_nbits_left_not_0(pInputStream)
 							__get_next_code_first_while(pInputStream)
 						} else {
-							if (nbits_left == 0) 
+							if (nbits_left == 0)
 								__get_next_code_second_nbits_left_0(pInputStream)
 							else
 								__get_next_code_second_nbits_left_not_0(pInputStream)
 
 							__get_next_code_second_while(pInputStream)
-						}		
+						}
 
 							if (c == ending) {
 								break;
@@ -2871,13 +2871,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 											__get_next_code_first_nbits_left_not_0(pInputStream)
 										__get_next_code_first_while(pInputStream)
 									} else {
-										if (nbits_left == 0) 
+										if (nbits_left == 0)
 											__get_next_code_second_nbits_left_0(pInputStream)
 										else
 											__get_next_code_second_nbits_left_not_0(pInputStream)
 
 										__get_next_code_second_while(pInputStream)
-									}		
+									}
 								} while (c == clear);
 
 								if (c == ending) {
@@ -3012,7 +3012,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 											val1 = buf[i] & (numcolors-1);
 
 											if (val1 == transIndex) {
-												*pImage32++ = backGround[i+image_left_pos] << 2; 
+												*pImage32++ = backGround[i+image_left_pos] << 2;
 												backGround[i+image_left_pos] = 0x1000000;
 											} else {
 												*pImage32++ = pDacbox[val1] << 2;
@@ -3140,7 +3140,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 													backGround[i+image_left_pos] = 0x1000000;
 													out_x += decwdt;
 												}
-												for (i = image_left_pos+orgwdt; i < logi_wdt; i++) {									
+												for (i = image_left_pos+orgwdt; i < logi_wdt; i++) {
 												d1 = a_x - out_x;
 												d2 = b_x - out_x;
 												if (0 <= d1 && d1 < decwdt) {
@@ -3417,13 +3417,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 								__get_next_code_first_nbits_left_not_0(pInputStream)
 							__get_next_code_first_while(pInputStream)
 						} else {
-							if (nbits_left == 0) 
+							if (nbits_left == 0)
 								__get_next_code_second_nbits_left_0(pInputStream)
 							else
 								__get_next_code_second_nbits_left_not_0(pInputStream)
 
 							__get_next_code_second_while(pInputStream)
-						}		
+						}
 							if (c == ending) {
 								break;
 							}
@@ -3448,7 +3448,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 											__get_next_code_second_nbits_left_not_0(pInputStream)
 
 										__get_next_code_second_while(pInputStream)
-									}		
+									}
 								} while (c == clear);
 
 								if (c == ending) {
@@ -3730,7 +3730,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 													}
 													out_x += decwdt;
 												}
-												for (i = image_left_pos+orgwdt; i < logi_wdt; i++) {			
+												for (i = image_left_pos+orgwdt; i < logi_wdt; i++) {
 												d1 = a_x - out_x;
 												d2 = b_x - out_x;
 												if (0 <= d1 && d1 < decwdt) {
@@ -4008,13 +4008,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 								__get_next_code_first_nbits_left_not_0(pInputStream)
 							__get_next_code_first_while(pInputStream)
 						} else {
-							if (nbits_left == 0) 
+							if (nbits_left == 0)
 								__get_next_code_second_nbits_left_0(pInputStream)
 							else
 								__get_next_code_second_nbits_left_not_0(pInputStream)
 
 							__get_next_code_second_while(pInputStream)
-						}		
+						}
 							if (c == ending) {
 								break;
 							}
@@ -4033,13 +4033,13 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 											__get_next_code_first_nbits_left_not_0(pInputStream)
 										__get_next_code_first_while(pInputStream)
 									} else {
-										if (nbits_left == 0) 
+										if (nbits_left == 0)
 											__get_next_code_second_nbits_left_0(pInputStream)
 										else
 											__get_next_code_second_nbits_left_not_0(pInputStream)
 
 										__get_next_code_second_while(pInputStream)
-									}		
+									}
 								} while (c == clear);
 
 								if (c == ending) {
@@ -4194,7 +4194,6 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 					}
 					backGround += logi_wdt;
 				}
-				
 
 				if (bCenterAlign) {
 					margin_wdt1_2 = (expected_width - resized_width) >> 1;
@@ -4207,7 +4206,7 @@ int __FastImgGetNextFrameAGIF_UseBuffer(AGifFrameInfo *pFrameData, BOOL bCenterA
 
 				/* 565 Conversion */
 				pImage32 = (unsigned int *)(pDecBuf);
-	
+
 				for (i = 0, k = margin_hgt1_2; i < dechgt; i++) {
 					pImage16 = (unsigned short *)((unsigned char *)pOutBits + ((margin_wdt1_2 + (expected_width) * k) << 1));
 					for (j = 0; j < decwdt; j++) {
