@@ -47,6 +47,7 @@
 #define THUMB_BLOCK_SIZE 512
 #define THUMB_ROOT_UID "0"
 #define THUMB_COMM_SOCK_PATH "/var/run/media-server/media_ipc_thumbcomm.socket"
+#define THUMB_EMPTY_STR ""
 
 static __thread char **arr_path;
 static __thread uid_t *arr_uid;
@@ -556,42 +557,6 @@ gboolean _thumb_server_prepare_socket(int *sock_fd)
 	return TRUE;
 }
 
-static char* _media_thumb_get_default_path(uid_t uid)
-{
-	char *result_psswd = NULL;
-	struct group *grpinfo = NULL;
-	if (uid == getuid()) {
-		if (THUMB_DEFAULT_PATH != NULL)
-			result_psswd = strndup(THUMB_DEFAULT_PATH, strlen(THUMB_DEFAULT_PATH));
-		grpinfo = getgrnam("users");
-		if (grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			if (result_psswd)
-				free(result_psswd);
-			return NULL;
-		}
-	} else {
-		struct passwd *userinfo = getpwuid(uid);
-		if (userinfo == NULL) {
-			thumb_err("getpwuid(%d) returns NULL !", uid);
-			return NULL;
-		}
-		grpinfo = getgrnam("users");
-		if (grpinfo == NULL) {
-			thumb_err("getgrnam(users) returns NULL !");
-			return NULL;
-		}
-		// Compare git_t type and not group name
-		if (grpinfo->gr_gid != userinfo->pw_gid) {
-			thumb_err("UID [%d] does not belong to 'users' group!", uid);
-			return NULL;
-		}
-		asprintf(&result_psswd, "%s/share/media/.thumb/phone", userinfo->pw_dir);
-	}
-
-	return result_psswd;
-}
-
 int _thumbnail_get_data(const char *origin_path,
 						media_thumb_format format,
 						char *thumb_path,
@@ -784,13 +749,8 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 			if (strlen(thumb_path) == 0) {
 				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, uid);
 				if (err != MS_MEDIA_ERR_NONE) {
-					char *default_path = _media_thumb_get_default_path(uid);
-					if (default_path) {
-						thumb_err("_media_thumb_get_hash_name failed - %d", err);
-						strncpy(thumb_path, default_path, max_length);
-						free(default_path);
-						default_path = NULL;
-					}
+					thumb_err("_media_thumb_get_hash_name failed - %d", err);
+					strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
 					_media_thumb_db_disconnect();
 					return err;
 				}
@@ -805,13 +765,8 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	} else if (msg_type == THUMB_REQUEST_ALL_MEDIA) {
 		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, uid);
 		if (err != MS_MEDIA_ERR_NONE) {
-			char *default_path = _media_thumb_get_default_path(uid);
-			if (default_path) {
-				thumb_err("_media_thumb_get_hash_name failed - %d", err);
-				strncpy(thumb_path, default_path, max_length);
-				free(default_path);
-				default_path = NULL;
-			}
+			thumb_err("_media_thumb_get_hash_name failed - %d", err);
+			strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
 			_media_thumb_db_disconnect();
 			return err;
 		}
@@ -828,23 +783,12 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 
 	err = _thumbnail_get_data(origin_path, thumb_format, thumb_path, &data, &thumb_size, &thumb_w, &thumb_h, &origin_w, &origin_h, &alpha, &is_saved);
 	if (err != MS_MEDIA_ERR_NONE) {
-		char *default_path = _media_thumb_get_default_path(uid);
 		thumb_err("_thumbnail_get_data failed - %d", err);
 		SAFE_FREE(data);
+		strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
 
-		if (default_path) {
-			strncpy(thumb_path, default_path, max_length);
-			free(default_path);
-			default_path = NULL;
-		}
 		goto DB_UPDATE;
-//		_media_thumb_db_disconnect();
-//		return err;
 	}
-
-	//thumb_dbg("Size : %d, W:%d, H:%d", thumb_size, thumb_w, thumb_h);
-	//thumb_dbg("Origin W:%d, Origin H:%d\n", origin_w, origin_h);
-	//thumb_dbg("Thumb : %s", thumb_path);
 
 	res_msg->msg_type = THUMB_RESPONSE;
 	res_msg->thumb_size = thumb_size;
@@ -869,16 +813,11 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 	if (is_saved == FALSE && data != NULL) {
 		err = _media_thumb_save_to_file_with_evas(data, thumb_w, thumb_h, alpha, thumb_path);
 		if (err != MS_MEDIA_ERR_NONE) {
-			char *default_path = _media_thumb_get_default_path(uid);
 			thumb_err("save_to_file_with_evas failed - %d", err);
 			SAFE_FREE(data);
 
 			if (msg_type == THUMB_REQUEST_DB_INSERT || msg_type == THUMB_REQUEST_ALL_MEDIA) {
-				if (default_path) {
-					strncpy(thumb_path, default_path, max_length);
-					free(default_path);
-					default_path = NULL;
-				}
+				strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
 			}
 			_media_thumb_db_disconnect();
 			return err;
