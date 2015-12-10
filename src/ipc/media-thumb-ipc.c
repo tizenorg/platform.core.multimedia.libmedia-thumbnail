@@ -78,45 +78,62 @@ int _media_thumb_get_error()
 	}
 }
 
-int __media_thumb_pop_req_queue(const char *path, bool shutdown_channel)
+void __media_thumb_shutdown_channel(bool only_shutdown)
 {
-	int req_len = 0, i;
+	int len = -1;
+	thumbReq *req = (thumbReq *)g_queue_peek_head(g_request_queue);
+
+	len = g_queue_get_length(g_manage_queue);
+
+	if (req != NULL) {
+		if (!only_shutdown) {
+			if (len == 0 && req->isCanceled == true) {
+				thumb_dbg("The manage queue will be released");
+			} else {
+				thumb_dbg("There is remain item in the manage queue");
+				return;
+			}
+		}
+		GSource *source_id = g_main_context_find_source_by_id(g_main_context_get_thread_default(), req->source_id);
+		if (source_id != NULL) {
+			g_source_destroy(source_id);
+		} else {
+			thumb_err("G_SOURCE_ID is NULL");
+		}
+
+		g_io_channel_shutdown(req->channel, TRUE, NULL);
+		g_io_channel_unref(req->channel);
+		g_queue_pop_head(g_request_queue);
+
+		SAFE_FREE(req->path);
+		SAFE_FREE(req->userData);
+		SAFE_FREE(req);
+
+		if(g_manage_queue && len == 0) {
+			g_queue_free(g_manage_queue);
+			g_manage_queue = NULL;
+		}
+	}
+}
+
+int __media_thumb_pop_req_queue(const char *path)
+{
+	int req_len = 0;
 
 	req_len = g_queue_get_length(g_request_queue);
 
 	if (req_len <= 0) {
 //		thumb_dbg("There is no request in the queue");
 	} else {
+		__media_thumb_shutdown_channel(true);
+	}
 
-		for (i = 0; i < req_len; i++) {
-			thumbReq *req = NULL;
-			req = (thumbReq *)g_queue_peek_nth(g_request_queue, i);
-			if (req == NULL) continue;
+	/* Check manage queue */
+	if(g_manage_queue) {
+		req_len = g_queue_get_length(g_manage_queue);
 
-			if (strncmp(path, req->path, strlen(path)) == 0) {
-				if (shutdown_channel) {
-					GSource *source_id = g_main_context_find_source_by_id(g_main_context_get_thread_default(), req->source_id);
-					if (source_id != NULL) {
-						g_source_destroy(source_id);
-					} else {
-						thumb_err("G_SOURCE_ID is NULL");
-					}
-
-					g_io_channel_shutdown(req->channel, TRUE, NULL);
-					g_io_channel_unref(req->channel);
-				}
-				g_queue_pop_nth(g_request_queue, i);
-
-				SAFE_FREE(req->path);
-				SAFE_FREE(req->userData);
-				SAFE_FREE(req);
-
-				break;
-			}
-		}
-		if (i == req_len) {
-//			thumb_dbg("There's no %s in the queue", path);
-		}
+		if(req_len > 0)
+			_media_thumb_send_request();
 	}
 
 	return MS_MEDIA_ERR_NONE;
@@ -136,6 +153,8 @@ int __media_thumb_check_req_queue_for_cancel(const char *path)
 
 		if (req != NULL && strncmp(path, req->path, strlen(path)) == 0) {
 			req->isCanceled = true;
+			__media_thumb_shutdown_channel(false);
+
 			return MS_MEDIA_ERR_NONE;
 		}
 	}
@@ -170,6 +189,10 @@ int __media_thumb_pop_manage_queue(const char *path)
 		}
 		if (!flag) {
 			return __media_thumb_check_req_queue_for_cancel(path);
+		} else {
+			__media_thumb_shutdown_channel(false);
+
+			return MS_MEDIA_ERR_NONE;
 		}
 	}
 
@@ -612,7 +635,6 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 	thumbMsg recv_msg;
 	int header_size = 0;
 	int sock = 0;
-	int len = -1;
 	int err = MS_MEDIA_ERR_NONE;
 
 	memset((void *)&recv_msg, 0, sizeof(thumbMsg));
@@ -625,7 +647,7 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 	if ((err = _media_thumb_recv_msg(sock, header_size, &recv_msg)) < 0) {
 		thumb_err("_media_thumb_recv_msg failed ");
 		if (recv_msg.origin_path_size > 0) {
-			__media_thumb_pop_req_queue(recv_msg.org_path, TRUE);
+			__media_thumb_pop_req_queue(recv_msg.org_path);
 		} else {
 			thumb_err("origin path size is wrong.");
 		}
@@ -633,8 +655,6 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 		return FALSE;
 	}
 
-	g_io_channel_shutdown(src, TRUE, NULL);
-	g_io_channel_unref(src);
 	//thumb_dbg("Completed..%s", recv_msg.org_path);
 
 	if (recv_msg.status == THUMB_FAIL) {
@@ -650,23 +670,9 @@ gboolean _media_thumb_write_socket(GIOChannel *src, GIOCondition condition, gpoi
 		}
 	}
 
-	__media_thumb_pop_req_queue(recv_msg.org_path, FALSE);
+	__media_thumb_pop_req_queue(recv_msg.org_path);
 
 	thumb_dbg("Done");
-
-	SAFE_FREE(recv_msg.thumb_data);
-
-	/* Check manage queue */
-	if (g_manage_queue) {
-		len = g_queue_get_length(g_manage_queue);
-
-		if (len > 0) {
-			_media_thumb_send_request();
-		} else {
-			g_queue_free(g_manage_queue);
-			g_manage_queue = NULL;
-		}
-	}
 
 	return FALSE;
 }
