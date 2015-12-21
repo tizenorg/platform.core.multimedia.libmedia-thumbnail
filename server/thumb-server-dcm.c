@@ -425,7 +425,7 @@ static int __thumb_server_dcm_create_socket(int *socket_fd, thumb_server_dcm_por
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sun_family = AF_UNIX;
 	unlink(DCM_IPC_PATH[port]);
-	strcpy(serv_addr.sun_path, DCM_IPC_PATH[port]);
+	strncpy(serv_addr.sun_path, DCM_IPC_PATH[port], strlen(DCM_IPC_PATH[port]));
 
 	/* Bind socket to local address */
 	for (i = 0; i < 20; i++) {
@@ -556,7 +556,7 @@ int _thumb_server_dcm_send_msg(thumb_server_dcm_ipc_msg_type_e msg_type, uid_t u
 	/* Set dcm thread socket address */
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sun_family = AF_UNIX;
-	strcpy(serv_addr.sun_path, DCM_IPC_PATH[port]);
+	strncpy(serv_addr.sun_path, DCM_IPC_PATH[port], strlen(DCM_IPC_PATH[port]));
 
 	/* Connect to the socket */
 	if (connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
