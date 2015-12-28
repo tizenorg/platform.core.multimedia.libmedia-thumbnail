@@ -56,21 +56,28 @@ cp %{SOURCE1001} %{SOURCE1002} %{SOURCE1003} .
 make %{?_smp_mflags}
 
 %install
+rm -rf %{buildroot}
 %make_install
 
+#License
+mkdir -p %{buildroot}/%{_datadir}/license
+cp -rf %{_builddir}/%{name}-%{version}/LICENSE.APLv2.0 %{buildroot}/%{_datadir}/license/%{name}
+cp -rf %{_builddir}/%{name}-%{version}/LICENSE.APLv2.0 %{buildroot}/%{_datadir}/license/media-thumbnail-server
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 
 %files
 %manifest %{name}.manifest
-%license LICENSE
 %defattr(-,root,root,-)
 %{_libdir}/libmedia-thumbnail.so
 %{_libdir}/libmedia-thumbnail.so.*
 %{_libdir}/libmedia-hash.so
 %{_libdir}/libmedia-hash.so.1
 %{_libdir}/libmedia-hash.so.1.0.0
+#License
+%{_datadir}/license/%{name}
+%{_datadir}/license/media-thumbnail-server
 
 %files devel
 %manifest %{name}-devel.manifest
