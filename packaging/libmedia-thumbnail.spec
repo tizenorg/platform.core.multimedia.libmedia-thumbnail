@@ -32,7 +32,7 @@ Description: Media thumbnail service library for multimedia applications
 %package devel
 Summary:        Media thumbnail service library for multimedia applications (development)
 Requires:       %{name}  = %{version}-%{release}
-Group:          Development/Libraries
+Group:          Multimedia/Development
 
 %description devel
 Description: Media thumbnail service library for multimedia applications (development)
@@ -40,7 +40,7 @@ Description: Media thumbnail service library for multimedia applications (develo
 %package -n media-thumbnail-server
 Summary:        Thumbnail generator
 Requires:       %{name}  = %{version}-%{release}
-Group:          Development/Libraries
+Group:          Multimedia/Service
 
 %description -n media-thumbnail-server
 Description: Media Thumbnail Server
