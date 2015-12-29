@@ -2,7 +2,6 @@ Copyright (c) Samsung Electronics Co., Ltd. All rights reserved.
 Except as noted, this software is licensed under Apache License, Version 2.
 Please, see the LICENSE file for Apache License terms and conditions.
 
-Some parts of libmedia-thumbnail are licensed under public domian.
+Some parts of libmedia-thumbnail are licensed under the Public domain
  - md5/md5.c
  - md5/md5.h
-

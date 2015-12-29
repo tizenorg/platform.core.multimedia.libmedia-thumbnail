@@ -3,7 +3,7 @@ Summary:    Media thumbnail service library for multimedia applications
 Version: 0.1.87
 Release:    0
 Group:      Multimedia/Libraries
-License:    Apache-2.0
+License:    Apache-2.0 and public domain
 Source0:    %{name}-%{version}.tar.gz
 Source1001: %{name}.manifest
 Source1002: %{name}-devel.manifest
