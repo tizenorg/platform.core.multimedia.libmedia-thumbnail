@@ -151,8 +151,8 @@ AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width, un
 
 	DrmGetFileAttributes(szFileName, &fileAttrib);
 
-	if (fileAttrib.fileSize == 0) {
-		thumb_err("Zero File Size");
+	if (fileAttrib.fileSize <= 0) {
+		thumb_err("Zero or below Zero File Size");
 		DrmCloseFile(hFile);
 		return NULL;
 	}
@@ -161,7 +161,8 @@ AGifFrameInfo *ImgCreateAGIFFrame(const char *szFileName, unsigned int width, un
 	/* A size of allocated memory - w * h *2 means RGB565 and 4096 means the max of header length */
 //	mem_alloc_size = width * height * 2 + MAX_GIF_HEADER_SIZE;
 	mem_alloc_size = cFileSize;
-	if ((pEncodedData = (unsigned char *)malloc(mem_alloc_size)) == NULL) {
+	pEncodedData = (unsigned char *)malloc(mem_alloc_size);
+	if (pEncodedData == NULL) {
 		thumb_err("Memory Allocation to pEncodedData failed");
 		DrmCloseFile(hFile);
 		return NULL;

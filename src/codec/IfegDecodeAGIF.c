@@ -111,8 +111,6 @@ AGifFrameInfo *FastImgCreateAGIFFrameData(unsigned int width, unsigned int heigh
 
 		if (transparent == 1 && backcolor_index == transIndex) {
 			image_backcolor = ui_backcolor;
-		} else if (transparent == 1 && backcolor_index != transIndex) {
-			image_backcolor = backcolor_parsing;
 		} else {
 			image_backcolor = backcolor_parsing;
 		}
