@@ -770,9 +770,20 @@ int _media_thumb_send_request()
 		thumb_stderror("connect");
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
+
 	req_manager = (thumbReq *)g_queue_pop_head(g_manage_queue);
+
+	if (req_manager == NULL) {
+		thumb_err("queue pop fail");
+		g_io_channel_shutdown(channel, TRUE, NULL);
+		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
+	}
+
 	GSource *source = NULL;
 	source = g_io_create_watch(channel, G_IO_IN);
 	g_source_set_callback(source, (GSourceFunc)_media_thumb_write_socket, req_manager->userData, NULL);
@@ -873,10 +884,20 @@ int _media_thumb_raw_data_send_request()
 		thumb_stderror("connect error");
 		g_io_channel_shutdown(channel, TRUE, NULL);
 		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
 		return MS_MEDIA_ERR_SOCKET_CONN;
 	}
 
 	req_manager = (thumbRawReq *)g_queue_pop_head(g_manage_raw_queue);
+
+	if (req_manager == NULL) {
+		thumb_err("queue pop fail");
+		g_io_channel_shutdown(channel, TRUE, NULL);
+		g_io_channel_unref(channel);
+		ms_ipc_delete_client_socket(&sock_info);
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
+	}
+
 	GSource *source = NULL;
 	source = g_io_create_watch(channel, G_IO_IN);
 	g_source_set_callback(source, (GSourceFunc)_media_thumb_raw_data_write_socket, req_manager->userData, NULL);
