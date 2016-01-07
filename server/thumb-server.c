@@ -27,10 +27,6 @@
 #include <pthread.h>
 #include <vconf.h>
 
-#ifdef _SUPPORT_DCM
-#include "thumb-server-dcm.h"
-#endif /* _SUPPORT_DCM */
-
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
@@ -50,44 +46,6 @@ static void _media_thumb_signal_handler(void *user_data)
 		exit(1);
 
 	return;
-}
-#endif
-
-#ifdef _SUPPORT_DCM
-void _thumb_server_signal_handler(int n)
-{
-	int stat, pid, dcm_pid;
-
-	dcm_pid = thumb_server_dcm_get_server_pid();
-
-	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0) {
-		/* check pid of child process of thumbnail thread */
-		if (pid == dcm_pid) {
-			thumb_err("[%d] Dcm-svc server is stopped by media-thumb-server", pid);
-			thumb_server_dcm_reset_server_status();
-		} else {
-			thumb_err("[%d] is stopped", pid);
-		}
-	}
-
-	return;
-}
-
-static void _thumb_server_add_signal_handler(void)
-{
-	struct sigaction sigset;
-
-	/* Add signal handler */
-	sigemptyset(&sigset.sa_mask);
-	sigaddset(&sigset.sa_mask, SIGCHLD);
-	sigset.sa_flags = SA_RESTART |SA_NODEFER;
-	sigset.sa_handler = _thumb_server_signal_handler;
-
-	if (sigaction(SIGCHLD, &sigset, NULL) < 0) {
-		thumb_err("sigaction failed [%s]", strerror(errno));
-	}
-
-	signal(SIGPIPE, SIG_IGN);
 }
 #endif
 
@@ -121,10 +79,6 @@ int main(void)
 		return -1;
 	}
 
-#ifdef _SUPPORT_DCM
-	_thumb_server_add_signal_handler();
-#endif
-
 	g_thumb_server_mainloop = g_main_loop_new(context, FALSE);
 	context = g_main_loop_get_context(g_thumb_server_mainloop);
 
@@ -140,13 +94,6 @@ int main(void)
 	source_evas_init = g_idle_source_new();
 	g_source_set_callback(source_evas_init, _thumb_daemon_start_jobs, NULL, NULL);
 	g_source_attach(source_evas_init, context);
-
-#ifdef _SUPPORT_DCM
-	thumb_dbg("[GD] _thumb_server_dcm_thread created");
-	/* Create dcm thread */
-	GThread *dcm_thread = NULL;
-	dcm_thread = g_thread_new("dcm_thread", (GThreadFunc)_thumb_server_dcm_thread, NULL);
-#endif /* _SUPPORT_DCM */
 
 /*	Would be used when glib 2.32 is installed
 	GSource *sig_handler_src = NULL;
@@ -165,10 +112,6 @@ int main(void)
 	g_io_channel_unref(channel);
 	_thumb_daemon_finish_jobs();
 
-#ifdef _SUPPORT_DCM
-	/* Finish dcm thread */
-	g_thread_join(dcm_thread);
-#endif /* _SUPPORT_DCM */
 	g_main_loop_unref(g_thumb_server_mainloop);
 	ms_cynara_finish();
 
