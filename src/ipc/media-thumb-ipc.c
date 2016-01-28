@@ -109,7 +109,7 @@ void __media_thumb_shutdown_channel(bool only_shutdown)
 		SAFE_FREE(req->userData);
 		SAFE_FREE(req);
 
-		if(g_manage_queue && len == 0) {
+		if (g_manage_queue && len == 0) {
 			g_queue_free(g_manage_queue);
 			g_manage_queue = NULL;
 		}
@@ -129,10 +129,10 @@ int __media_thumb_pop_req_queue(const char *path)
 	}
 
 	/* Check manage queue */
-	if(g_manage_queue) {
+	if (g_manage_queue) {
 		req_len = g_queue_get_length(g_manage_queue);
 
-		if(req_len > 0)
+		if (req_len > 0)
 			_media_thumb_send_request();
 	}
 
