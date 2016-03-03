@@ -64,7 +64,7 @@ int _thumbnail_get_raw_data(const char *origin_path,
 						unsigned char **data,
 						int *size);
 
-int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid);
+int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg);
 
 int _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg);
 

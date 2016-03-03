@@ -45,6 +45,7 @@ typedef struct {
 	int alpha;
 	unsigned char *data;
 	bool is_saved;
+	bool is_raw;
 } media_thumb_info;
 
 enum Exif_Orientation {
@@ -74,8 +75,7 @@ int _media_thumb_image(const char *origin_path,
 					int thumb_width,
 					int thumb_height,
 					media_thumb_format format,
-					media_thumb_info *thumb_info,
-					bool is_req_raw);
+					media_thumb_info *thumb_info);
 
 int _media_thumb_video(const char *origin_path,
 					int thumb_width,

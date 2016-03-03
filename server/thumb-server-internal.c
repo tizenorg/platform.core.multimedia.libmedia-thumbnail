@@ -165,11 +165,11 @@ static void __thumb_daemon_stop_job()
 	return;
 }
 
-int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
+int _thumb_daemon_process_job(thumbMsg *req_msg, thumbMsg *res_msg)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
-	err = _media_thumb_process(req_msg, res_msg, uid);
+	err = _media_thumb_process(req_msg, res_msg);
 	if (err != MS_MEDIA_ERR_NONE) {
 		if (req_msg->msg_type == THUMB_REQUEST_SAVE_FILE) {
 			thumb_err("_media_thumb_process is failed: %d", err);
@@ -196,13 +196,8 @@ static int __thumb_daemon_process_job_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 
 	err = _media_thumb_process_raw(req_msg, res_msg);
 	if (err != MS_MEDIA_ERR_NONE) {
-		if (err != MS_MEDIA_ERR_FILE_NOT_EXIST) {
-			thumb_warn("_media_thumb_process is failed: %d, So use default thumb", err);
-			res_msg->status = THUMB_SUCCESS;
-		} else {
-			thumb_warn("_media_thumb_process is failed: %d, (file not exist) ", err);
-			res_msg->status = THUMB_FAIL;
-		}
+		thumb_warn("_media_thumb_process is failed: %d", err);
+		res_msg->status = THUMB_FAIL;
 	} else {
 		res_msg->status = THUMB_SUCCESS;
 	}
@@ -291,10 +286,11 @@ int _thumb_daemon_process_queue_jobs(gpointer data)
 		memset(&res_msg, 0x00, sizeof(thumbMsg));
 
 		recv_msg.msg_type = THUMB_REQUEST_DB_INSERT;
+		recv_msg.uid = uid;
 		strncpy(recv_msg.org_path, path, sizeof(recv_msg.org_path));
 		recv_msg.org_path[sizeof(recv_msg.org_path) - 1] = '\0';
 
-		err = _thumb_daemon_process_job(&recv_msg, &res_msg, uid);
+		err = _thumb_daemon_process_job(&recv_msg, &res_msg);
 		if (err == MS_MEDIA_ERR_FILE_NOT_EXIST) {
 			thumb_err("Thumbnail processing is failed : %d", err);
 		} else {
@@ -403,7 +399,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	} else if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("received KILL msg from thumbnail agent.");
 	} else {
-		_thumb_daemon_process_job(&recv_msg, &res_msg, recv_msg.uid);
+		_thumb_daemon_process_job(&recv_msg, &res_msg);
 	}
 
 	if (res_msg.msg_type == 0)
@@ -579,13 +575,15 @@ int _thumbnail_get_data(const char *origin_path,
 	file_type = _media_thumb_get_file_type(origin_path);
 	thumb_width = *width;
 	thumb_height = *height;
-	if (thumb_width == 0) {
+	if (thumb_width == 0 || thumb_height == 0) {
 		thumb_width = THUMB_DEFAULT_WIDTH;
 		thumb_height = THUMB_DEFAULT_HEIGHT;
 	}
 
+	thumb_info.is_raw = FALSE;
+
 	if (file_type == THUMB_IMAGE_TYPE) {
-		err = _media_thumb_image(origin_path, thumb_path, thumb_width, thumb_height, format, &thumb_info, FALSE);
+		err = _media_thumb_image(origin_path, thumb_path, thumb_width, thumb_height, format, &thumb_info);
 		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("_media_thumb_image failed");
 			return err;
@@ -610,8 +608,7 @@ int _thumbnail_get_data(const char *origin_path,
 	if (alpha) *alpha = thumb_info.alpha;
 	if (is_saved) *is_saved = thumb_info.is_saved;
 
-	thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x",
-				*size, *width, *height, *data);
+	thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x", *size, *width, *height, *data);
 
 	return MS_MEDIA_ERR_NONE;
 }
@@ -644,16 +641,15 @@ int _thumbnail_get_raw_data(const char *origin_path,
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-//	thumb_dbg_slog("Origin path : %s", origin_path);
-
 	int file_type = THUMB_NONE_TYPE;
 	media_thumb_info thumb_info = {0,};
 	file_type = _media_thumb_get_file_type(origin_path);
 	thumb_width = *width;
 	thumb_height = *height;
+	thumb_info.is_raw = TRUE;
 
 	if (file_type == THUMB_IMAGE_TYPE) {
-		err = _media_thumb_image(origin_path, thumb_path, thumb_width, thumb_height, format, &thumb_info, TRUE);
+		err = _media_thumb_image(origin_path, thumb_path, thumb_width, thumb_height, format, &thumb_info);
 		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("_media_thumb_image failed");
 			return err;
@@ -674,12 +670,10 @@ int _thumbnail_get_raw_data(const char *origin_path,
 	*width = thumb_info.width;
 	*height = thumb_info.height;
 
-	//thumb_dbg("Thumb data is generated successfully (Size:%d, W:%d, H:%d) 0x%x", *size, *width, *height, *data);
-
 	return MS_MEDIA_ERR_NONE;
 }
 
-int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
+int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg)
 {
 	int err = MS_MEDIA_ERR_NONE;
 	unsigned char *data = NULL;
@@ -714,7 +708,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		return MS_MEDIA_ERR_FILE_NOT_EXIST;
 	}
 
-	err = _media_thumb_db_connect(uid);
+	err = _media_thumb_db_connect(req_msg->uid);
 	if (err != MS_MEDIA_ERR_NONE) {
 		thumb_err("_media_thumb_mb_svc_connect failed: %d", err);
 		return err;
@@ -729,7 +723,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 			return MS_MEDIA_ERR_NONE;
 		} else {
 			if (strlen(thumb_path) == 0) {
-				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, uid);
+				err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, req_msg->uid);
 				if (err != MS_MEDIA_ERR_NONE) {
 					thumb_err("_media_thumb_get_hash_name failed - %d", err);
 					strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
@@ -745,7 +739,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 		strncpy(thumb_path, req_msg->dst_path, max_length);
 
 	} else if (msg_type == THUMB_REQUEST_ALL_MEDIA) {
-		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, uid);
+		err = _media_thumb_get_hash_name(origin_path, thumb_path, max_length, req_msg->uid);
 		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("_media_thumb_get_hash_name failed - %d", err);
 			strncpy(thumb_path, THUMB_EMPTY_STR, max_length);
@@ -829,7 +823,7 @@ int _media_thumb_process(thumbMsg *req_msg, thumbMsg *res_msg, uid_t uid)
 DB_UPDATE:
 	/* DB update if needed */
 	if (need_update_db == 1) {
-		err = _media_thumb_update_db(origin_path, thumb_path, res_msg->origin_width, res_msg->origin_height, uid);
+		err = _media_thumb_update_db(origin_path, thumb_path, res_msg->origin_width, res_msg->origin_height, req_msg->uid);
 		if (err != MS_MEDIA_ERR_NONE) {
 			thumb_err("_media_thumb_update_db failed : %d", err);
 		}
@@ -860,13 +854,6 @@ _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 	thumb_w = req_msg->thumb_width;
 	thumb_h = req_msg->thumb_height;
 
-	//thumb_dbg("origin_path : %s, thumb_w : %d, thumb_h : %d ", origin_path, thumb_w, thumb_h);
-
-	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
-		thumb_err("origin_path does not exist in file system.");
-		return MS_MEDIA_ERR_FILE_NOT_EXIST;
-	}
-
 	err = _thumbnail_get_raw_data(origin_path, thumb_format, &thumb_w, &thumb_h, &data, &thumb_size);
 
 	if (err != MS_MEDIA_ERR_NONE) {
@@ -881,7 +868,6 @@ _media_thumb_process_raw(thumbMsg *req_msg, thumbMsg *res_msg)
 	res_msg->thumb_data = malloc(thumb_size * sizeof(unsigned char));
 	memcpy(res_msg->thumb_data, data, thumb_size);
 
-	//thumb_dbg("Size : %d, W:%d, H:%d", thumb_size, thumb_w, thumb_h);
 	SAFE_FREE(data);
 
 	return MS_MEDIA_ERR_NONE;
