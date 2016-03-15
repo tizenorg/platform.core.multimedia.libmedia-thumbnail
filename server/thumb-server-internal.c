@@ -42,7 +42,7 @@
 #define THUMB_DEFAULT_HEIGHT 240
 #define THUMB_BLOCK_SIZE 512
 #define THUMB_ROOT_UID "0"
-#define THUMB_COMM_SOCK_PATH "/var/run/media-server/media_ipc_thumbcomm.socket"
+#define THUMB_COMM_SOCK_PATH tzplatform_mkpath(TZ_SYS_RUN, "media-server/media_ipc_thumbcomm.socket")
 #define THUMB_EMPTY_STR ""
 
 static __thread char **arr_path;
