@@ -1252,6 +1252,7 @@ int _media_thumb_video(const char *origin_path,
 
 static char* _media_thumb_mmc_get_path(uid_t uid)
 {
+	int ret = 0;
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
 	if (uid == getuid()) {
@@ -1280,7 +1281,11 @@ static char* _media_thumb_mmc_get_path(uid_t uid)
 			thumb_err("UID [%d] does not belong to 'users' group!", uid);
 			return NULL;
 		}
-		asprintf(&result_psswd, "%s/share/media/.thumb/mmc", userinfo->pw_dir);
+		ret = asprintf(&result_psswd, "%s/share/media/.thumb/mmc", userinfo->pw_dir);
+		if (ret == -1) {
+			thumb_err("asprintf failed");
+			return NULL;
+		}
 	}
 
 	return result_psswd;
@@ -1288,6 +1293,7 @@ static char* _media_thumb_mmc_get_path(uid_t uid)
 
 static char* _media_thumb_phone_get_path(uid_t uid)
 {
+	int ret = 0;
 	char *result_psswd = NULL;
 	struct group *grpinfo = NULL;
 	if (uid == getuid()) {
@@ -1316,7 +1322,11 @@ static char* _media_thumb_phone_get_path(uid_t uid)
 			thumb_err("UID [%d] does not belong to 'users' group!", uid);
 			return NULL;
 		}
-		asprintf(&result_psswd, "%s/share/media/.thumb/phone", userinfo->pw_dir);
+		ret = asprintf(&result_psswd, "%s/share/media/.thumb/phone", userinfo->pw_dir);
+		if (ret == -1) {
+			thumb_err("asprintf failed");
+			return NULL;
+		}
 	}
 
 	return result_psswd;
