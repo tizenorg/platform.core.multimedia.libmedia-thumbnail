@@ -324,6 +324,28 @@ int __media_thumb_check_req_queue(const char *path)
 		}
 	}
 
+	if (g_manage_queue != NULL) {
+		req_len = g_queue_get_length(g_manage_queue);
+
+		if (req_len <= 0) {
+//		thumb_dbg("There is no request in the queue");
+		} else {
+			for (i = 0; i < req_len; i++) {
+				thumbReq *req = NULL;
+				req = (thumbReq *)g_queue_peek_nth(g_manage_queue, i);
+				if (req == NULL) continue;
+
+				if (strncmp(path, req->path, strlen(path)) == 0) {
+					//thumb_dbg("Same Request - %s", path);
+					return MS_MEDIA_ERR_INVALID_PARAMETER;
+
+					break;
+				}
+			}
+		}
+	}
+
+
 	return MS_MEDIA_ERR_NONE;
 }
 
