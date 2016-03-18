@@ -46,7 +46,7 @@ void byteReverse(unsigned char *buf, unsigned longs)
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void MD5Init(MD5_CTX *ctx)
+void media_thumb_MD5Init(MD5_CTX *ctx)
 {
 	ctx->buf[0] = 0x67452301;
 	ctx->buf[1] = 0xefcdab89;
@@ -61,7 +61,7 @@ void MD5Init(MD5_CTX *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
+void media_thumb_MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
 {
 	uint32_t t;
 
@@ -111,7 +111,7 @@ void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
  * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void MD5Final(unsigned char digest[16], MD5_CTX *ctx)
+void media_thumb_MD5Final(unsigned char digest[16], MD5_CTX *ctx)
 {
 	unsigned count;
 	unsigned char *p;
