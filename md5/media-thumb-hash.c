@@ -93,9 +93,9 @@ char *_media_thumb_generate_hash_name(const char *file)
 
 	memset(&ctx, 0x00, sizeof(MD5_CTX));
 
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char const *)uri, (unsigned)strlen(uri));
-	MD5Final(hash, &ctx);
+	media_thumb_MD5Init(&ctx);
+	media_thumb_MD5Update(&ctx, (unsigned char const *)uri, (unsigned)strlen(uri));
+	media_thumb_MD5Final(hash, &ctx);
 
 	for (n = 0; n < MD5_HASHBYTES; n++) {
 		md5out[2 * n] = hex[hash[n] >> 4];
