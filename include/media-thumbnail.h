@@ -37,7 +37,7 @@ typedef int (*ThumbFunc) (int error_code, char* path, void* data);
 
 typedef void (*ThumbRawFunc) (int error_code, int request_id, const char* org_path, int thumb_width, int thumb_height, unsigned char* thumb_data, int thumb_size, void* data);
 
-int thumbnail_request_from_db_async(const char *origin_path, ThumbFunc func, void *user_data, uid_t uid);
+int thumbnail_request_from_db_async(unsigned int request_id, const char *origin_path, ThumbFunc func, void *user_data, uid_t uid);
 
 int thumbnail_request_extract_raw_data_async(int request_id, const char *origin_path, int width, int height, ThumbRawFunc func, void *user_data, uid_t uid);
 
@@ -45,7 +45,7 @@ int thumbnail_request_extract_all_thumbs(uid_t uid);
 
 int thumbnail_request_from_db_with_size(const char *origin_path, char *thumb_path, int max_length, int *origin_width, int *origin_height, uid_t uid);
 
-int thumbnail_request_cancel_media(const char *origin_path);
+int thumbnail_request_cancel_media(unsigned int request_id, const char *origin_path);
 
 int thumbnail_request_cancel_raw_data(int request_id);
 

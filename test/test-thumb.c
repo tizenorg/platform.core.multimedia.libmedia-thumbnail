@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
 {
 	int mode;
 	int err = -1;
+	unsigned int req_id = 0;
 	const char *origin_path = NULL;
 
 	if ((argc != 3) && (argc != 4)) {
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 	} else if (mode == 6) {
 		printf("Test thumbnail_request_cancel_media\n");
 
-		err = thumbnail_request_cancel_media(origin_path);
+		err = thumbnail_request_cancel_media(req_id, origin_path);
 		if (err < 0) {
 			printf("thumbnail_request_cancel_media failed : %d\n", err);
 			return -1;

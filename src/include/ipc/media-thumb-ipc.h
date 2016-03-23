@@ -73,6 +73,7 @@ int _media_thumb_request(int msg_type,
 					uid_t uid);
 
 int _media_thumb_request_async(int msg_type,
+					unsigned int request_id,
 					const char *origin_path,
 					thumbUserData *userData,
 					uid_t uid);
