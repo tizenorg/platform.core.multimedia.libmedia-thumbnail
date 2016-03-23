@@ -43,6 +43,7 @@ static GQueue *g_manage_raw_queue = NULL;
 typedef struct {
 	GIOChannel *channel;
 	int msg_type;
+	unsigned int request_id;
 	bool isCanceled;
 	int source_id;
 	uid_t uid;
@@ -139,7 +140,7 @@ int __media_thumb_pop_req_queue(const char *path)
 	return MS_MEDIA_ERR_NONE;
 }
 
-int __media_thumb_check_req_queue_for_cancel(const char *path)
+int __media_thumb_check_req_queue_for_cancel(unsigned int request_id, const char *path)
 {
 	int req_len = 0;
 
@@ -151,7 +152,7 @@ int __media_thumb_check_req_queue_for_cancel(const char *path)
 		thumbReq *req = NULL;
 		req = (thumbReq *)g_queue_peek_head(g_request_queue);
 
-		if (req != NULL && strncmp(path, req->path, strlen(path)) == 0) {
+		if (req != NULL && strncmp(path, req->path, strlen(path)) == 0 && request_id == req->request_id) {
 			req->isCanceled = true;
 			__media_thumb_shutdown_channel(false);
 
@@ -162,7 +163,7 @@ int __media_thumb_check_req_queue_for_cancel(const char *path)
 	return MS_MEDIA_ERR_INTERNAL;
 }
 
-int __media_thumb_pop_manage_queue(const char *path)
+int __media_thumb_pop_manage_queue(unsigned int request_id, const char *path)
 {
 	int req_len = 0, i;
 	bool flag = false;
@@ -177,7 +178,7 @@ int __media_thumb_pop_manage_queue(const char *path)
 			req = (thumbReq *)g_queue_peek_nth(g_manage_queue, i);
 			if (req == NULL) continue;
 
-			if (strncmp(path, req->path, strlen(path)) == 0) {
+			if (strncmp(path, req->path, strlen(path)) == 0 && request_id == req->request_id) {
 				g_queue_pop_nth(g_manage_queue, i);
 
 				SAFE_FREE(req->path);
@@ -188,7 +189,7 @@ int __media_thumb_pop_manage_queue(const char *path)
 			}
 		}
 		if (!flag) {
-			return __media_thumb_check_req_queue_for_cancel(path);
+			return __media_thumb_check_req_queue_for_cancel(request_id, path);
 		} else {
 			__media_thumb_shutdown_channel(false);
 
@@ -296,7 +297,7 @@ int __media_thumb_pop_raw_data_manage_queue(int request_id)
 
 	return MS_MEDIA_ERR_NONE;
 }
-
+#if 0
 int __media_thumb_check_req_queue(const char *path)
 {
 	int req_len = 0, i;
@@ -348,7 +349,7 @@ int __media_thumb_check_req_queue(const char *path)
 
 	return MS_MEDIA_ERR_NONE;
 }
-
+#endif
 bool __media_thumb_check_cancel(void)
 {
 	thumbReq *req = NULL;
@@ -997,7 +998,7 @@ int _media_thumb_raw_data_send_request()
 	return MS_MEDIA_ERR_NONE;
 }
 
-int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserData *userData, uid_t uid)
+int _media_thumb_request_async(int msg_type, unsigned int request_id, const char *origin_path, thumbUserData *userData, uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
 
@@ -1018,6 +1019,7 @@ int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserD
 		thumb_req->path = strdup(origin_path);
 		thumb_req->userData = userData;
 		thumb_req->isCanceled = false;
+		thumb_req->request_id = request_id;
 		thumb_req->uid = uid;
 
 		g_queue_push_tail(g_manage_queue, (gpointer)thumb_req);
@@ -1028,11 +1030,12 @@ int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserD
 	} else {
 		if (msg_type != THUMB_REQUEST_CANCEL_MEDIA) {
 			/* Enqueue */
+#if 0
 			if ((msg_type == THUMB_REQUEST_DB_INSERT) && (__media_thumb_check_req_queue(origin_path) < 0)) {
 				thumb_err("duplicated request");
 				return MS_MEDIA_ERR_THUMB_DUPLICATED_REQUEST;
 			}
-
+#endif
 			thumbReq *thumb_req = NULL;
 			THUMB_MALLOC(thumb_req, sizeof(thumbReq));
 			if (thumb_req == NULL) {
@@ -1044,12 +1047,13 @@ int _media_thumb_request_async(int msg_type, const char *origin_path, thumbUserD
 			thumb_req->path = strdup(origin_path);
 			thumb_req->userData = userData;
 			thumb_req->isCanceled = false;
+			thumb_req->request_id = request_id;
 			thumb_req->uid = uid;
 
 			g_queue_push_tail(g_manage_queue, (gpointer)thumb_req);
 		} else {
 			/* Dequeue */
-			err = __media_thumb_pop_manage_queue(origin_path);
+			err = __media_thumb_pop_manage_queue(request_id, origin_path);
 		}
 	}
 

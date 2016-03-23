@@ -635,10 +635,9 @@ int _thumbnail_get_raw_data(const char *origin_path,
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	if (!g_file_test
-		(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
-			thumb_err("Original path (%s) does not exist", origin_path);
-			return MS_MEDIA_ERR_INVALID_PARAMETER;
+	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
+		thumb_err("Original path (%s) does not exist", origin_path);
+		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
 	int file_type = THUMB_NONE_TYPE;
