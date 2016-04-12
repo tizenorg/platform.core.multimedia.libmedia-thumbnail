@@ -37,6 +37,10 @@ extern "C" {
 #define		TIFF_IMAGE_WIDTH	0x100
 #define		TIFF_IMAGE_HEIGHT	0x101
 
+#ifndef EXPORT_API
+#define EXPORT_API
+#endif // EXPORT_API
+
 typedef enum
 {
 	IMG_CODEC_UNKNOWN_TYPE = -2,
@@ -54,12 +58,11 @@ typedef enum
 } ImgCodecType;
 
 //ImgCodecType ImgGetInfoFile(const char*filePath, ImgImageInfo *imgInfo);
-int ImgGetImageInfo(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
-int ImgGetImageInfoForThumb(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
+EXPORT_API int ImgGetImageInfo(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
+EXPORT_API int ImgGetImageInfoForThumb(const char *filePath, ImgCodecType *type, unsigned int *width, unsigned int *height);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif
-
