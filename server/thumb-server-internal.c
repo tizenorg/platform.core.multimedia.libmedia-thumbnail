@@ -41,8 +41,8 @@
 #define THUMB_DEFAULT_WIDTH 320
 #define THUMB_DEFAULT_HEIGHT 240
 #define THUMB_BLOCK_SIZE 512
-#define THUMB_ROOT_UID "0"
-#define THUMB_COMM_SOCK_PATH tzplatform_mkpath(TZ_SYS_RUN, "media-server/media_ipc_thumbcomm.socket")
+#define THUMB_ROOT_UID "451"
+#define THUMB_COMM_SOCK_PATH "/tmp/media-server/media_ipc_thumbcomm.socket"
 #define THUMB_EMPTY_STR ""
 
 static __thread char **arr_path;
@@ -370,7 +370,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 	}
 
 	if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER && strncmp(credentials.uid, THUMB_ROOT_UID, strlen(THUMB_ROOT_UID)) != 0) {
-		thumb_err("Only root can send THUMB_REQUEST_KILL_SERVER request");
+		thumb_err("Only media-server can send THUMB_REQUEST_KILL_SERVER request");
 		_thumb_server_send_deny_message(client_sock);
 		close(client_sock);
 		return TRUE;

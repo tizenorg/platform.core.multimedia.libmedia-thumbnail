@@ -32,7 +32,7 @@
 #include <pwd.h>
 
 #define THUMB_SOCK_BLOCK_SIZE 512
-#define THUMB_IPC_PATH tzplatform_mkpath(TZ_SYS_RUN, "media-server/media_ipc_thumbcreator.socket")
+#define THUMB_IPC_PATH "/tmp/media-server/media_ipc_thumbcreator.socket"
 
 static GQueue *g_request_queue = NULL;
 static GQueue *g_manage_queue = NULL;
