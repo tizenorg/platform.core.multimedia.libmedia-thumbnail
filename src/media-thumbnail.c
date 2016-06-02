@@ -139,16 +139,24 @@ int thumbnail_request_from_db_async(unsigned int request_id, const char *origin_
 int thumbnail_request_extract_raw_data_async(int request_id, const char *origin_path, int width, int height, ThumbRawFunc func, void *user_data, uid_t uid)
 {
 	int err = MS_MEDIA_ERR_NONE;
+	int exist = 0;
 
 	if (origin_path == NULL || request_id == 0) {
-		thumb_err("Invalid parameter");
+		thumb_err("original path is NULL. Or there is an error in request_id.");
 		return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
 
-	if (!g_file_test(origin_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR)) {
-			thumb_err("Original path(%s) doesn't exist.", origin_path);
+	/* check the file exits actually */
+	exist = open(origin_path, O_RDONLY);
+	if (exist < 0) {
+		thumb_err("Fail to open original_path[%s]", origin_path);
+		if (errno == EACCES || errno == EPERM)
+			return  MS_MEDIA_ERR_PERMISSION_DENIED;
+		else
 			return MS_MEDIA_ERR_INVALID_PARAMETER;
 	}
+	close(exist);
+
 	thumb_dbg_slog("Path : %s", origin_path);
 
 	thumbRawUserData *userData = (thumbRawUserData*)malloc(sizeof(thumbRawUserData));
