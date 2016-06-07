@@ -438,6 +438,7 @@ gboolean _thumb_server_read_socket(GIOChannel *src,
 		thumb_dbg_slog("Sent data(%d) from %s", res_msg.thumb_size, res_msg.org_path);
 	}
 	SAFE_FREE(buf);
+	SAFE_FREE(res_msg.thumb_data);
 
 	if (recv_msg.msg_type == THUMB_REQUEST_KILL_SERVER) {
 		thumb_warn("Shutting down...");
